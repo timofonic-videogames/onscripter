@@ -31,13 +31,13 @@ CFLAGS = -O3 -fomit-frame-pointer -ffast-math -Wall -Wpointer-arith -pipe -c $(I
 
 RM = rm -f
 
-TARGET_EXE = ados
+TARGET_EXE = ha
 TARGET = $(TARGET_EXE)$(EXESUFFIX)
 
 EXT_OBJS = win32rc.o
 
 include Makefile.onscripter
 
-RCFILE ?= ados.rc
+RCFILE ?= hallucinate.rc
 win32rc.o: $(RCFILE)
 	windres $< -o $@
