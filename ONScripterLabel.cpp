@@ -515,7 +515,7 @@ int ONScripterLabel::init()
     if ( open() ) return -1;
 
 	if ( script_h.save_path == NULL ){
-		const char *gameid = script_h.game_identifier ? script_h.game_identifier : "PONScripter";
+		const char *gameid = script_h.game_identifier ? script_h.game_identifier : "ONScripter";
 #ifdef WIN32
 		// On Windows, store in [Profiles]/All Users/Application Data.
 		// TODO: optionally permit saves to be per-user rather than shared?
