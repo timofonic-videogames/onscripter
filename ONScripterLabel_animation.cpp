@@ -147,7 +147,7 @@ void ONScripterLabel::setupAnimationInfo( AnimationInfo *anim, FontInfo *info )
 
         SDL_Rect pos;
         if (anim->is_tight_region){
-	    drawString( anim->file_name, anim->color_list[ anim->current_cell ], &f_info, false, NULL, &pos );
+        drawString( anim->file_name, anim->color_list[ anim->current_cell ], &f_info, false, NULL, &pos );
         }
         else{
             int xy_bak[2];

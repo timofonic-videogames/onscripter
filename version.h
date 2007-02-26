@@ -1,2 +1,2 @@
-#define ONS_VERSION "20061128-insani+hael"
+#define ONS_VERSION "20060724-insani"
 #define NSC_VERSION 255

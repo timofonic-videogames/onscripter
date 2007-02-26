@@ -23,17 +23,8 @@ INCS = `sdl-config --cflags` `smpeg-config --cflags`
 #DEFS = -DLINUX -DUSE_AVIFILE -DUSE_OGG_VORBIS -DENABLE_1BYTE_CHAR -DFORCE_1BYTE_CHAR
 
 # with OggVorbis and English mode and insani
-#LIBS = -static -z muldefs -Wl,--start-group `sdl-config --static-libs` `smpeg-config --libs` -lSDL_ttf -lfreetype -lSDL_image -ltiff -lpng -lSDL_mixer -lbz2 -lz -ljpeg -lm -lvorbis -lvorbisenc -lvorbisfile -logg -lgpm -lncurses -lslang -ldirectfb -lfusion -ldirect -lvga -ldl -lesd -lartsc -lasound -lX11 -laa -Wl,--end-group
-#DEFS = -DLINUX -DUSE_OGG_VORBIS -DENABLE_1BYTE_CHAR -DFORCE_1BYTE_CHAR -DINSANI
-
-# with Haeleth
-LIBS := -Wl,-O2 -Wl,-Bstatic -lSDL_image -lpng -ljpeg \
-        -lSDL_mixer $(shell pkg-config vorbisfile --libs) -Wl,-Bdynamic \
-        $(shell sdl-config --libs) -Wl,-Bstatic $(shell smpeg-config --libs) \
-        -lSDL_ttf $(shell freetype-config --libs) -lbz2 \
-         -Wl,-Bdynamic \
-        -Wl,-start-group -lX11 -lXext -lXrandr -lXau -lXdmcp -lXrender -Wl,-end-group -ldl
-DEFS = -DLINUX -DUSE_OGG_VORBIS -DENABLE_1BYTE_CHAR -DFORCE_1BYTE_CHAR -DINSANI -DHAELETH
+LIBS = -static -z muldefs -Wl,--start-group `sdl-config --static-libs` `smpeg-config --libs` -lSDL_ttf -lfreetype -lSDL_image -ltiff -lpng -lSDL_mixer -lbz2 -lz -ljpeg -lm -lvorbis -lvorbisenc -lvorbisfile -logg -lgpm -lncurses -lslang -ldirectfb -lfusion -ldirect -lvga -ldl -lesd -lartsc -lasound -lX11 -laa -Wl,--end-group
+DEFS = -DLINUX -DUSE_OGG_VORBIS -DENABLE_1BYTE_CHAR -DFORCE_1BYTE_CHAR -DINSANI
 
 EXESUFFIX =
 OBJSUFFIX = .o
@@ -45,8 +36,8 @@ OBJSUFFIX = .o
 CC = g++ 
 LD = g++ -o 
 
-CFLAGS = -g -ggdb -Wall -Wpointer-arith -pipe -c $(INCS) $(DEFS)
-#CFLAGS = -O3 -Wall -fomit-frame-pointer -pipe -c $(INCS) $(DEFS)
+#CFLAGS = -g -Wall -Wpointer-arith -pipe -c $(INCS) $(DEFS)
+CFLAGS = -O3 -Wall -fomit-frame-pointer -pipe -c $(INCS) $(DEFS)
 
 # for GCC on PowerPC specfied
 #CC = powerpc-unknown-linux-gnu-g++
@@ -62,7 +53,7 @@ CFLAGS = -g -ggdb -Wall -Wpointer-arith -pipe -c $(INCS) $(DEFS)
 
 RM = rm -f
 
-TARGET = onscripter$(EXESUFFIX) 
+TARGET = onscripter$(EXESUFFIX) sardec$(EXESUFFIX) nsadec$(EXESUFFIX) sarconv$(EXESUFFIX) nsaconv$(EXESUFFIX)
 #TARGET = onscripter$(EXESUFFIX) sardec$(EXESUFFIX) nsadec$(EXESUFFIX) sarconv$(EXESUFFIX) nsaconv$(EXESUFFIX) simple_aviplay$(EXESUFFIX)
 #EXT_OBJS = AVIWrapper$(OBJSUFFIX)
 
