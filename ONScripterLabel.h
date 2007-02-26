@@ -21,7 +21,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Modified by Haeleth, autumn 2006, to remove unnecessary diagnostics.
+// Modified by Haeleth, summer 2006, to remove unnecessary diagnostic messages 
+// and implement an old-movie filter for "hallucinate".
+
+// Modified by Haeleth, autumn 2006, to better support OS X packaging.
 
 #ifndef __ONSCRIPTER_LABEL_H__
 #define __ONSCRIPTER_LABEL_H__
@@ -97,7 +100,9 @@ public:
     void setFontFile(const char *filename);
     void setRegistryFile(const char *filename);
     void setDLLFile(const char *filename);
-    void setSavePath(const char *path);
+/* Haeleth */
+	void setSavePath(const char *path);
+/* /Haeleth */    
     void setArchivePath(const char *path);
     void setFullscreenMode();
     void setWindowMode();
@@ -109,6 +114,9 @@ public:
 
     int  init();
     int  eventLoop();
+/* Haeleth */    
+    bool WaitEvent(SDL_Event* event);
+/* /Haeleth */    
 
     void reset(); // used if definereset
     void resetSub(); // used if reset
@@ -280,10 +288,12 @@ public:
     int allsphideCommand();
     int amspCommand();
 
+/* Haeleth */
     int insertmenuCommand();
     int resetmenuCommand();
     int setlayerCommand();
     int layermessageCommand();
+/* /Haeleth */
 
 protected:
     /* ---------------------------------------- */
@@ -585,6 +595,11 @@ private:
     int  doEffect( EffectLink *effect, AnimationInfo *anim, int effect_image );
     void drawEffect( SDL_Rect *dst_rect, SDL_Rect *src_rect, SDL_Surface *surface );
     void generateMosaic( SDL_Surface *src_surface, int level );
+
+	/* ---------------------------------------- */
+	/* Haeleth: Old movie effect functions */
+	void updateOldMovie();
+	void refreshOldMovie( SDL_Surface *surface, SDL_Rect clip );
 
     /* ---------------------------------------- */
     /* Select related variables */

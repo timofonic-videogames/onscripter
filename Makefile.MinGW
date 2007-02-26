@@ -8,8 +8,7 @@ WIN32 = true
 INCS = `sdl-config --cflags` `smpeg-config --cflags` `freetype-config --cflags`
 
 LIBS = -static -Wl,--start-group \
-       $(filter-out -lSDLmain,$(shell sdl-config --static-libs)) \
-       `smpeg-config --libs` `freetype-config --libs` \
+       `sdl-config --static-libs` `smpeg-config --libs` `freetype-config --libs` \
        -lSDL_image -ljpeg -lpng -lz    \
        -lSDL_mixer -logg -lvorbis -lvorbisfile  \
        -lSDL_ttf -lbz2 -Wl,--end-group
@@ -28,20 +27,17 @@ CXX = g++
 LD  = g++ -o 
 
 #CFLAGS = -O0 -g -Wall -Wpointer-arith -pipe -c $(INCS) $(DEFS)
-CFLAGS += -O3 -fomit-frame-pointer -ffast-math -Wall -Wpointer-arith -pipe -c $(INCS) $(DEFS)
+CFLAGS = -O3 -fomit-frame-pointer -ffast-math -Wall -Wpointer-arith -pipe -c $(INCS) $(DEFS)
 
 RM = rm -f
 
-TARGET_EXE = onscripter 
+TARGET_EXE = ados
 TARGET = $(TARGET_EXE)$(EXESUFFIX)
 
-EXT_OBJS = SDL_win32_main.o win32rc.o
+EXT_OBJS = win32rc.o
 
 include Makefile.onscripter
 
-RCFILE ?= onscripter.rc
+RCFILE ?= ados.rc
 win32rc.o: $(RCFILE)
 	windres $< -o $@
-
-SDL_win32_main.o: SDL_win32_main.c
-	$(CC) $(INCS) $(DEFS) -c $< -o $@

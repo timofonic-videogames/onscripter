@@ -21,6 +21,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+// Modified by Haeleth, summer 2006, to implement an old-movie effect for "hallucinate".
+
 #include "ONScripterLabel.h"
 
 int ONScripterLabel::proceedAnimation()
@@ -124,6 +126,16 @@ void ONScripterLabel::setupAnimationInfo( AnimationInfo *anim, FontInfo *info )
     anim->deleteSurface();
     anim->abs_flag = true;
 
+/* Haeleth */
+    if (strcmp(anim->file_name, "*10") == 0) {
+    	// This activates the old-movie effect. Technically by creating a sprite layer that
+    	// holds the effect, but we just create a blank sprite layer as a flag, and arrange
+    	// the movie effect separately.
+		anim->setImageName(":s/1,1,0;#000000\x81\x40");
+		parseTaggedString(anim);
+    }
+/* /Haeleth */
+
     if ( anim->trans_mode == AnimationInfo::TRANS_STRING ){
         FontInfo f_info = sentence_font;
         if (info) f_info = *info;
@@ -147,7 +159,7 @@ void ONScripterLabel::setupAnimationInfo( AnimationInfo *anim, FontInfo *info )
 
         SDL_Rect pos;
         if (anim->is_tight_region){
-	    drawString( anim->file_name, anim->color_list[ anim->current_cell ], &f_info, false, NULL, &pos );
+            drawString( anim->file_name, anim->color_list[ anim->current_cell ], &f_info, false, NULL, &pos );
         }
         else{
             int xy_bak[2];
@@ -169,7 +181,7 @@ void ONScripterLabel::setupAnimationInfo( AnimationInfo *anim, FontInfo *info )
         
         anim->allocImage( pos.w*anim->num_of_cells, pos.h );
         anim->fill( 0, 0, 0, 0 );
-        
+       
         f_info.setRubyOnFlag(false);
         f_info.top_xy[0] = f_info.top_xy[1] = 0;
         for ( int i=0 ; i<anim->num_of_cells ; i++ ){
@@ -190,7 +202,6 @@ void ONScripterLabel::setupAnimationInfo( AnimationInfo *anim, FontInfo *info )
         if ( surface ) SDL_FreeSurface(surface);
         if ( surface_m ) SDL_FreeSurface(surface_m);
     }
-
 }
 
 void ONScripterLabel::parseTaggedString( AnimationInfo *anim )

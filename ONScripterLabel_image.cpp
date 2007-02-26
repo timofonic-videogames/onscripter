@@ -21,6 +21,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+// Modified by Haeleth, summer 2006, to implement an old-movie effect for "hallucinate".
+
 #include "ONScripterLabel.h"
 #include "resize_image.h"
 
@@ -267,9 +269,23 @@ void ONScripterLabel::refreshSurface( SDL_Surface *surface, SDL_Rect *clip_src, 
 
     int i, top;
 
-    SDL_FillRect( surface, &clip, SDL_MapRGB( surface->format, 0, 0, 0) );
-    
-    drawTaggedSurface( surface, &bg_info, clip );
+    // Haeleth: Check whether old-movie effect is active.
+    // This is a Hallucinate-specific check: in Hallucinate, we want to update the old movie
+    // effect only when sprite 120 is visible and the background image is neither "black" nor
+    // "white".
+    // In the unlikely event that anyone ever wants to use this hack with a game other than
+    // Hallucinate, this will need replacing with something more generally applicable.
+    if (sprite_info[120].image_surface && sprite_info[120].visible
+        && bg_info.image_name && bg_info.image_name[0] != 'b' && bg_info.image_name[0] != 'w') {
+	    // If the old-movie effect is active, refreshOldMovie() takes care of clearing and 
+	    // redrawing the background.
+        refreshOldMovie( surface, clip );
+    }
+    else {
+    	// If the old-movie effect is disabled, we redraw things normally.
+        SDL_FillRect( surface, &clip, SDL_MapRGB( surface->format, 0, 0, 0) );
+        drawTaggedSurface( surface, &bg_info, clip );
+    }
     
     if ( !all_sprite_hide_flag ){
         if ( z_order < 10 && refresh_mode & REFRESH_SAYA_MODE )

@@ -21,11 +21,15 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Modified by Haeleth, autumn 2006, to remove unnecessary diagnostics and support OS X/Linux packaging better.
+// Modified by Haeleth, summer 2006, to remove unnecessary diagnostic messages 
+// and implement an old-movie filter for "hallucinate".
+
+// Modified by Haeleth, autumn 2006, to support OS X packaging better.
 
 #include "ONScripterLabel.h"
-#include <cstdio>
+#include <stdio.h>
 
+/* Haeleth */
 #ifdef MACOSX
 namespace Carbon {
 #include <Carbon/Carbon.h>
@@ -33,16 +37,7 @@ namespace Carbon {
 }
 #include <sys/stat.h>
 #endif
-#ifdef WIN32
-#include <windows.h>
-typedef HRESULT (WINAPI *GETFOLDERPATH)(HWND, int, HANDLE, DWORD, LPTSTR);
-#endif
-#ifdef LINUX
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <pwd.h>
-#endif
+/* /Haeleth */
 
 extern void initSJIS2UTF16();
 extern "C" void waveCallback( int channel );
@@ -94,7 +89,9 @@ static struct FuncLUT{
     {"setwindow3",   &ONScripterLabel::setwindow3Command},
     {"setwindow2",   &ONScripterLabel::setwindow2Command},
     {"setwindow",   &ONScripterLabel::setwindowCommand},
+/* Haeleth */
     {"setlayer", &ONScripterLabel::setlayerCommand},
+/* /Haeleth */
     {"setcursor",   &ONScripterLabel::setcursorCommand},
     {"selnum",   &ONScripterLabel::selectCommand},
     {"selgosub",   &ONScripterLabel::selectCommand},
@@ -111,7 +108,9 @@ static struct FuncLUT{
     {"rnd2",   &ONScripterLabel::rndCommand},
     {"rmode",   &ONScripterLabel::rmodeCommand},
     {"resettimer",   &ONScripterLabel::resettimerCommand},
+/* Haeleth */
     {"resetmenu", &ONScripterLabel::resetmenuCommand},
+/* /Haeleth */
     {"reset",   &ONScripterLabel::resetCommand},
     {"repaint",   &ONScripterLabel::repaintCommand},
     {"quakey",   &ONScripterLabel::quakeCommand},
@@ -154,14 +153,18 @@ static struct FuncLUT{
     {"locate", &ONScripterLabel::locateCommand},
     {"loadgame", &ONScripterLabel::loadgameCommand},
     {"ld", &ONScripterLabel::ldCommand},
+/* Haeleth */
     {"layermessage", &ONScripterLabel::layermessageCommand},
+/* /Haeleth */
     {"jumpf", &ONScripterLabel::jumpfCommand},
     {"jumpb", &ONScripterLabel::jumpbCommand},
     {"isfull", &ONScripterLabel::isfullCommand},
     {"isskip", &ONScripterLabel::isskipCommand},
     {"ispage", &ONScripterLabel::ispageCommand},
     {"isdown", &ONScripterLabel::isdownCommand},
+/* Haeleth */
     {"insertmenu", &ONScripterLabel::insertmenuCommand},
+/* /Haeleth */
     {"input", &ONScripterLabel::inputCommand},
     {"indent", &ONScripterLabel::indentCommand},
     {"humanorder", &ONScripterLabel::humanorderCommand},
@@ -444,12 +447,14 @@ void ONScripterLabel::setArchivePath(const char *path)
     sprintf( archive_path, RELATIVEPATH "%s%c", path, DELIMITER );
 }
 
+/* Haeleth */
 void ONScripterLabel::setSavePath(const char *path)
 {
     if (script_h.save_path) delete[] script_h.save_path;
     script_h.save_path = new char[ RELATIVEPATHLENGTH + strlen(path) + 2 ];
     sprintf( script_h.save_path, RELATIVEPATH "%s%c", path, DELIMITER );
 }
+/* /Haeleth */
 
 void ONScripterLabel::setFullscreenMode()
 {
@@ -488,9 +493,11 @@ void ONScripterLabel::setKeyEXE(const char *filename)
 
 int ONScripterLabel::init()
 {
-	if (archive_path == NULL) {
-#ifdef MACOSX
-		// On OS X, store archives etc in the application bundle by default.
+    if (archive_path == NULL){
+#ifndef MACOSX
+    	archive_path = "";
+#else
+/* Haeleth */
 		using namespace Carbon;
 		ProcessSerialNumber psn;
 		GetCurrentProcess(&psn);
@@ -500,10 +507,7 @@ int ONScripterLabel::init()
 		FSRefMakePath(&bundle, (UInt8*) bpath, 32768);
 		archive_path = new char[strlen(bpath) + 32];
 		sprintf(archive_path, "%s/Contents/Resources/", bpath);
-#else
-		// On Linux, the path is unpredictable and should be set by using "-r PATH" in a launcher script.
-		// On other platforms they're stored in the same place as the executable.
-		archive_path = "";
+/* /Haeleth */
 #endif
 	}
 
@@ -514,57 +518,23 @@ int ONScripterLabel::init()
 
     if ( open() ) return -1;
 
+/* Haeleth */
 	if ( script_h.save_path == NULL ){
-		const char *gameid = script_h.game_identifier ? script_h.game_identifier : "PONScripter";
-#ifdef WIN32
-		// On Windows, store in [Profiles]/All Users/Application Data.
-		// TODO: optionally permit saves to be per-user rather than shared?
-		HMODULE shdll = LoadLibrary("shfolder");
-		if (shdll) {
-			GETFOLDERPATH gfp = GETFOLDERPATH(GetProcAddress(shdll, "SHGetFolderPathA"));
-			if (gfp) {
-				char hpath[MAX_PATH];
-				HRESULT res = gfp(0, 0x0023, 0, 0, hpath);
-				if (res != S_FALSE && res != E_FAIL && res != E_INVALIDARG) {
-					script_h.save_path = new char[strlen(hpath) + strlen(gameid) + 3];
-					sprintf(script_h.save_path, "%s/%s/", hpath, gameid);
-					CreateDirectory(script_h.save_path, 0);
-				}
-			}
-			FreeLibrary(shdll);
-		}
-		if (script_h.save_path == NULL) {
-			// Error; assume ancient Windows. In this case it's safe to use the archive path!
-			script_h.save_path = archive_path;
-		}
-#elif defined MACOSX
-		// On OS X, place in subfolder of ~/Library/Preferences.
+#ifndef MACOSX
+    	script_h.save_path = archive_path;
+#else
 		using namespace Carbon;
 		FSRef home;
 		FSFindFolder(kUserDomain, kPreferencesFolderType, kDontCreateFolder, &home);
 		char hpath[32768];
 		FSRefMakePath(&home, (UInt8*) hpath, 32768);
+		const char *gameid = script_h.game_identifier ? script_h.game_identifier : "ONScripter";
 		script_h.save_path = new char[strlen(hpath) + strlen(gameid) + 8];
 		sprintf(script_h.save_path, "%s/%s Data/", hpath, gameid);
 		mkdir(script_h.save_path, 0755);
-#elif defined LINUX
-		// On Linux (and similar *nixen), place in ~/.gameid
-		passwd* pwd = getpwuid(getuid());
-		if (pwd) {
-			script_h.save_path = new char[strlen(pwd->pw_dir) + strlen(gameid) + 4];
-			sprintf(script_h.save_path, "%s/.%s/", pwd->pw_dir, gameid);
-			mkdir(script_h.save_path, 0755);
-		}
-		else script_h.save_path = archive_path;
-#else
-		// Fall back on default ONScripter behaviour if we don't have any better ideas.
-		script_h.save_path = archive_path;
 #endif
 	}
-	if ( script_h.game_identifier ) {
-		delete[] script_h.game_identifier; 
-		script_h.game_identifier = NULL; 
-	}
+/* /Haeleth */
 
     initSDL();
 
@@ -1220,47 +1190,23 @@ int ONScripterLabel::parseLine( )
 
 SDL_Surface *ONScripterLabel::loadImage( char *file_name )
 {
-    char* alt_buffer = 0;
     if ( !file_name ) return NULL;
     unsigned long length = script_h.cBR->getFileLength( file_name );
-
-    if (length == 0) {
-	alt_buffer = new char[strlen(file_name) + strlen(script_h.save_path) + 1];
-	sprintf(alt_buffer, "%s%s", script_h.save_path, file_name);
-	char* si = alt_buffer;
-	do { if (*si == '\\') *si = DELIMITER; } while (*(++si));
-	FILE* fp = std::fopen(alt_buffer, "rb");
-	if (fp) {
-	    fseek(fp, 0, SEEK_END);
-	    length = ftell(fp);
-	    fclose(fp);
-	}
-	else delete[] alt_buffer;
-    }
-
     if ( length == 0 ){
-        if (strcmp(file_name, "uoncur.bmp" ) && strcmp(file_name, "uoffcur.bmp") &&
-                   strcmp(file_name, "doncur.bmp" ) && strcmp(file_name, "doffcur.bmp") &&
-                   strcmp(file_name, "cursor0.bmp") && strcmp(file_name, "cursor1.bmp"))
-        {
+    	if (strcmp(file_name, "uoncur.bmp" ) && strcmp(file_name, "uoffcur.bmp") &&
+		    strcmp(file_name, "doncur.bmp" ) && strcmp(file_name, "doffcur.bmp") &&
+		    strcmp(file_name, "cursor0.bmp") && strcmp(file_name, "cursor1.bmp"))
+		{
             fprintf( stderr, " *** can't find file [%s] ***\n", file_name );
         }
         return NULL;
-    }
+    }   
     if ( filelog_flag )
         script_h.findAndAddLog( script_h.log_info[ScriptHandler::FILE_LOG], file_name, true );
     //printf(" ... loading %s length %ld\n", file_name, length );
     unsigned char *buffer = new unsigned char[length];
     int location;
-    if (!alt_buffer) {
-	script_h.cBR->getFile( file_name, buffer, &location );
-    }
-    else {
-	FILE* fp = std::fopen(alt_buffer, "rb");
-	fread(buffer, 1, length, fp);
-	fclose(fp);
-	delete[] alt_buffer;
-    }
+    script_h.cBR->getFile( file_name, buffer, &location );
     SDL_Surface *tmp = IMG_Load_RW(SDL_RWFromMem( buffer, length ), 1);
 
     char *ext = strrchr(file_name, '.');
@@ -1344,9 +1290,8 @@ void ONScripterLabel::clearCurrentTextBuffer()
 
     int num = (sentence_font.num_xy[0]*2+1)*sentence_font.num_xy[1];
     if (sentence_font.getTateyokoMode() == FontInfo::TATE_MODE)
-        num = (sentence_font.num_xy[1]*2+1)*sentence_font.num_xy[1];
+        num = (sentence_font.num_xy[1]*2+1)*sentence_font.num_xy[0];
 
-// TEST for ados backlog cutoff problem
 	num *= 2;
 
     if ( current_text_buffer->buffer2 &&

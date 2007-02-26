@@ -21,7 +21,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Modified by Haeleth, Autumn 2006, to better support OS X/Linux packaging.
+// Modified by Haeleth, Autumn 2006, to better support OS X packaging.
 
 #ifndef __SCRIPT_HANDLER_H__
 #define __SCRIPT_HANDLER_H__
@@ -235,9 +235,11 @@ public:
            SCREEN_SIZE_320x240 = 3
     };
     int global_variable_border;
-    
+
+/* Haeleth */
     char *game_identifier;
     char *save_path;
+/* /Haeleth */
 
     BaseReader *cBR;
     
@@ -330,6 +332,5 @@ private:
     unsigned char key_table[256];
     bool key_table_flag;
 };
-
 
 #endif // __SCRIPT_HANDLER_H__

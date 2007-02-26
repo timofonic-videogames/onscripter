@@ -28,24 +28,19 @@
 
 void optionHelp()
 {
+    printf("ONScripter version %s(%d.%02d)\n", ONS_VERSION, NSC_VERSION/100, NSC_VERSION%100 );
     printf( "Usage: onscripter [option ...]\n" );
     printf( "      --cdaudio\t\tuse CD audio if available\n");
     printf( "      --cdnumber no\tchoose the CD-ROM drive number\n");
     printf( "  -f, --font file\tset a TTF font file\n");
     printf( "      --registry file\tset a registry file\n");
     printf( "      --dll file\tset a dll file\n");
-#if   defined WIN32
-    printf( "  -r, --root path\tset the root path to the archives\n");
-    printf( "  -s, --save path\tset the path to use for saved games (default: folder in All Users profile)\n");
-#elif defined MACOSX
-    printf( "  -r, --root path\tset the root path to the archives (default: Resources in ONScripter bundle)\n");
-    printf( "  -s, --save path\tset the path to use for saved games (default: folder in ~/Library/Preferences)\n");
-#elif defined LINUX
-    printf( "  -r, --root path\tset the root path to the archives\n");
-    printf( "  -s, --save path\tset the path to use for saved games (default: hidden subdirectory in ~)\n");
-#else
+#ifndef MACOSX
     printf( "  -r, --root path\tset the root path to the archives\n");
     printf( "  -s, --save path\tset the path to use for saved games (default: same as root path)\n");
+#else
+    printf( "  -r, --root path\tset the root path to the archives (default: Resources in ONScripter bundle)\n");
+    printf( "  -s, --save path\tset the path to use for saved games (default: folder in ~/Library/Preferences)\n");
 #endif
     printf( "      --fullscreen\tstart in fullscreen mode\n");
     printf( "      --window\t\tstart in window mode\n");

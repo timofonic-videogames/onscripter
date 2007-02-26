@@ -21,19 +21,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Modified by Haeleth, autumn 2006, to remove unnecessary diagnostics and support ADOS properly.
+// Modified by Haeleth, summer 2006, to remove unnecessary diagnostic messages.
 
 #include "ONScripterLabel.h"
 #include "version.h"
-
-#include <cstdio>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <string.h>
-#include <errno.h>
-#ifdef WIN32
-#include <direct.h>
-#endif
 
 #if defined(MACOSX) && (SDL_COMPILEDVERSION >= 1208)
 #include <CoreFoundation/CoreFoundation.h>
@@ -867,27 +858,14 @@ int ONScripterLabel::savescreenshotCommand()
     }
 
     const char *buf = script_h.readStr();
-    char filename[4096];
+    char filename[256];
 
     char *ext = strrchr( buf, '.' );
     if ( ext && (!strcmp( ext+1, "BMP" ) || !strcmp( ext+1, "bmp" ) ) ){
-        sprintf( filename, "%s%s", script_h.save_path, buf );
-        int last_delim = 0;
-	for ( unsigned int i=0 ; i<strlen( filename ) ; i++ ) {
-            if ( filename[i] == '/' || filename[i] == '\\' ) {
+        sprintf( filename, "%s%s", archive_path, buf );
+        for ( unsigned int i=0 ; i<strlen( filename ) ; i++ )
+            if ( filename[i] == '/' || filename[i] == '\\' )
                 filename[i] = DELIMITER;
-		last_delim = i;
-	    }
-	}
-	if (last_delim) {	
-	    filename[last_delim] = 0;
-	    mkdir(filename
-#ifndef WIN32
-		  , 0755
-#endif
-		);
-	    filename[last_delim] = DELIMITER;
-	}
         SDL_SaveBMP( screenshot_surface, filename );
     }
     else
@@ -1154,11 +1132,13 @@ int ONScripterLabel::playCommand()
     else{ // play MIDI
         stopBGM( false );
 
+#ifndef MIDI_DISABLED
         setStr(&midi_file_name, buf);
         midi_play_loop_flag = loop_flag;
         if (playSound(midi_file_name, SOUND_MIDI, midi_play_loop_flag) != SOUND_MIDI){
             fprintf(stderr, "can't play MIDI file %s\n", midi_file_name);
         }
+#endif
     }
 
     return RET_CONTINUE;
@@ -2158,22 +2138,7 @@ int ONScripterLabel::fileexistCommand()
     script_h.pushVariable();
     const char *buf = script_h.readStr();
 
-    int found = (script_h.cBR->getFileLength(buf)>0)?1:0;
-    if (!found) {
-	char fn[4096];
-	sprintf(fn, "%s%s", script_h.save_path, buf);
-	char* si = fn;
-	do { if (*si == '\\') *si = DELIMITER; } while (*(++si));
-	FILE* fp = std::fopen(fn, "rb"); // FIXME: failing even when file exists?!
-//printf("Seek %s, fp = %s, ", fn, fp ? "yes" : "no");
-	if (fp) {
-	    found = 1;
-	    fclose(fp);
-//puts("found\n");
-	}
-//else printf(" fail (%s)\n", strerror(errno));
-    }
-    script_h.setInt( &script_h.pushed_variable, found );
+    script_h.setInt( &script_h.pushed_variable, (script_h.cBR->getFileLength(buf)>0)?1:0 );
 
     return RET_CONTINUE;
 }

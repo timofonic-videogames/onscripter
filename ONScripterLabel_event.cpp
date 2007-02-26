@@ -21,11 +21,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+// Modified by Haeleth, summer 2006, to implement an old-movie effect for "hallucinate".
+
 #include "ONScripterLabel.h"
 #if defined(LINUX)
 #include <sys/types.h>
 #include <sys/wait.h>
 #endif
+#include <stdlib.h>
 
 #define ONS_TIMER_EVENT   (SDL_USEREVENT)
 #define ONS_SOUND_EVENT   (SDL_USEREVENT+1)
@@ -38,6 +41,10 @@
 #if defined(INSANI)
 #define ONS_FADE_EVENT    (SDL_USEREVENT+6)
 #endif
+
+/* Haeleth */
+#define HAEL_BGUPDATE_EVENT (SDL_USEREVENT+7)
+/* /Haeleth */
 
 #define EDIT_MODE_PREFIX "[EDIT MODE]  "
 #define EDIT_SELECT_STRING "MP3 vol (m)  SE vol (s)  Voice vol (v)  Numeric variable (n)"
@@ -1063,6 +1070,26 @@ void ONScripterLabel::timerEvent( void )
 /* **************************************** *
  * Event loop
  * **************************************** */
+
+/* Haeleth: we implement our own event polling routine, to enable constant animation updates. *
+static Uint32 last_ticks = 0;
+bool ONScripterLabel::WaitEvent(SDL_Event* event)
+{
+	while (1) {
+		Uint32 ticks = SDL_GetTicks();
+		if (ticks - last_ticks > 120) {
+			last_ticks = ticks;
+			event->type = HAEL_BGUPDATE_EVENT;
+			return true;
+		}
+		if (SDL_PollEvent(event)) {
+			return true;
+		}			
+		SDL_Delay(10);
+	}
+}
+* /Haeleth */
+
 int ONScripterLabel::eventLoop()
 {
     SDL_Event event, tmp_event;
@@ -1134,6 +1161,12 @@ int ONScripterLabel::eventLoop()
           case ONS_TIMER_EVENT:
             timerEvent();
             break;
+
+/* Haeleth *
+          case HAEL_BGUPDATE_EVENT:
+            updateOldMovie();
+            break;
+* /Haeleth */
 
           case ONS_SOUND_EVENT:
           case ONS_CDAUDIO_EVENT:

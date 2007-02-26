@@ -1,0 +1,25 @@
+ONSCRICON ICON "hallucinate.ico"
+
+1 VERSIONINFO
+FILEVERSION 1, 0, 0, 0
+PRODUCTVERSION 1, 0, 0, 0
+FILEFLAGS 32
+FILEOS 4
+FILETYPE 1
+{
+   BLOCK "StringFileInfo" {
+       BLOCK "080904b0" {
+           VALUE "FileDescription", "ONScripter for hallucinate"
+           VALUE "OriginalFilename", "ha.exe"
+           VALUE "CompanyName", "Ogapee/Haeleth"
+           VALUE "FileVersion", "2006-09-23"
+           VALUE "LegalCopyright", "Copyright 1998-2006 Studio O.G.A. Portions copyright 2005-2006 insani, 2006 Haeleth."
+           VALUE "ProductName", "hallucinate"
+           VALUE "ProductVersion", "1"
+           VALUE "Comments", "This is a modified version of ONScripter designed exclusively for use with hallucinate. It may have undesirable behaviour when used to run other games, even other games that use the same special effects."
+       }
+   }
+   BLOCK "VarFileInfo" {
+       VALUE "Translation", 0x0809, 0x04B0
+   }
+}

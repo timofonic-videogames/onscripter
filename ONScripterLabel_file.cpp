@@ -21,7 +21,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Modified by Haeleth, Autumn 2006, to better support OS X/Linux packaging.
+// Modified by Haeleth, Autumn 2006, to better support OS X packaging.
 
 #include "ONScripterLabel.h"
 
@@ -149,7 +149,7 @@ int ONScripterLabel::loadSaveFile( int no )
     char filename[16];
     sprintf( filename, "save%d.dat", no );
     if (loadFileIOBuf( filename )){
-        //fprintf( stderr, "can't open save file %s\n", filename );
+        fprintf( stderr, "can't open save file %s\n", filename );
         return -1;
     }
 
@@ -185,7 +185,7 @@ int ONScripterLabel::loadSaveFile( int no )
         file_version = readChar() * 100;
         file_version += readChar();
     }
-    //printf("Save file version is %d.%d\n", file_version/100, file_version%100 );
+    printf("Save file version is %d.%d\n", file_version/100, file_version%100 );
     if ( file_version > SAVEFILE_VERSION_MAJOR*100 + SAVEFILE_VERSION_MINOR ){
         fprintf( stderr, "Save file is newer than %d.%d, please use the latest ONScripter.\n", SAVEFILE_VERSION_MAJOR, SAVEFILE_VERSION_MINOR );
         return -1;
@@ -535,14 +535,14 @@ int ONScripterLabel::saveSaveFile( int no )
         memcpy(file_io_buf, save_data_buf, save_data_len);
         file_io_buf_ptr = save_data_len;
         if (saveFileIOBuf( filename )){
-            //fprintf( stderr, "can't open save file %s for writing\n", filename );
+            fprintf( stderr, "can't open save file %s for writing\n", filename );
             return -1;
         }
 
-        //size_t magic_len = strlen(SAVEFILE_MAGIC_NUMBER)+2;
-        //sprintf( filename, RELATIVEPATH "sav%csave%d.dat", DELIMITER, no );
-        //if (saveFileIOBuf( filename, magic_len ))
-        //    fprintf( stderr, "can't open save file %s for writing (not an error)\n", filename );
+        size_t magic_len = strlen(SAVEFILE_MAGIC_NUMBER)+2;
+        sprintf( filename, RELATIVEPATH "sav%csave%d.dat", DELIMITER, no );
+        if (saveFileIOBuf( filename, magic_len ))
+            fprintf( stderr, "can't open save file %s for writing (not an error)\n", filename );
     }
 
     return 0;

@@ -21,8 +21,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Modified by Haeleth, Autumn 2006, to better support OS X/Linux packaging.
-
 #include "ONScripterLabel.h"
 #if defined(LINUX)
 #include <signal.h>
@@ -153,7 +151,7 @@ int ONScripterLabel::playSound(const char *filename, int format, bool loop_flag,
     if (format & SOUND_MP3){
         if (music_cmd){
             FILE *fp;
-            if ( (fp = fopen(TMP_MUSIC_FILE, "wb", true)) == NULL){
+            if ( (fp = fopen(TMP_MUSIC_FILE, "wb"), true) == NULL){
                 fprintf(stderr, "can't open temporary Music file %s\n", TMP_MUSIC_FILE);
             }
             else{
@@ -327,10 +325,10 @@ int ONScripterLabel::playMIDI(bool loop_flag)
 
     char midi_filename[256];
     sprintf(midi_filename, "%s%s", script_h.save_path, TMP_MIDI_FILE);
-    midi_info = Mix_LoadMUS(midi_filename);
+	midi_info = Mix_LoadMUS(midi_filename);
     if (midi_info == NULL) {
-        fprintf(stderr, "MIDI error: %s\n", Mix_GetError());
-        return -1;
+		fprintf(stderr, "MIDI error: %s\n", Mix_GetError());
+    	return -1;
     }
 
     int midi_looping = loop_flag ? -1 : 0;

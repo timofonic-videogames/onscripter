@@ -202,7 +202,7 @@ int ONScripterLabel::doEffect( EffectLink *effect, AnimationInfo *anim, int effe
         break;
 
       default:
-        //printf("effect No. %d is not implemented. Crossfade is substituted for that.\n",effect_no);
+        printf("effect No. %d is not implemented. Crossfade is substituted for that.\n",effect_no);
 
       case 10: // Cross fade
         height = 256 * effect_counter / effect->duration;
