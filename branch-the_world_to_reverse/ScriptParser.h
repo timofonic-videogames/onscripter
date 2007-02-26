@@ -21,7 +21,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Modified by Haeleth, Autumn 2006, to better support OS X/Linux packaging.
+// Modified by Haeleth, Autumn 2006, to better support OS X packaging
 
 #ifndef __SCRIPT_PARSER_H__
 #define __SCRIPT_PARSER_H__

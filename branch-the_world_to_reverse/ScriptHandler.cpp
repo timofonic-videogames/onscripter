@@ -21,7 +21,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Modified by Haeleth, Autumn 2006, to better support OS X/Linux packaging.
+// Modified by Haeleth, Autumn 2006, to better support OS X packaging.
 
 #include "ScriptHandler.h"
 
@@ -49,6 +49,7 @@ ScriptHandler::ScriptHandler()
     screen_size = SCREEN_SIZE_640x480;
     global_variable_border = 200;
     
+	// Haeleth
 	save_path = NULL;
     game_identifier = NULL;
 }
@@ -65,6 +66,7 @@ ScriptHandler::~ScriptHandler()
     delete[] saved_string_buffer;
     delete[] variable_data;
     
+    // Haeleth
     if (game_identifier) delete[] game_identifier;
 }
 
@@ -235,14 +237,6 @@ const char *ScriptHandler::readToken()
     else if (ch == '`'){
         ch = *++buf;
         while (ch != '`' && ch != 0x0a && ch !='\0'){
-            if (ch == '$'){
-            	if (buf[1] == '$') ++buf; else{
-                	addStrVariable(&buf);
-	                while (*--buf == ' ');
-	                ch = *++buf;
-                	continue;
-                }
-            }
             if ( IS_TWO_BYTE(ch) ){
                 addStringBuffer( ch );
                 ch = *++buf;
@@ -957,6 +951,7 @@ int ScriptHandler::readScript( char *path )
         }
         buf++;
     }
+/* Haeleth */
     if ( *buf++ == ';' ){
     	while (*buf == ' ' || *buf == '\t') ++buf;
     	if ( !strncmp( buf, "gameid ", 7 ) ){
@@ -968,6 +963,7 @@ int ScriptHandler::readScript( char *path )
     		game_identifier[i - 1] = 0;
     	}
     }
+/* /Haeleth */
 
     return labelScript();
 }

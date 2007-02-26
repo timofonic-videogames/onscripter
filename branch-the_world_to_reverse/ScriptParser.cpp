@@ -21,7 +21,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Modified by Haeleth, Autumn 2006, to better support OS X/Linux packaging.
+// Modified by Haeleth, Autumn 2006, to better support OS X packaging
 
 #include "ScriptParser.h"
 
@@ -836,7 +836,7 @@ ScriptParser::EffectLink *ScriptParser::parseEffect()
     return NULL;
 }
 
-FILE *ScriptParser::fopen( const char *path, const char *mode, const bool save )
+FILE *ScriptParser::fopen(const char *path, const char *mode, const bool save)
 {
     char filename[256];
     const char *root = save ? script_h.save_path : archive_path;
