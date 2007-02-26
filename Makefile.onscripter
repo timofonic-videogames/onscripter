@@ -3,6 +3,8 @@
 # Makefile.onscripter - General makefile rules for ONScripter
 #
 
+TARGET_EXE ?= onscripter
+
 GUI_OBJS = ONScripterLabel$(OBJSUFFIX) ONScripterLabel_command$(OBJSUFFIX) ONScripterLabel_text$(OBJSUFFIX) \
 	ONScripterLabel_effect$(OBJSUFFIX) ONScripterLabel_event$(OBJSUFFIX) ONScripterLabel_rmenu$(OBJSUFFIX) \
 	ONScripterLabel_animation$(OBJSUFFIX) ONScripterLabel_sound$(OBJSUFFIX) ONScripterLabel_file$(OBJSUFFIX) \
@@ -35,7 +37,7 @@ nsaconv$(EXESUFFIX): $(NSACONV_OBJS)
 simple_aviplay$(EXESUFFIX): simple_aviplay$(OBJSUFFIX) AVIWrapper$(OBJSUFFIX)
 	$(LD)$@ simple_aviplay$(OBJSUFFIX) AVIWrapper$(OBJSUFFIX) $(LIBS)
 
-onscripter$(EXESUFFIX): $(ONSCRIPTER_OBJS)
+$(TARGET_EXE)$(EXESUFFIX): $(ONSCRIPTER_OBJS)
 	$(LD)$@ $(ONSCRIPTER_OBJS) $(LIBS)
 
 clean:

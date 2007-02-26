@@ -21,7 +21,28 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+// Modified by Haeleth, autumn 2006, to remove unnecessary diagnostics and support OS X/Linux packaging better.
+
 #include "ONScripterLabel.h"
+#include <cstdio>
+
+#ifdef MACOSX
+namespace Carbon {
+#include <Carbon/Carbon.h>
+#include <CoreServices/CoreServices.h>
+}
+#include <sys/stat.h>
+#endif
+#ifdef WIN32
+#include <windows.h>
+typedef HRESULT (WINAPI *GETFOLDERPATH)(HWND, int, HANDLE, DWORD, LPTSTR);
+#endif
+#ifdef LINUX
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <pwd.h>
+#endif
 
 extern void initSJIS2UTF16();
 extern "C" void waveCallback( int channel );
@@ -73,6 +94,7 @@ static struct FuncLUT{
     {"setwindow3",   &ONScripterLabel::setwindow3Command},
     {"setwindow2",   &ONScripterLabel::setwindow2Command},
     {"setwindow",   &ONScripterLabel::setwindowCommand},
+    {"setlayer", &ONScripterLabel::setlayerCommand},
     {"setcursor",   &ONScripterLabel::setcursorCommand},
     {"selnum",   &ONScripterLabel::selectCommand},
     {"selgosub",   &ONScripterLabel::selectCommand},
@@ -89,6 +111,7 @@ static struct FuncLUT{
     {"rnd2",   &ONScripterLabel::rndCommand},
     {"rmode",   &ONScripterLabel::rmodeCommand},
     {"resettimer",   &ONScripterLabel::resettimerCommand},
+    {"resetmenu", &ONScripterLabel::resetmenuCommand},
     {"reset",   &ONScripterLabel::resetCommand},
     {"repaint",   &ONScripterLabel::repaintCommand},
     {"quakey",   &ONScripterLabel::quakeCommand},
@@ -131,12 +154,14 @@ static struct FuncLUT{
     {"locate", &ONScripterLabel::locateCommand},
     {"loadgame", &ONScripterLabel::loadgameCommand},
     {"ld", &ONScripterLabel::ldCommand},
+    {"layermessage", &ONScripterLabel::layermessageCommand},
     {"jumpf", &ONScripterLabel::jumpfCommand},
     {"jumpb", &ONScripterLabel::jumpbCommand},
     {"isfull", &ONScripterLabel::isfullCommand},
     {"isskip", &ONScripterLabel::isskipCommand},
     {"ispage", &ONScripterLabel::ispageCommand},
     {"isdown", &ONScripterLabel::isdownCommand},
+    {"insertmenu", &ONScripterLabel::insertmenuCommand},
     {"input", &ONScripterLabel::inputCommand},
     {"indent", &ONScripterLabel::indentCommand},
     {"humanorder", &ONScripterLabel::humanorderCommand},
@@ -253,8 +278,10 @@ void ONScripterLabel::initSDL()
         exit(-1);
     }
 
+#ifndef HAELETH
     if(SDL_InitSubSystem( SDL_INIT_JOYSTICK ) == 0 && SDL_JoystickOpen(0) != NULL)
         printf( "Initialize JOYSTICK\n");
+#endif
 
 #if defined(PSP) || defined(IPODLINUX)
     SDL_ShowCursor(SDL_DISABLE);
@@ -269,7 +296,7 @@ void ONScripterLabel::initSDL()
 
 #if defined(INSANI)
 	SDL_WM_SetIcon(IMG_Load("icon.png"), NULL);
-	fprintf(stderr, "Autodetect: insanity spirit detected!\n");
+	//fprintf(stderr, "Autodetect: insanity spirit detected!\n");
 #endif
 
 #if defined(BPP16)
@@ -304,7 +331,7 @@ void ONScripterLabel::initSDL()
                  screen_width, screen_height, screen_bpp, SDL_GetError() );
         exit(-1);
     }
-    printf("Display: %d x %d (%d bpp)\n", screen_width, screen_height, screen_bpp);
+    //printf("Display: %d x %d (%d bpp)\n", screen_width, screen_height, screen_bpp);
 
     initSJIS2UTF16();
 
@@ -334,9 +361,9 @@ void ONScripterLabel::openAudio()
         int channels;
 
         Mix_QuerySpec( &freq, &format, &channels);
-        printf("Audio: %d Hz %d bit %s\n", freq,
-               (format&0xFF),
-               (channels > 1) ? "stereo" : "mono");
+        //printf("Audio: %d Hz %d bit %s\n", freq,
+        //       (format&0xFF),
+        //       (channels > 1) ? "stereo" : "mono");
         audio_format.format = format;
         audio_format.freq = freq;
         audio_format.channels = channels;
@@ -417,6 +444,13 @@ void ONScripterLabel::setArchivePath(const char *path)
     sprintf( archive_path, RELATIVEPATH "%s%c", path, DELIMITER );
 }
 
+void ONScripterLabel::setSavePath(const char *path)
+{
+    if (script_h.save_path) delete[] script_h.save_path;
+    script_h.save_path = new char[ RELATIVEPATHLENGTH + strlen(path) + 2 ];
+    sprintf( script_h.save_path, RELATIVEPATH "%s%c", path, DELIMITER );
+}
+
 void ONScripterLabel::setFullscreenMode()
 {
     fullscreen_mode = true;
@@ -454,7 +488,24 @@ void ONScripterLabel::setKeyEXE(const char *filename)
 
 int ONScripterLabel::init()
 {
-    if (archive_path == NULL) archive_path = "";
+	if (archive_path == NULL) {
+#ifdef MACOSX
+		// On OS X, store archives etc in the application bundle by default.
+		using namespace Carbon;
+		ProcessSerialNumber psn;
+		GetCurrentProcess(&psn);
+		FSRef bundle;
+		GetProcessBundleLocation(&psn, &bundle);
+		char bpath[32768];
+		FSRefMakePath(&bundle, (UInt8*) bpath, 32768);
+		archive_path = new char[strlen(bpath) + 32];
+		sprintf(archive_path, "%s/Contents/Resources/", bpath);
+#else
+		// On Linux, the path is unpredictable and should be set by using "-r PATH" in a launcher script.
+		// On other platforms they're stored in the same place as the executable.
+		archive_path = "";
+#endif
+	}
 
     if (key_exe_file){
         createKeyTable( key_exe_file );
@@ -463,6 +514,57 @@ int ONScripterLabel::init()
 
     if ( open() ) return -1;
 
+	if ( script_h.save_path == NULL ){
+		const char *gameid = script_h.game_identifier ? script_h.game_identifier : "PONScripter";
+#ifdef WIN32
+		// On Windows, store in [Profiles]/All Users/Application Data.
+		// TODO: optionally permit saves to be per-user rather than shared?
+		HMODULE shdll = LoadLibrary("shfolder");
+		if (shdll) {
+			GETFOLDERPATH gfp = GETFOLDERPATH(GetProcAddress(shdll, "SHGetFolderPathA"));
+			if (gfp) {
+				char hpath[MAX_PATH];
+				HRESULT res = gfp(0, 0x0023, 0, 0, hpath);
+				if (res != S_FALSE && res != E_FAIL && res != E_INVALIDARG) {
+					script_h.save_path = new char[strlen(hpath) + strlen(gameid) + 3];
+					sprintf(script_h.save_path, "%s/%s/", hpath, gameid);
+					CreateDirectory(script_h.save_path, 0);
+				}
+			}
+			FreeLibrary(shdll);
+		}
+		if (script_h.save_path == NULL) {
+			// Error; assume ancient Windows. In this case it's safe to use the archive path!
+			script_h.save_path = archive_path;
+		}
+#elif defined MACOSX
+		// On OS X, place in subfolder of ~/Library/Preferences.
+		using namespace Carbon;
+		FSRef home;
+		FSFindFolder(kUserDomain, kPreferencesFolderType, kDontCreateFolder, &home);
+		char hpath[32768];
+		FSRefMakePath(&home, (UInt8*) hpath, 32768);
+		script_h.save_path = new char[strlen(hpath) + strlen(gameid) + 8];
+		sprintf(script_h.save_path, "%s/%s Data/", hpath, gameid);
+		mkdir(script_h.save_path, 0755);
+#elif defined LINUX
+		// On Linux (and similar *nixen), place in ~/.gameid
+		passwd* pwd = getpwuid(getuid());
+		if (pwd) {
+			script_h.save_path = new char[strlen(pwd->pw_dir) + strlen(gameid) + 4];
+			sprintf(script_h.save_path, "%s/.%s/", pwd->pw_dir, gameid);
+			mkdir(script_h.save_path, 0755);
+		}
+		else script_h.save_path = archive_path;
+#else
+		// Fall back on default ONScripter behaviour if we don't have any better ideas.
+		script_h.save_path = archive_path;
+#endif
+	}
+	if ( script_h.game_identifier ) {
+		delete[] script_h.game_identifier; 
+		script_h.game_identifier = NULL; 
+	}
 
     initSDL();
 
@@ -1118,10 +1220,31 @@ int ONScripterLabel::parseLine( )
 
 SDL_Surface *ONScripterLabel::loadImage( char *file_name )
 {
+    char* alt_buffer = 0;
     if ( !file_name ) return NULL;
     unsigned long length = script_h.cBR->getFileLength( file_name );
+
+    if (length == 0) {
+	alt_buffer = new char[strlen(file_name) + strlen(script_h.save_path) + 1];
+	sprintf(alt_buffer, "%s%s", script_h.save_path, file_name);
+	char* si = alt_buffer;
+	do { if (*si == '\\') *si = DELIMITER; } while (*(++si));
+	FILE* fp = std::fopen(alt_buffer, "rb");
+	if (fp) {
+	    fseek(fp, 0, SEEK_END);
+	    length = ftell(fp);
+	    fclose(fp);
+	}
+	else delete[] alt_buffer;
+    }
+
     if ( length == 0 ){
-        fprintf( stderr, " *** can't find file [%s] ***\n", file_name );
+        if (strcmp(file_name, "uoncur.bmp" ) && strcmp(file_name, "uoffcur.bmp") &&
+                   strcmp(file_name, "doncur.bmp" ) && strcmp(file_name, "doffcur.bmp") &&
+                   strcmp(file_name, "cursor0.bmp") && strcmp(file_name, "cursor1.bmp"))
+        {
+            fprintf( stderr, " *** can't find file [%s] ***\n", file_name );
+        }
         return NULL;
     }
     if ( filelog_flag )
@@ -1129,7 +1252,15 @@ SDL_Surface *ONScripterLabel::loadImage( char *file_name )
     //printf(" ... loading %s length %ld\n", file_name, length );
     unsigned char *buffer = new unsigned char[length];
     int location;
-    script_h.cBR->getFile( file_name, buffer, &location );
+    if (!alt_buffer) {
+	script_h.cBR->getFile( file_name, buffer, &location );
+    }
+    else {
+	FILE* fp = std::fopen(alt_buffer, "rb");
+	fread(buffer, 1, length, fp);
+	fclose(fp);
+	delete[] alt_buffer;
+    }
     SDL_Surface *tmp = IMG_Load_RW(SDL_RWFromMem( buffer, length ), 1);
 
     char *ext = strrchr(file_name, '.');
@@ -1214,6 +1345,9 @@ void ONScripterLabel::clearCurrentTextBuffer()
     int num = (sentence_font.num_xy[0]*2+1)*sentence_font.num_xy[1];
     if (sentence_font.getTateyokoMode() == FontInfo::TATE_MODE)
         num = (sentence_font.num_xy[1]*2+1)*sentence_font.num_xy[1];
+
+// TEST for ados backlog cutoff problem
+	num *= 2;
 
     if ( current_text_buffer->buffer2 &&
          current_text_buffer->num != num ){

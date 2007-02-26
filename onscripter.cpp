@@ -21,6 +21,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+// Modified by Haeleth, Autumn 2006: fix typos, separate save and root paths
+
 #include "ONScripterLabel.h"
 #include "version.h"
 
@@ -32,8 +34,20 @@ void optionHelp()
     printf( "  -f, --font file\tset a TTF font file\n");
     printf( "      --registry file\tset a registry file\n");
     printf( "      --dll file\tset a dll file\n");
+#if   defined WIN32
     printf( "  -r, --root path\tset the root path to the archives\n");
-    printf( "      --fullcsreen\tstart in fullscreen mode\n");
+    printf( "  -s, --save path\tset the path to use for saved games (default: folder in All Users profile)\n");
+#elif defined MACOSX
+    printf( "  -r, --root path\tset the root path to the archives (default: Resources in ONScripter bundle)\n");
+    printf( "  -s, --save path\tset the path to use for saved games (default: folder in ~/Library/Preferences)\n");
+#elif defined LINUX
+    printf( "  -r, --root path\tset the root path to the archives\n");
+    printf( "  -s, --save path\tset the path to use for saved games (default: hidden subdirectory in ~)\n");
+#else
+    printf( "  -r, --root path\tset the root path to the archives\n");
+    printf( "  -s, --save path\tset the path to use for saved games (default: same as root path)\n");
+#endif
+    printf( "      --fullscreen\tstart in fullscreen mode\n");
     printf( "      --window\t\tstart in window mode\n");
     printf( "      --force-button-shortcut\tignore useescspc and getenter command\n");
     printf( "      --enable-wheeldown-advance\tadvance the text on mouse wheeldown event\n");
@@ -47,6 +61,7 @@ void optionHelp()
 
 void optionVersion()
 {
+    printf("ONScripter version %s(%d.%02d)\n", ONS_VERSION, NSC_VERSION/100, NSC_VERSION%100 );
     printf("Written by Ogapee <ogapee@aqua.dti2.ne.jp>\n\n");
     printf("Copyright (c) 2001-2006 Ogapee.\n");
     printf("This is free software; see the source for copying conditions.\n");
@@ -60,8 +75,6 @@ extern "C" int main( int argc, char **argv )
 int main( int argc, char **argv )
 #endif
 {
-    printf("ONScripter version %s(%d.%02d)\n", ONS_VERSION, NSC_VERSION/100, NSC_VERSION%100 );
-
     ONScripterLabel ons;
 
 #if defined(PSP)
@@ -107,6 +120,11 @@ int main( int argc, char **argv )
                 argc--;
                 argv++;
                 ons.setArchivePath(argv[0]);
+            }
+            else if ( !strcmp( argv[0]+1, "s" ) || !strcmp( argv[0]+1, "-save" ) ){
+                argc--;
+                argv++;
+                ons.setSavePath(argv[0]);
             }
             else if ( !strcmp( argv[0]+1, "-fullscreen" ) ){
                 ons.setFullscreenMode();

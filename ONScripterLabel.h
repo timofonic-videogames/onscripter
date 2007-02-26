@@ -21,6 +21,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+// Modified by Haeleth, autumn 2006, to remove unnecessary diagnostics.
+
 #ifndef __ONSCRIPTER_LABEL_H__
 #define __ONSCRIPTER_LABEL_H__
 
@@ -95,6 +97,7 @@ public:
     void setFontFile(const char *filename);
     void setRegistryFile(const char *filename);
     void setDLLFile(const char *filename);
+    void setSavePath(const char *path);
     void setArchivePath(const char *path);
     void setFullscreenMode();
     void setWindowMode();
@@ -276,6 +279,11 @@ public:
     int allspresumeCommand();
     int allsphideCommand();
     int amspCommand();
+
+    int insertmenuCommand();
+    int resetmenuCommand();
+    int setlayerCommand();
+    int layermessageCommand();
 
 protected:
     /* ---------------------------------------- */

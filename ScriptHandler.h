@@ -21,6 +21,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+// Modified by Haeleth, Autumn 2006, to better support OS X/Linux packaging.
+
 #ifndef __SCRIPT_HANDLER_H__
 #define __SCRIPT_HANDLER_H__
 
@@ -102,7 +104,7 @@ public:
     ~ScriptHandler();
 
     void reset();
-    FILE *fopen( const char *path, const char *mode );
+    FILE *fopen( const char *path, const char *mode, const bool save = false );
     void setKeyTable( const unsigned char *key_table );
 
     // basic parser function
@@ -233,6 +235,9 @@ public:
            SCREEN_SIZE_320x240 = 3
     };
     int global_variable_border;
+    
+    char *game_identifier;
+    char *save_path;
 
     BaseReader *cBR;
     
@@ -325,5 +330,6 @@ private:
     unsigned char key_table[256];
     bool key_table_flag;
 };
+
 
 #endif // __SCRIPT_HANDLER_H__
