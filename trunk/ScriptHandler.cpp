@@ -854,7 +854,23 @@ int ScriptHandler::readScript( char *path )
     archive_path = new char[ strlen(path) + 1 ];
     strcpy( archive_path, path );
 
-    FILE *fp = NULL;
+    // Haeleth: Search for gameid file (this overrides any builtin
+    // ;gameid directive, or serves its purpose if none is available)
+    FILE *fp = fopen("game.id", "rb");
+    if (fp) {
+	size_t line_size = 0;
+	char c;
+	do {
+	    c = fgetc(fp);
+	    ++line_size;
+	} while (c != '\r' && c != '\n' && c != EOF);
+	fseek(fp, 0, SEEK_SET);
+	game_identifier = new char[line_size];
+	fgets(game_identifier, line_size, fp);
+	fclose(fp);
+    }
+    
+    fp = NULL;
     char filename[10];
     int i, encrypt_mode = 0;
     if ((fp = fopen("0.txt", "rb")) != NULL){
@@ -957,7 +973,7 @@ int ScriptHandler::readScript( char *path )
         }
         buf++;
     }
-    if ( *buf++ == ';' ){
+    if ( *buf++ == ';' && !game_identifier ){
     	while (*buf == ' ' || *buf == '\t') ++buf;
     	if ( !strncmp( buf, "gameid ", 7 ) ){
     		buf += 7;

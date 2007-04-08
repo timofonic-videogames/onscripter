@@ -1,52 +1,132 @@
-ONScripter
+			      ONScripter-En
 
-0. はじめに
-
-	高橋直樹氏作の NScripter 用に作成されたスクリプトを独自に解釈して実行します。
+	   An enhanced portable open-source NScripter clone
 
 
-1. 動作環境
+  HISTORY
 
-	libjpeg 6b, bzip2-1.0.2, SDL-1.2.6, SDL_image-1.2.3, SDL_mixer-1.2.5, SDL_ttf-2.0.6, 及び SMPEG-0.4.4 が動作する環境です。
-	Linux 2.4.27 + XFree86 4.3.0 + g++ (gcc 3.3.4) で開発しています。
-	Linux, Windows 2000 (Visual C++ 6.0), Zaurus (SL-5500,SL-C700)上で動作確認をしています。
-	MacOS X および MacOS 9, FreeBSD, Solaris, Tru64 UNIX, PSP, OS/Warp, iPod, Dreamcast 上での動作報告をいただいています。
+Naoki Takahashi's `NScripter' is a popular Japanese game engine used
+for both commercial and free visual novels.  It attained popularity
+due to its liberal terms of use and relative simplicity.  However, it
+is closed source software and only available for Windows.
 
+A number of cross-platform clones exist, and Ogapee's `ONScripter' is
+the most popular of these.  Due to the ease with which it can be
+modified to support languages other than Japanese, ONScripter has been
+adopted by the visual novel localisation community as the engine of
+choice for translated NScripter games; the patch to support English
+even made it into the main ONScripter source code.
 
-2. コンパイル・起動方法
+Nevertheless, the English-language community has found it convenient
+to maintain its own branch of the code, and to enhance it in ways best
+suited to the use we make of it.
 
-	コンパイル・起動方法は以下の通りです。
-	ただし、onscripter を実行する場所に default.ttf, スクリプト, アーカイブがなければいけません。
-	詳しくは同梱の www/onscripter.html を参照してください。
-
-	Linux もしくは FreeBSD, Solaris の場合
-	$ make -f Makefile.Linux
-	$ onscripter
-
-	Windows の場合 (DOS プロンプトで)
-	$ libjpeg 6b, bzip2, SDL と SMPEG のインストール場所に合わせて Makefile.Win を修正
-	$ nmake -f Makefile.Win
-	$ onscripter.exe
-
-	MacOS X の場合
-	$ make -f Makefile.MacOSX
-	$ onscripter
-
-	Zaurus (SL-5500, SL-A300, SL-B500, SL-C700) の場合
-	別のマシン(Linux 等)上でクロスコンパイル
-	$ make -f Makefile.ARMLinux
-	Zaurus の Qtopia 上から実行
-	$ onscripter
-
-	それ以外のプラットフォームでは、Makefile.Linux を雛形にして Makefile.### を作ってください。
-
-	ONScripter は、カレントディレクトリの 0.txt もしくは nscript.dat を自動的に読み込み、それにしたがってカレントディレクトリの arc.sar もしくは arc.nsa を読み込みます。
+ONScripter-En is that branch.
 
 
-3. 連絡先
+  REQUIREMENTS
 
-	本ソフトウェアに関する問い合わせは
+ONScripter is based on SDL, and should run on any platform for which
+SDL is available.  It has been successfully compiled on platforms as
+diverse as the Dreamcast, the PSP, and the iPod.
 
-	ogapee@aqua.dti2.ne.jp
+ONScripter-En has slightly more strict requirements, however.  Since
+ONScripter's original build system is extremely difficult to use, it
+has been replaced in this branch with a more conventional
+configure-build system; this depends on a POSIX-like environment with
+GNU make, and the code has only been tested with the GNU C++ compiler.
 
-	まで電子メールにてお願いします。
+The primary test environment is GNU/Linux, and the secondary test
+environment is MacOS X.  Assuming standard build tools are installed,
+the full-source distribution is almost guaranteed to compile
+out-of-the-box on these and any other POSIX-conformant platform (BSD,
+Solaris, etc).  The code is known to work on both 32-bit and 64-bit
+Unixen.
+
+This distribution is also tested on Windows.  Building on Windows
+requires the MinGW distribution of g++, and the MSYS environment.
+Windows users unfamiliar with Unix might prefer to stick with the
+binary distribution.  64-bit Windows has not been tested.
+
+Please see INSTALL for specific build instructions.
+
+
+  PLAYING GAMES
+
+Playing an existing game with ONScripter-En requires two additional
+files to be added to the game directory:
+
+- `default.ttf', a TrueType font.  The free font Sazanami Gothic is
+  known to work.
+
+- `game.id', a text file containing simply the name of the game.  This
+  is used to identify a separate directory where saved data is stored;
+  unlike the original ONScripter, which places saved games in the game
+  directory, ONScripter-En does not require games to be kept in a
+  world-writable location.
+
+This done, the game can be played either by dropping the `onscripter'
+executable into the game directory and running it, or by running it
+with the `-r' command-line option to identify the desired game.
+
+The saved game location behaviour can be overridden with the `-s'
+command-line option if you wish for some reason to restore the default
+ONScripter behaviour or to place saves somewhere else.
+
+Please run `onscripter --help' for details of other command-line
+options.
+
+
+  PACKAGING GAMES
+
+ONScripter-En includes some features designed to make packaging new
+games or translations in a platform-appropriate fashion easier and
+neater.
+
+Firstly, `game.id' can be replaced by a line
+
+  ;gameid Your Title Here
+
+at the start of the script, or immediately after the modeline if
+present.
+
+Secondly, the saved-game location behaviour described above means that
+you do not have to worry about installing to a world-writable
+location; this should simplify matters considerably on Vista and on
+Unix-type platforms.  In the latter case, the recommended approach is
+to store game data somewhere appropriate in the filesystem
+(e.g. /usr/local/share/<title>) and to create a shell script in an
+appropriate binary folder (e.g. /usr/local/bin/<title>) that launches
+the onscripter executable with a suitable argument to -r.
+
+MacOS X deserves special mention.  OS X applications are typically
+distributed as bundles, and ONScripter includes special code to make
+this possible for NScripter games.  Simply place the `onscripter'
+binary in <game>.app/Contents/MacOS, and the files that would normally
+go in the game directory (script, data archives, default.ttf, etc) in
+<game>.app/Contents/Resources, and everything should Just Work; you'll
+have a native-looking OS X game that can be drag-installed and deleted
+to uninstall.
+
+
+  CONTACT INFORMATION
+
+The author of ONScripter itself is Ogapee, who can be reached by email
+at the address
+
+  ogapee@aqua.dti2.ne.jp
+
+The maintainer of this branch (as of April 2007) is Haeleth, who can
+be reached by email at the address
+
+  haeleth@haeleth.net
+
+Correspondence in English, or regarding issues related to this branch
+in particular, should be directed to this latter address in the first
+instance.
+
+
+  LICENSE
+
+ONScripter and ONScripter-En are distributed under the terms of the
+GNU General Public License.  See COPYING for details.
