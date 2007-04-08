@@ -5,9 +5,13 @@
   dependencies are available, and provides the option of building
   local libraries as required.  The end result is a package that can
   reasonably be distributed in source form for Linux users.
-
   In the process support for PSP, iPod, etc. has been removed; it
   could be replaced easily enough if anyone was available to test.
+
+  Translate README.
+
+  To make life easier with existing games, add the ability to store
+  game ID in a file `game.id' as an alternative to modifying 0.txt.
 
 
 2006-11-22
