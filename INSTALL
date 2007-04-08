@@ -15,4 +15,5 @@ This is the usual
 
 * NOTES
 
-For Windows builds, use the MinGW compilers in the MSYS environment.
+For Windows builds, use a MinGW toolchain in the MSYS environment.
+
