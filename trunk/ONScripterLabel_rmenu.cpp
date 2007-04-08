@@ -300,7 +300,7 @@ void ONScripterLabel::executeSystemLoad()
         menu_font.top_xy[0] = (screen_width * screen_ratio2 / screen_ratio1 - menu_font.num_xy[0] * menu_font.pitch_xy[0]) / 2;
         menu_font.top_xy[1] = (screen_height * screen_ratio2 / screen_ratio1  - menu_font.num_xy[1] * menu_font.pitch_xy[1]) / 2;
         menu_font.setXY( (menu_font.num_xy[0] - strlen( load_menu_name ) / 2) / 2, 0 );
-        uchar3 color = {0xff, 0xff, 0xff};
+//        uchar3 color = {0xff, 0xff, 0xff};
         // drawString( load_menu_name, color, &menu_font, true, accumulation_surface, NULL, &text_info );
         /* The following three lines are part of a hack allowing the menu name to show up when custom right-menus are in
            existence.  As it stands in ONScripter, these menu names get drawn in the accumulation buffer one level below
@@ -382,7 +382,7 @@ void ONScripterLabel::executeSystemSave()
         menu_font.top_xy[0] = (screen_width * screen_ratio2 / screen_ratio1 - menu_font.num_xy[0] * menu_font.pitch_xy[0]) / 2;
         menu_font.top_xy[1] = (screen_height * screen_ratio2 / screen_ratio1  - menu_font.num_xy[1] * menu_font.pitch_xy[1]) / 2;
         menu_font.setXY((menu_font.num_xy[0] - strlen( save_menu_name ) / 2 ) / 2, 0);
-        uchar3 color = {0xff, 0xff, 0xff};
+//        uchar3 color = {0xff, 0xff, 0xff};
         // drawString( save_menu_name, color, &menu_font, true, accumulation_surface, NULL, &text_info );
         /* The following three lines are part of a hack allowing the menu name to show up when custom right-menus are in
            existence.  As it stands in ONScripter, these menu names get drawn in the accumulation buffer one level below
@@ -525,7 +525,7 @@ void ONScripterLabel::executeSystemYesNo()
         menu_font.top_xy[0] = (screen_width * screen_ratio2 / screen_ratio1 - menu_font.num_xy[0] * menu_font.pitch_xy[0]) / 2;
         menu_font.top_xy[1] = (screen_height * screen_ratio2 / screen_ratio1  - menu_font.num_xy[1] * menu_font.pitch_xy[1]) / 2;
         menu_font.setXY(0, 0);
-        uchar3 color = {0xff, 0xff, 0xff};
+//        uchar3 color = {0xff, 0xff, 0xff};
 
         // drawString( name, color, &menu_font, true, accumulation_surface, NULL, &text_info );
         /* The following three lines are part of a hack allowing the menu name to show up when custom right-menus are in
