@@ -93,13 +93,19 @@ present.
 Secondly, the saved-game location behaviour described above means that
 you do not have to worry about installing to a world-writable
 location; this should simplify matters considerably on Vista and on
-Unix-type platforms.  In the latter case, the recommended approach is
-to store game data somewhere appropriate in the filesystem
-(e.g. /usr/local/share/<title>) and to create a shell script in an
-appropriate binary folder (e.g. /usr/local/bin/<title>) that launches
-the onscripter executable with a suitable argument to -r.
+Unix-type platforms.
 
-MacOS X deserves special mention.  OS X applications are typically
+In the latter case, the recommended approach is to store game data
+somewhere appropriate (e.g. /usr/local/share/<title>) and to create a
+shell script in an appropriate place (e.g. /usr/local/bin/<title>)
+that launches the onscripter executable with a suitable argument to
+-r.  Since there is no convenient way to distribute binaries that will
+work even on multiple Linux distributions, let alone other Unix
+platforms, it is recommended that packages instead depend on the user
+supplying a separate ONScripter binary, either built from source or
+from an OS/distro-specific package.
+
+MacOS X is an exception to all this.  OS X applications are typically
 distributed as bundles, and ONScripter includes special code to make
 this possible for NScripter games.  Simply place the `onscripter'
 binary in <game>.app/Contents/MacOS, and the files that would normally
