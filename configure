@@ -433,7 +433,7 @@ then
 	OggVorbis_File vf;f=fopen("o.ogg","rb");int n=ov_open(f,&vf,0,0)<0;fclose(f);return n;}
 	_EOF
     INTERNAL_OGGLIBS=true
-    $CXX -logg -lvorbis -lvorbisfile test.cc -o otest #>/dev/null 2>&1
+    $CXX -logg -lvorbis -lvorbisfile test.cc -o otest >/dev/null 2>&1
     ./otest 2>/dev/null
     case $? in
     0) echo "yes"; INTERNAL_OGGLIBS=false ;;
@@ -610,7 +610,7 @@ cat >> Makefile <<_EOF
 LIBS = -Lextlib/lib \\
        -static -Wl,--start-group \\
        \$(filter-out -lSDLmain,\$(shell $SDL_CONFIG --static-libs)) \\
-       -lSDL_ttf
+       -lSDL_ttf \\
        \$(shell $SMPEG_CONFIG --libs) \$(shell $FREETYPE_CONFIG --libs) \\
        -lSDL_image -ljpeg -lpng -lz             \\
        -lSDL_mixer -logg -lvorbis -lvorbisfile  \\
@@ -679,11 +679,11 @@ if [ "$SYS" = "MinGW" ]
 then cat >> Makefile <<_EOF
 
 RCFILE ?= onscripter.rc
-win32rc.o: $(RCFILE)
-	windres $< -o $@
+win32rc.o: \$(RCFILE)
+	windres \$< -o \$@
 
 SDL_win32_main.o: SDL_win32_main.c
-	$(CC) $(INCS) $(DEFS) -c $< -o $@
+	\$(CC) \$(INCS) \$(DEFS) -c \$< -o \$@
 _EOF
 fi
 
