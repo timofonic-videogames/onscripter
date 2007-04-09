@@ -1,0 +1,19 @@
+* TO BUILD ONSCRIPTER FOR YOUR USE
+
+This is the usual
+
+  ./configure
+  make
+  sudo make install
+
+
+* TO BUILD A REDISTRIBUTABLE ONSCRIPTER BINARY
+
+  ./configure --with-internal-libs
+  make
+
+
+* NOTES
+
+For Windows builds, use a MinGW toolchain in the MSYS environment.
+

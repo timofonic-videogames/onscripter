@@ -1,0 +1,40 @@
+2007-04-08
+
+  Update build system to use a configure script that generates a
+  platform-appropriate makefile.  This also verifies that all required
+  dependencies are available, and provides the option of building
+  local libraries as required.  The end result is a package that can
+  reasonably be distributed in source form for Linux users.
+  In the process support for PSP, iPod, etc. has been removed; it
+  could be replaced easily enough if anyone was available to test.
+
+  Translate README.
+
+  To make life easier with existing games, add the ability to store
+  game ID in a file `game.id' as an alternative to modifying 0.txt.
+
+
+2006-11-22
+
+  Implement default data/save separation for Windows and Linux too.
+  On Windows, saves go under the global Application Data folder; on
+  Linux and other Unix-like systems, they go in a dotdir in the user's
+  home directory.  These changes enhance Vista compatibility
+  considerably, and make it possible to package Linux games in a way
+  that respects the FHS.
+
+
+2006-09-05
+
+  Fix typo in usage summary.
+  
+  Remove unnecessary diagnostics.
+
+  Make archive path and save path separately configurable.  Game data
+  no longer has to be stored in a writable directory.
+  
+  OS X: make default archive path be the Resources folder of the
+  application bundle, and default save path be a new subfolder of the
+  user's Library/Preferences.  The name of the subfolder is derived
+  from a new "game identifier" that should be specified at the top of
+  0.txt with a ";gameid Whatever" line immediately after the modeline.
