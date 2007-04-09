@@ -222,7 +222,7 @@ const char* MAD_WRAPPER_error( MAD_WRAPPER *mad )
     return "Mad open error";
 }
 
-#if defined(DEBUG_MAD)
+#ifdef DEBUG_MAD
 void mp3callback( void *userdata, Uint8 *stream, int len )
 {
     if ( MAD_WRAPPER_playAudio( userdata, stream, len ) == 0 ){

@@ -22,7 +22,7 @@
  */
 
 #include "ONScripterLabel.h"
-#if defined(LINUX)
+#ifdef LINUX
 #include <sys/types.h>
 #include <sys/wait.h>
 #endif
@@ -35,7 +35,7 @@
 #define ONS_MUSIC_EVENT   (SDL_USEREVENT+5)
 
 // This sets up the fadeout event flag for use in mp3 fadeout.  Recommend for integration.  [Seung Park, 20060621]
-#if defined(INSANI)
+#ifdef INSANI
 #define ONS_FADE_EVENT    (SDL_USEREVENT+6)
 #endif
 
@@ -49,9 +49,9 @@ SDL_TimerID timer_cdaudio_id = NULL;
 // the reason we have a separate midi loop timer id here is that on Mac OS X, looping midis via SDL will cause SDL itself
 // to hard crash after the first play.  So, we work around that by manually causing the midis to loop.  This OS X midi
 // workaround is the work of Ben Carter.  Recommend for integration.  [Seung Park, 20060621]
-#if defined(INSANI)
+#ifdef INSANI
 SDL_TimerID timer_mp3fadeout_id = NULL;
-#if defined(MACOSX)
+#ifdef MACOSX
 SDL_TimerID timer_midi_id = NULL;
 #endif
 #endif
@@ -105,7 +105,7 @@ extern "C" Uint32 cdaudioCallback( Uint32 interval, void *param )
 }
 
 // Pushes the mp3 fadeout event onto the stack.  Part of our mp3 fadeout enabling patch.  Recommend for integration.  [Seung Park, 20060621]
-#if defined(INSANI)
+#ifdef INSANI
 extern "C" Uint32 SDLCALL mp3fadeoutCallback( Uint32 interval, void *param )
 {
     SDL_Event event;
@@ -118,7 +118,7 @@ extern "C" Uint32 SDLCALL mp3fadeoutCallback( Uint32 interval, void *param )
 
 SDLKey transKey(SDLKey key)
 {
-#if defined(IPODLINUX)
+#ifdef IPODLINUX
  	switch(key){
       case SDLK_m:      key = SDLK_UP;      break; /* Menu                   */
       case SDLK_d:      key = SDLK_DOWN;    break; /* Play/Pause             */
@@ -136,7 +136,7 @@ SDLKey transKey(SDLKey key)
 
 SDLKey transJoystickButton(Uint8 button)
 {
-#if defined(PSP)
+#ifdef PSP
     SDLKey button_map[] = { SDLK_ESCAPE, /* TRIANGLE */
                             SDLK_RETURN, /* CIRCLE   */
                             SDLK_SPACE,  /* CROSS    */
@@ -206,7 +206,7 @@ void ONScripterLabel::flushEventSub( SDL_Event &event )
 
 // The event handler for the mp3 fadeout event itself.  Simply sets the volume of the mp3 being played lower and lower until it's 0,
 // and until the requisite mp3 fadeout time has passed.  Recommend for integration.  [Seung Park, 20060621]
-#if defined(INSANI)
+#ifdef INSANI
     else if ( event.type == ONS_FADE_EVENT ){
 		if (skip_flag || draw_one_page_flag || ctrl_pressed_status || skip_to_wait ) {
 			mp3fadeout_duration = 0;
@@ -312,7 +312,7 @@ void ONScripterLabel::advancePhase( int count )
 
 void midiCallback( int sig )
 {
-#if defined(LINUX)
+#ifdef LINUX
     int status;
     wait( &status );
 #endif
@@ -346,7 +346,7 @@ extern "C" void waveCallback( int channel )
 
 void musicCallback( int sig )
 {
-#if defined(LINUX)
+#ifdef LINUX
     int status;
     wait( &status );
 #endif
@@ -421,7 +421,7 @@ void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
               ( event->type == SDL_MOUSEBUTTONUP || btndown_flag ) ){
         current_button_state.button = current_over_button;
         volatile_button_state.button = current_over_button;
-#if defined(INSANI)
+#ifdef INSANI
 		//fprintf(stderr, "event_mode = %d\n", event_mode);
 		if ( event_mode & WAIT_SLEEP_MODE) skip_to_wait=1;
 #endif
@@ -943,7 +943,7 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
         }
     }
 
-#if defined(INSANI)
+#ifdef INSANI
 		if ( event_mode & WAIT_SLEEP_MODE ) {
 			if ( event->keysym.sym == SDLK_RETURN || event->keysym.sym == SDLK_KP_ENTER || event->keysym.sym == SDLK_SPACE ) skip_to_wait = 1;
 		}
@@ -1139,7 +1139,7 @@ int ONScripterLabel::eventLoop()
           case ONS_CDAUDIO_EVENT:
 
 // Just adds the case for ONS_FADE_EVENT.  This is part of our mp3 fadeout enablement patch.  Recommend for integration.  [Seung Park, 20060621]
-#if defined(INSANI)
+#ifdef INSANI
           case ONS_FADE_EVENT:
 #endif
 
