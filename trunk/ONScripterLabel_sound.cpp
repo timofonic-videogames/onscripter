@@ -354,9 +354,10 @@ int ONScripterLabel::playMIDI(bool loop_flag)
 
     Mix_VolumeMusic(music_volume);
 #if defined(MACOSX) && defined(INSANI)
-	// Emulate looping on MacOS ourselves to work around bug in SDL_Mixer
-	Mix_PlayMusic(midi_info, false);
-	timer_midi_id = SDL_AddTimer(1000, midiSDLCallback, NULL);
+    // Emulate looping on MacOS ourselves to work around bug in SDL_Mixer
+    midi_looping = 0;
+    Mix_PlayMusic(midi_info, midi_looping);
+    timer_midi_id = SDL_AddTimer(1000, midiSDLCallback, NULL);
 #else
     Mix_PlayMusic(midi_info, midi_looping);
 #endif
