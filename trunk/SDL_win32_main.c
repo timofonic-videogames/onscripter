@@ -3,7 +3,8 @@
 
     The WinMain function -- calls your program's main() function
     
-    Customised to handle stdout/stderr redirection in a UAC-compliant way by Peter Jolly, 2006-11-22
+    Customised to handle stdout/stderr redirection in a UAC-compliant
+    way by Peter Jolly, 2006-11-22
 */
 
 #include <stdio.h>
@@ -270,7 +271,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR szCmdLine, int sw)
 			char hpath[MAX_PATH];
 			HRESULT res = gfp(0, 0x0023, 0, 0, hpath);
 			if (res != S_FALSE && res != E_FAIL && res != E_INVALIDARG) {
-				sprintf(outputPath, "%s\\ADOS\\", hpath);
+				sprintf(outputPath, "%s\\ONScripter-En\\", hpath);
 				CreateDirectory(outputPath, 0);
 				pathlen = strlen(outputPath);
 			}
