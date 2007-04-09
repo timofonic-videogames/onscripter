@@ -1,4 +1,4 @@
-%define name SDL_ttf
+%define name sdl_ttf
 %define version 2.0.8
 %define release 1
 
