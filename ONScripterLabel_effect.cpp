@@ -41,7 +41,7 @@ int ONScripterLabel::setEffect( EffectLink *effect )
 int ONScripterLabel::doEffect( EffectLink *effect, AnimationInfo *anim, int effect_image )
 {
 	int prevduration = effect->duration;
-#if defined(INSANI)
+#ifdef INSANI
 	if ( ctrl_pressed_status || skip_to_wait ) effect->duration = 1;
 #endif
     effect_start_time = SDL_GetTicks();
@@ -325,7 +325,7 @@ int ONScripterLabel::doEffect( EffectLink *effect, AnimationInfo *anim, int effe
     effect_counter += effect_timer_resolution;
     if ( effect_counter < effect->duration && effect_no != 1 ){
         if ( effect_no != 0 ) flush( REFRESH_NONE_MODE, NULL, false );
-#if defined(INSANI)
+#ifdef INSANI
 		effect->duration = prevduration;
 #endif
         return RET_WAIT | RET_REREAD;
@@ -335,7 +335,7 @@ int ONScripterLabel::doEffect( EffectLink *effect, AnimationInfo *anim, int effe
 
         if ( effect_no != 0 ) flush(REFRESH_NONE_MODE);
         if ( effect_no == 1 ) effect_counter = 0;
-#if defined(INSANI)
+#ifdef INSANI
 		effect->duration = prevduration;
 #endif
         event_mode = IDLE_EVENT_MODE;
@@ -364,7 +364,7 @@ void ONScripterLabel::generateMosaic( SDL_Surface *src_surface, int level )
     int width = 160;
     for ( i=0 ; i<level ; i++ ) width >>= 1;
 
-#if defined(BPP16)
+#ifdef BPP16
     int total_width = accumulation_surface->pitch / 2;
 #else
     int total_width = accumulation_surface->pitch / 4;

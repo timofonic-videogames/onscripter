@@ -24,11 +24,11 @@
 // Modified by Haeleth, Autumn 2006, to better support OS X/Linux packaging.
 
 #include "ONScripterLabel.h"
-#if defined(LINUX)
+#ifdef LINUX
 #include <signal.h>
 #endif
 
-#if defined(USE_AVIFILE)
+#ifdef USE_AVIFILE
 #include "AVIWrapper.h"
 #endif
 
@@ -85,9 +85,9 @@ extern long decodeOggVorbis(OVInfo *ovi, unsigned char *buf_dst, long len, bool 
         buf = (char*)ovi->cvt.buf;
     }
 
-#if defined(USE_OGG_VORBIS)
+#ifdef USE_OGG_VORBIS
     while(1){
-#if defined(INTEGER_OGG_VORBIS)
+#ifdef INTEGER_OGG_VORBIS
         long src_len = ov_read( &ovi->ovf, buf, len, &current_section);
 #else
 #if SDL_BYTEORDER == SDL_LIL_ENDIAN
@@ -301,7 +301,7 @@ int ONScripterLabel::playOGG(int format, unsigned char *buffer, long length, boo
 int ONScripterLabel::playExternalMusic(bool loop_flag)
 {
     int music_looping = loop_flag ? -1 : 0;
-#if defined(LINUX)
+#ifdef LINUX
     signal(SIGCHLD, musicCallback);
     if (music_cmd) music_looping = 0;
 #endif
@@ -335,7 +335,7 @@ int ONScripterLabel::playMIDI(bool loop_flag)
 
     int midi_looping = loop_flag ? -1 : 0;
 
-#if defined(EXTERNAL_MIDI_PROGRAM)
+#ifdef EXTERNAL_MIDI_PROGRAM
     FILE *com_file;
     if ( midi_play_loop_flag ){
         if( (com_file = fopen("play_midi", "wb")) != NULL )
@@ -347,7 +347,7 @@ int ONScripterLabel::playMIDI(bool loop_flag)
     }
 #endif
 
-#if defined(LINUX)
+#ifdef LINUX
     signal(SIGCHLD, midiCallback);
     if (midi_cmd) midi_looping = 0;
 #endif
@@ -428,7 +428,7 @@ int ONScripterLabel::playMPEG( const char *filename, bool click_flag )
 
 void ONScripterLabel::playAVI( const char *filename, bool click_flag )
 {
-#if defined(USE_AVIFILE)
+#ifdef USE_AVIFILE
     char *absolute_filename = new char[ strlen(archive_path) + strlen(filename) + 1 ];
     sprintf( absolute_filename, "%s%s", archive_path, filename );
     for ( unsigned int i=0 ; i<strlen( absolute_filename ) ; i++ )
@@ -457,7 +457,7 @@ void ONScripterLabel::playAVI( const char *filename, bool click_flag )
 
 void ONScripterLabel::stopBGM( bool continue_flag )
 {
-#if defined(EXTERNAL_MIDI_PROGRAM)
+#ifdef EXTERNAL_MIDI_PROGRAM
     FILE *com_file;
     if( (com_file = fopen("stop_bgm", "wb")) != NULL )
         fclose(com_file);
@@ -584,7 +584,7 @@ void ONScripterLabel::setupWaveHeader( unsigned char *buffer, int channels, int 
 
     memcpy( buffer, &header, sizeof(header) );
 }
-#if defined(USE_OGG_VORBIS)
+#ifdef USE_OGG_VORBIS
 static size_t oc_read_func(void *ptr, size_t size, size_t nmemb, void *datasource)
 {
     OVInfo *ogg_vorbis_info = (OVInfo*)datasource;
@@ -633,7 +633,7 @@ OVInfo *ONScripterLabel::openOggVorbis( unsigned char *buf, long len, int &chann
 {
     OVInfo *ovi = NULL;
 
-#if defined(USE_OGG_VORBIS)
+#ifdef USE_OGG_VORBIS
     ovi = new OVInfo();
 
     ovi->buf = buf;
@@ -680,7 +680,7 @@ int ONScripterLabel::closeOggVorbis(OVInfo *ovi)
     if (ovi->buf){
         delete[] ovi->buf;
         ovi->buf = NULL;
-#if defined(USE_OGG_VORBIS)
+#ifdef USE_OGG_VORBIS
         ovi->length = 0;
         ovi->pos = 0;
         ov_clear(&ovi->ovf);

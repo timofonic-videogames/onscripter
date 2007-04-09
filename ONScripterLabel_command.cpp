@@ -44,7 +44,7 @@
 
 #define CONTINUOUS_PLAY
 
-#if defined(INSANI)
+#ifdef INSANI
 extern SDL_TimerID timer_mp3fadeout_id;
 extern "C" Uint32 SDLCALL mp3fadeoutCallback( Uint32 interval, void *param );
 #endif
@@ -86,7 +86,7 @@ int ONScripterLabel::waittimerCommand()
 
 int ONScripterLabel::waitCommand()
 {
-#if defined(INSANI)
+#ifdef INSANI
    int count = script_h.readInt();
 
    if( skip_flag || draw_one_page_flag || ctrl_pressed_status || skip_to_wait ) return RET_CONTINUE;
@@ -395,7 +395,7 @@ int ONScripterLabel::sp_rgb_gradationCommand()
     // replace pixels of the key-color with the specified color in gradation
     for (i=upper_bound ; i<=lower_bound ; i++){
         ONSBuf *buf = (ONSBuf *)surface->pixels + surface->w * i;
-#if defined(BPP16)
+#ifdef BPP16
         unsigned char *alphap = si->alpha_buf + surface->w * i;
 #else
 #if SDL_BYTEORDER == SDL_LIL_ENDIAN
@@ -421,7 +421,7 @@ int ONScripterLabel::sp_rgb_gradationCommand()
                 *buf = color;
                 *alphap = alpha;
             }
-#if defined(BPP16)
+#ifdef BPP16
             alphap++;
 #else
             alphap += 4;
@@ -1014,7 +1014,7 @@ int ONScripterLabel::quakeCommand()
     if ( tmp_effect.duration < tmp_effect.no * 4 ) tmp_effect.duration = tmp_effect.no * 4;
     tmp_effect.effect   = CUSTOM_EFFECT_NO + quake_type;
 
-#if defined(INSANI)
+#ifdef INSANI
 	if ( ctrl_pressed_status || skip_to_wait )
 	{
 		dirty_rect.fill( screen_width, screen_height );
@@ -1218,7 +1218,7 @@ int ONScripterLabel::mp3volCommand()
     return RET_CONTINUE;
 }
 
-#if defined(INSANI)
+#ifdef INSANI
 int ONScripterLabel::mp3fadeoutCommand()
 {
     mp3fadeout_start = SDL_GetTicks();
@@ -1299,7 +1299,7 @@ int ONScripterLabel::monocroCommand()
 int ONScripterLabel::menu_windowCommand()
 {
     if ( fullscreen_mode ){
-#if !defined(PSP)
+#ifndef PSP
         if ( !SDL_WM_ToggleFullScreen( screen_surface ) ){
             SDL_FreeSurface(screen_surface);
             screen_surface = SDL_SetVideoMode( screen_width, screen_height, screen_bpp, DEFAULT_VIDEO_SURFACE_FLAG );
@@ -1316,7 +1316,7 @@ int ONScripterLabel::menu_windowCommand()
 int ONScripterLabel::menu_fullCommand()
 {
     if ( !fullscreen_mode ){
-#if !defined(PSP)
+#ifndef PSP
         if ( !SDL_WM_ToggleFullScreen( screen_surface ) ){
             SDL_FreeSurface(screen_surface);
             screen_surface = SDL_SetVideoMode( screen_width, screen_height, screen_bpp, DEFAULT_VIDEO_SURFACE_FLAG|SDL_FULLSCREEN );
@@ -1616,7 +1616,7 @@ int ONScripterLabel::isskipCommand()
         script_h.setInt( &script_h.current_variable, 2 );
     else if ( skip_flag )
         script_h.setInt( &script_h.current_variable, 1 );
-#if defined (INSANI)
+#ifdef INSANI
     else if ( ctrl_pressed_status )
         script_h.setInt( &script_h.current_variable, 3 );
 #endif
@@ -2719,7 +2719,7 @@ int ONScripterLabel::captionCommand()
     DirectReader::convertFromSJISToUTF8(buf2, (char *) buf1, len);
     delete[] buf1;
 #elif defined(LINUX)
-#if defined(UTF8_FILESYSTEM)
+#ifdef UTF8_FILESYSTEM
     char *buf1 = new char[len+1];
     strcpy(buf1, buf);
     DirectReader::convertFromSJISToUTF8(buf2, buf1, len);
@@ -2982,7 +2982,7 @@ int ONScripterLabel::bltCommand()
         SDL_LockSurface(btndef_info.image_surface);
         ONSBuf *dst_buf = (ONSBuf*)accumulation_surface->pixels;
         ONSBuf *src_buf = (ONSBuf*)btndef_info.image_surface->pixels;
-#if defined(BPP16)
+#ifdef BPP16
         int dst_width = accumulation_surface->pitch / 2;
         int src_width = btndef_info.image_surface->pitch / 2;
 #else

@@ -33,14 +33,14 @@
 #include <SDL_ttf.h>
 #include <SDL_mixer.h>
 
-#if defined(MP3_MAD)
+#ifdef MP3_MAD
 #include "MadWrapper.h"
 #else
 #include <smpeg.h>
 #endif
 
-#if defined(USE_OGG_VORBIS)
-#if defined(INTEGER_OGG_VORBIS)
+#ifdef USE_OGG_VORBIS
+#ifdef INTEGER_OGG_VORBIS
 #include <tremor/ivorbisfile.h>
 #else
 #include <vorbis/vorbisfile.h>
@@ -75,7 +75,7 @@ struct OVInfo{
     int mult2;
     unsigned char *buf;
     long decoded_length;
-#if defined(USE_OGG_VORBIS)
+#ifdef USE_OGG_VORBIS
     ogg_int64_t length;
     ogg_int64_t pos;
     OggVorbis_File ovf;
@@ -179,7 +179,7 @@ public:
     int mspCommand();
     int mpegplayCommand();
     int mp3volCommand();
-#if defined(INSANI)
+#ifdef INSANI
     int mp3fadeoutCommand();
 #endif
     int mp3Command();
@@ -302,7 +302,7 @@ protected:
     int variable_edit_num;
     int variable_edit_sign;
 
-#if defined(INSANI)
+#ifdef INSANI
 	int skip_to_wait;
 #endif
 
@@ -643,7 +643,7 @@ private:
     char *music_file_name;
     unsigned char *mp3_buffer;
     SMPEG *mp3_sample;
-#if defined(INSANI)
+#ifdef INSANI
     Uint32 mp3fadeout_start;
     Uint32 mp3fadeout_duration;
 #endif

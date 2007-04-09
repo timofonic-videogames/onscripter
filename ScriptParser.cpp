@@ -339,7 +339,7 @@ int ScriptParser::open()
 
     switch ( script_h.screen_size ){
       case ScriptHandler::SCREEN_SIZE_800x600:
-#if defined(PDA)
+#ifdef PDA
         screen_ratio1 = 2;
         screen_ratio2 = 5;
 #else
@@ -350,7 +350,7 @@ int ScriptParser::open()
         screen_height = 600 * screen_ratio1 / screen_ratio2;
         break;
       case ScriptHandler::SCREEN_SIZE_400x300:
-#if defined(PDA)
+#ifdef PDA
         screen_ratio1 = 4;
         screen_ratio2 = 5;
 #else
@@ -368,7 +368,7 @@ int ScriptParser::open()
         break;
       case ScriptHandler::SCREEN_SIZE_640x480:
       default:
-#if defined(PDA)
+#ifdef PDA
         screen_ratio1 = 1;
         screen_ratio2 = 2;
 #else

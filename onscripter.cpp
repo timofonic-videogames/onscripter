@@ -67,7 +67,7 @@ void optionVersion()
     printf("This is free software; see the source for copying conditions.\n");
     exit(0);
 }
-#if defined(QWS)
+#ifdef QWS
 int SDL_main( int argc, char **argv )
 #elif defined(PSP)
 extern "C" int main( int argc, char **argv )
@@ -77,7 +77,7 @@ int main( int argc, char **argv )
 {
     ONScripterLabel ons;
 
-#if defined(PSP)
+#ifdef PSP
     ons.disableRescale();
     ons.enableButtonShortCut();
 #endif

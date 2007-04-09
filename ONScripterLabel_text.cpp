@@ -390,7 +390,7 @@ int ONScripterLabel::leaveTextDisplayMode()
 
 void ONScripterLabel::doClickEnd()
 {
-#if defined(INSANI)
+#ifdef INSANI
 	skip_to_wait = 0;
 #endif
 
@@ -415,7 +415,7 @@ void ONScripterLabel::doClickEnd()
 
 int ONScripterLabel::clickWait( char *out_text )
 {
-#if defined(INSANI)
+#ifdef INSANI
 	skip_to_wait = 0;
 #endif
 
@@ -462,7 +462,7 @@ int ONScripterLabel::clickWait( char *out_text )
 
 int ONScripterLabel::clickNewPage( char *out_text )
 {
-#if defined(INSANI)
+#ifdef INSANI
 	skip_to_wait = 0;
 #endif
 
@@ -716,7 +716,7 @@ int ONScripterLabel::processText()
         string_buffer_offset++;
         return RET_CONTINUE | RET_NOREAD;
     }
-#if defined(INSANI)
+#ifdef INSANI
     else if ( ch == '!' ){
         string_buffer_offset++;
         if ( script_h.getStringBuffer()[ string_buffer_offset ] == 's' ){
