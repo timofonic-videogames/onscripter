@@ -2,7 +2,7 @@
  *
  *  ONScripterLabel_text.cpp - Text parser of ONScripter
  *
- *  Copyright (c) 2001-2006 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2007 Ogapee. All rights reserved.
  *
  *  ogapee@aqua.dti2.ne.jp
  *
@@ -157,7 +157,6 @@ void ONScripterLabel::drawChar( char* text, FontInfo *info, bool flush_flag, boo
             sentence_font.advanceCharInHankaku(2);
 
         if ( lookback_flag ){
-            current_text_buffer->addBuffer( 0x0a );
             for (int i=0 ; i<indent_offset ; i++){
                 current_text_buffer->addBuffer(((char*)"@")[0]);
                 current_text_buffer->addBuffer(((char*)"@")[1]);
@@ -320,6 +319,14 @@ void ONScripterLabel::restoreTextBuffer()
 #endif
             if ( IS_TWO_BYTE(out_text[0]) ){
                 out_text[1] = current_text_buffer->buffer2[i+1];
+                if (IS_KINSOKU( current_text_buffer->buffer2+i+2 )){
+                    int i = 2;
+                    while (!f_info.isEndOfLine(i) &&
+                           IS_KINSOKU( current_text_buffer->buffer2+i+2 )){
+                        i += 2;
+                    }
+                    if (f_info.isEndOfLine(i)) f_info.newLine();
+                }
             }
             else{
                 out_text[1] = '\0';
@@ -344,7 +351,7 @@ int ONScripterLabel::enterTextDisplayMode(bool text_flag)
 
     if ( !(display_mode & TEXT_DISPLAY_MODE) ){
         if ( event_mode & EFFECT_EVENT_MODE ){
-            if ( doEffect( &window_effect, NULL, DIRECT_EFFECT_IMAGE ) == RET_CONTINUE ){
+            if ( doEffect( &window_effect, NULL, DIRECT_EFFECT_IMAGE, false ) == RET_CONTINUE ){
                 display_mode = TEXT_DISPLAY_MODE;
                 text_on_flag = true;
                 return RET_CONTINUE | RET_NOREAD;
@@ -352,8 +359,8 @@ int ONScripterLabel::enterTextDisplayMode(bool text_flag)
             return RET_WAIT | RET_REREAD;
         }
         else{
-            next_display_mode = TEXT_DISPLAY_MODE;
-            refreshSurface( effect_dst_surface, NULL, refreshMode() );
+	    SDL_BlitSurface( accumulation_comp_surface, NULL, effect_dst_surface, NULL );
+            SDL_BlitSurface( accumulation_surface, NULL, accumulation_comp_surface, NULL );
             dirty_rect.clear();
             dirty_rect.add( sentence_font_info.pos );
 
@@ -370,15 +377,15 @@ int ONScripterLabel::leaveTextDisplayMode()
          erase_text_window_mode != 0 ){
 
         if ( event_mode & EFFECT_EVENT_MODE ){
-            if ( doEffect( &window_effect,  NULL, DIRECT_EFFECT_IMAGE ) == RET_CONTINUE ){
+            if ( doEffect( &window_effect,  NULL, DIRECT_EFFECT_IMAGE, false ) == RET_CONTINUE ){
                 display_mode = NORMAL_DISPLAY_MODE;
                 return RET_CONTINUE | RET_NOREAD;
             }
             return RET_WAIT | RET_REREAD;
         }
         else{
-            next_display_mode = NORMAL_DISPLAY_MODE;
-            refreshSurface( effect_dst_surface, NULL, refreshMode() );
+            SDL_BlitSurface( accumulation_comp_surface, NULL, effect_dst_surface, NULL );
+            SDL_BlitSurface( accumulation_surface, NULL, accumulation_comp_surface, NULL );
             dirty_rect.add( sentence_font_info.pos );
 
             return setEffect( &window_effect );
@@ -622,7 +629,6 @@ int ONScripterLabel::processText()
             }
         }
         else if ( script_h.getStringBuffer()[ string_buffer_offset + 1 ] &&
-                  script_h.getStringBuffer()[ string_buffer_offset + 1 ] != 0x0a &&
                   !(script_h.getEndStatus() & ScriptHandler::END_1BYTE_CHAR) ){
             string_buffer_offset += 2;
         }
@@ -633,7 +639,8 @@ int ONScripterLabel::processText()
     }
 
 
-    if (script_h.getStringBuffer()[string_buffer_offset] == 0x0a){
+    if (script_h.getStringBuffer()[string_buffer_offset] == 0x0a ||
+	script_h.getStringBuffer()[string_buffer_offset] == 0x00){
         indent_offset = 0; // redundant
         return RET_CONTINUE;
     }
@@ -658,7 +665,6 @@ int ONScripterLabel::processText()
             }
 
             if (sentence_font.isEndOfLine(i)){
-                current_text_buffer->addBuffer( 0x0a );
                 sentence_font.newLine();
                 for (int i=0 ; i<indent_offset ; i++){
                     current_text_buffer->addBuffer(((char*)"@")[0]);
@@ -696,8 +702,8 @@ int ONScripterLabel::processText()
             drawChar( out_text, &sentence_font, true, true, accumulation_surface, &text_info );
             num_chars_in_sentence++;
             event_mode = WAIT_SLEEP_MODE;
-            if (skip_to_wait == 1 )
-				advancePhase( 0 );
+	    if ( skip_to_wait == 1 )
+	        advancePhase( 0 );
             else if ( sentence_font.wait_time == -1 )
                 advancePhase( default_text_speed[text_speed_no] );
             else
@@ -839,7 +845,8 @@ int ONScripterLabel::processText()
                     return clickWait( out_text );
             }
             else if (script_h.getStringBuffer()[ string_buffer_offset + 1 ] &&
-                     script_h.checkClickstr(&script_h.getStringBuffer()[string_buffer_offset+1]) == 1){
+                     script_h.checkClickstr(&script_h.getStringBuffer()[string_buffer_offset+1]) == 1 &&
+		     script_h.getEndStatus() & ScriptHandler::END_1BYTE_CHAR){
                 if ( script_h.getStringBuffer()[ string_buffer_offset + 2 ] &&
                      script_h.checkClickstr(&script_h.getStringBuffer()[string_buffer_offset+2]) > 0){
                     clickstr_state = CLICK_NONE;
@@ -867,7 +874,6 @@ int ONScripterLabel::processText()
         if ( skip_flag || draw_one_page_flag || ctrl_pressed_status )
             flush_flag = false;
         if ( script_h.getStringBuffer()[ string_buffer_offset + 1 ] &&
-             script_h.getStringBuffer()[ string_buffer_offset + 1 ] != 0x0a &&
              !(script_h.getEndStatus() & ScriptHandler::END_1BYTE_CHAR)){
             out_text[1] = script_h.getStringBuffer()[ string_buffer_offset + 1 ];
         drawDoubleChars( out_text, &sentence_font, flush_flag, true, accumulation_surface, &text_info );
@@ -887,8 +893,8 @@ int ONScripterLabel::processText()
         }
         else{
             event_mode = WAIT_SLEEP_MODE;
-			if ( skip_to_wait == 1 )
-				advancePhase( 0 );
+	    if ( skip_to_wait == 1 )
+	        advancePhase( 0 );
             else if ( sentence_font.wait_time == -1 )
                 advancePhase( default_text_speed[text_speed_no] );
             else
@@ -1006,7 +1012,8 @@ int ONScripterLabel::processText()
                     return clickWait( out_text );
             }
             else if (script_h.getStringBuffer()[ string_buffer_offset + 1 ] &&
-                     script_h.checkClickstr(&script_h.getStringBuffer()[string_buffer_offset+1]) == 1){
+                     script_h.checkClickstr(&script_h.getStringBuffer()[string_buffer_offset+1]) == 1 &&
+		     script_h.getEndStatus() & ScriptHandler::END_1BYTE_CHAR){
                 if ( script_h.getStringBuffer()[ string_buffer_offset + 2 ] &&
                      script_h.checkClickstr(&script_h.getStringBuffer()[string_buffer_offset+2]) > 0){
                     clickstr_state = CLICK_NONE;
@@ -1034,7 +1041,6 @@ int ONScripterLabel::processText()
         if ( skip_flag || draw_one_page_flag || ctrl_pressed_status )
             flush_flag = false;
         if ( script_h.getStringBuffer()[ string_buffer_offset + 1 ] &&
-             script_h.getStringBuffer()[ string_buffer_offset + 1 ] != 0x0a &&
              !(script_h.getEndStatus() & ScriptHandler::END_1BYTE_CHAR)){
             out_text[1] = script_h.getStringBuffer()[ string_buffer_offset + 1 ];
         drawDoubleChars( out_text, &sentence_font, flush_flag, true, accumulation_surface, &text_info );
@@ -1054,8 +1060,8 @@ int ONScripterLabel::processText()
         }
         else{
             event_mode = WAIT_SLEEP_MODE;
-			if ( skip_to_wait == 1 )
-				advancePhase( 0 );
+	    if ( skip_to_wait == 1 )
+		advancePhase( 0 );
             else if ( sentence_font.wait_time == -1 )
                 advancePhase( default_text_speed[text_speed_no] );
             else

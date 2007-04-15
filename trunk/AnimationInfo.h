@@ -2,7 +2,7 @@
  * 
  *  AnimationInfo.h - General image storage class of ONScripter
  *
- *  Copyright (c) 2001-2006 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2007 Ogapee. All rights reserved.
  *
  *  ogapee@aqua.dti2.ne.jp
  *
@@ -73,7 +73,10 @@ public:
     char *image_name;
     SDL_Surface *image_surface;
     unsigned char *alpha_buf;
-
+    int scale_x, scale_y, rot; // for lsp2
+    int blending_mode; // 0...normal, 1...additive
+    int cos_i, sin_i;
+    
     int font_size_xy[2]; // used by prnum and lsp string
     int font_pitch; // used by lsp string
     int remaining_time;
@@ -107,7 +110,7 @@ public:
     void allocImage( int w, int h );
     void copySurface( SDL_Surface *surface, SDL_Rect *rect );
     void fill( Uint8 r, Uint8 g, Uint8 b, Uint8 a );
-    void setupImage( SDL_Surface *surface, SDL_Surface *surface_m );
+    void setupImage( SDL_Surface *surface, SDL_Surface *surface_m, bool has_alpha );
 };
 
 #endif // __ANIMATION_INFO_H__

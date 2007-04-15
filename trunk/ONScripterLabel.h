@@ -2,7 +2,7 @@
  *
  *  ONScripterLabel.h - Execution block parser of ONScripter
  *
- *  Copyright (c) 2001-2006 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2007 Ogapee. All rights reserved.
  *
  *  ogapee@aqua.dti2.ne.jp
  *
@@ -53,6 +53,7 @@
 //#define DEFAULT_BLIT_FLAG (SDL_RLEACCEL)
 
 #define MAX_SPRITE_NUM 1000
+#define MAX_SPRITE2_NUM 256
 #define MAX_PARAM_NUM 100
 #define CUSTOM_EFFECT_NO 100
 
@@ -404,14 +405,16 @@ private:
            REFRESH_SAYA_MODE        = 2,
            REFRESH_SHADOW_MODE      = 4,
            REFRESH_TEXT_MODE        = 8,
-           REFRESH_CURSOR_MODE      = 16
+           REFRESH_CURSOR_MODE      = 16,
+	   REFRESH_COMP_MODE        = 32
     };
 
     int refresh_shadow_text_mode;
     int current_refresh_mode;
-    int display_mode, next_display_mode;
+    int display_mode;
     int event_mode;
     SDL_Surface *accumulation_surface; // Final image, i.e. picture_surface (+ shadow + text_surface)
+    SDL_Surface *accumulation_comp_surface; // Complementary final image, i.e. Final image xor (shadow + text_surface)
     SDL_Surface *screen_surface; // Text + Select_image + Tachi image + background
     SDL_Surface *effect_dst_surface; // Intermediate source buffer for effect
     SDL_Surface *effect_src_surface; // Intermediate destnation buffer for effect
@@ -493,9 +496,9 @@ private:
     void resetSentenceFont();
     void deleteButtonLink();
     void refreshMouseOverButton();
-    void refreshSprite( SDL_Surface *surface, int sprite_no, bool active_flag, int cell_no, SDL_Rect *check_src_rect, SDL_Rect *check_dst_rect );
+    void refreshSprite( int sprite_no, bool active_flag, int cell_no, SDL_Rect *check_src_rect, SDL_Rect *check_dst_rect );
 
-    void decodeExbtnControl( SDL_Surface *surface, const char *ctl_str, SDL_Rect *check_src_rect=NULL, SDL_Rect *check_dst_rect=NULL );
+    void decodeExbtnControl( const char *ctl_str, SDL_Rect *check_src_rect=NULL, SDL_Rect *check_dst_rect=NULL );
 
     void disableGetButtonFlag();
     int getNumberFromBuffer( const char **buf );
@@ -514,6 +517,7 @@ private:
     /* ---------------------------------------- */
     /* Sprite related variables */
     AnimationInfo sprite_info[MAX_SPRITE_NUM];
+    AnimationInfo sprite2_info[MAX_SPRITE2_NUM];
     bool all_sprite_hide_flag;
 
     /* ---------------------------------------- */
@@ -582,7 +586,7 @@ private:
     int effect_start_time_old;
 
     int  setEffect( EffectLink *effect );
-    int  doEffect( EffectLink *effect, AnimationInfo *anim, int effect_image );
+    int  doEffect( EffectLink *effect, AnimationInfo *anim, int effect_image, bool clear_dirty_region=true );
     void drawEffect( SDL_Rect *dst_rect, SDL_Rect *src_rect, SDL_Surface *surface );
     void generateMosaic( SDL_Surface *src_surface, int level );
 
@@ -689,7 +693,7 @@ private:
     void flush( int refresh_mode, SDL_Rect *rect=NULL, bool clear_dirty_flag=true, bool direct_flag=false );
     void flushDirect( SDL_Rect &rect, int refresh_mode );
     void executeLabel();
-    SDL_Surface *loadImage( char *file_name );
+    SDL_Surface *loadImage( char *file_name, bool *has_alpha=NULL );
     int parseLine();
 
     void mouseOverCheck( int x, int y );
@@ -736,6 +740,7 @@ private:
     int  system_menu_mode;
 
     int  shelter_event_mode;
+    int  shelter_display_mode;    
     bool shelter_draw_cursor_flag;
     struct TextBuffer *cached_text_buffer;
 

@@ -2,7 +2,7 @@
  *
  *  ONScripterLabel.cpp - Execution block parser of ONScripter
  *
- *  Copyright (c) 2001-2006 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2007 Ogapee. All rights reserved.
  *
  *  ogapee@aqua.dti2.ne.jp
  *
@@ -310,6 +310,27 @@ void ONScripterLabel::initSDL()
     screen_ratio2 *= 320;
     screen_width   = screen_width  * PDA_WIDTH / 320;
     screen_height  = screen_height * PDA_WIDTH / 320;
+#elif defined(PDA) && defined(PDA_AUTOSIZE)
+    SDL_Rect **modes;
+    modes = SDL_ListModes(NULL, 0);
+    if (modes == (SDL_Rect **)0){
+        fprintf(stderr, "No Video mode available.\n");
+        exit(-1);
+    }
+    else if (modes == (SDL_Rect **)-1){
+        // no restriction
+    }
+ 	else{
+        int width;
+        if (modes[0]->w * 3 > modes[0]->h * 4)
+            width = (modes[0]->h / 3) * 4;
+        else
+            width = (modes[0]->w / 4) * 4;
+        screen_ratio1 *= width;
+        screen_ratio2 *= 320;
+        screen_width   = screen_width  * width / 320;
+        screen_height  = screen_height * width / 320;
+    }
 #endif
 
     screen_surface = SDL_SetVideoMode( screen_width, screen_height, screen_bpp, DEFAULT_VIDEO_SURFACE_FLAG|(fullscreen_mode?SDL_FULLSCREEN:0) );
@@ -440,15 +461,15 @@ void ONScripterLabel::setDLLFile(const char *filename)
 void ONScripterLabel::setArchivePath(const char *path)
 {
     if (archive_path) delete[] archive_path;
-    archive_path = new char[ RELATIVEPATHLENGTH + strlen(path) + 2 ];
-    sprintf( archive_path, RELATIVEPATH "%s%c", path, DELIMITER );
+    archive_path = new char[ strlen(path) + 2 ];
+    sprintf( archive_path, "%s%c", path, DELIMITER );
 }
 
 void ONScripterLabel::setSavePath(const char *path)
 {
     if (script_h.save_path) delete[] script_h.save_path;
-    script_h.save_path = new char[ RELATIVEPATHLENGTH + strlen(path) + 2 ];
-    sprintf( script_h.save_path, RELATIVEPATH "%s%c", path, DELIMITER );
+    script_h.save_path = new char[ strlen(path) + 2 ];
+    sprintf( script_h.save_path, "%s%c", path, DELIMITER );
 }
 
 void ONScripterLabel::setFullscreenMode()
@@ -488,92 +509,97 @@ void ONScripterLabel::setKeyEXE(const char *filename)
 
 int ONScripterLabel::init()
 {
-	if (archive_path == NULL) {
+    if (archive_path == NULL) {
 #ifdef MACOSX
-		// On OS X, store archives etc in the application bundle by default.
-		using namespace Carbon;
-		ProcessSerialNumber psn;
-		GetCurrentProcess(&psn);
-		FSRef bundle;
-		GetProcessBundleLocation(&psn, &bundle);
-		char bpath[32768];
-		FSRefMakePath(&bundle, (UInt8*) bpath, 32768);
-		archive_path = new char[strlen(bpath) + 32];
-		sprintf(archive_path, "%s/Contents/Resources/", bpath);
+	// On OS X, store archives etc in the application bundle by default.
+	using namespace Carbon;
+	ProcessSerialNumber psn;
+	GetCurrentProcess(&psn);
+	FSRef bundle;
+	GetProcessBundleLocation(&psn, &bundle);
+	char bpath[32768];
+	FSRefMakePath(&bundle, (UInt8*) bpath, 32768);
+	archive_path = new char[strlen(bpath) + 32];
+	sprintf(archive_path, "%s/Contents/Resources/", bpath);
 #else
-		// On Linux, the path is unpredictable and should be set by using "-r PATH" in a launcher script.
-		// On other platforms they're stored in the same place as the executable.
-		archive_path = "";
+	// On Linux, the path is unpredictable and should be set by
+	// using "-r PATH" in a launcher script.  On other platforms
+	// they're stored in the same place as the executable.
+	archive_path = "";
 #endif
-	}
-
+    }
+    
     if (key_exe_file){
         createKeyTable( key_exe_file );
         script_h.setKeyTable( key_table );
     }
-
+    
     if ( open() ) return -1;
-
-	if ( script_h.save_path == NULL ){
-		const char *gameid = script_h.game_identifier ? script_h.game_identifier : "ONScripter";
+    
+    if ( script_h.save_path == NULL ){
+	const char *gameid = script_h.game_identifier ? script_h.game_identifier : "ONScripter";
 #ifdef WIN32
-		// On Windows, store in [Profiles]/All Users/Application Data.
-		// TODO: optionally permit saves to be per-user rather than shared?
-		HMODULE shdll = LoadLibrary("shfolder");
-		if (shdll) {
-			GETFOLDERPATH gfp = GETFOLDERPATH(GetProcAddress(shdll, "SHGetFolderPathA"));
-			if (gfp) {
-				char hpath[MAX_PATH];
-				HRESULT res = gfp(0, 0x0023, 0, 0, hpath);
-				if (res != S_FALSE && res != E_FAIL && res != E_INVALIDARG) {
-					script_h.save_path = new char[strlen(hpath) + strlen(gameid) + 3];
-					sprintf(script_h.save_path, "%s/%s/", hpath, gameid);
-					CreateDirectory(script_h.save_path, 0);
-				}
-			}
-			FreeLibrary(shdll);
+	// On Windows, store in [Profiles]/All Users/Application Data.
+	// TODO: optionally permit saves to be per-user rather than shared?
+	HMODULE shdll = LoadLibrary("shfolder");
+	if (shdll) {
+	    GETFOLDERPATH gfp = GETFOLDERPATH(GetProcAddress(shdll, "SHGetFolderPathA"));
+	    if (gfp) {
+		char hpath[MAX_PATH];
+		HRESULT res = gfp(0, 0x0023, 0, 0, hpath);
+		if (res != S_FALSE && res != E_FAIL && res != E_INVALIDARG) {
+		    script_h.save_path = new char[strlen(hpath) + strlen(gameid) + 3];
+		    sprintf(script_h.save_path, "%s/%s/", hpath, gameid);
+		    CreateDirectory(script_h.save_path, 0);
 		}
-		if (script_h.save_path == NULL) {
-			// Error; assume ancient Windows. In this case it's safe to use the archive path!
-			script_h.save_path = archive_path;
-		}
+	    }
+	    FreeLibrary(shdll);
+	}
+	if (script_h.save_path == NULL) {
+	    // Error; assume ancient Windows. In this case it's safe
+	    // to use the archive path!
+	    script_h.save_path = archive_path;
+	}
 #elif defined MACOSX
-		// On OS X, place in subfolder of ~/Library/Preferences.
-		using namespace Carbon;
-		FSRef home;
-		FSFindFolder(kUserDomain, kPreferencesFolderType, kDontCreateFolder, &home);
-		char hpath[32768];
-		FSRefMakePath(&home, (UInt8*) hpath, 32768);
-		script_h.save_path = new char[strlen(hpath) + strlen(gameid) + 8];
-		sprintf(script_h.save_path, "%s/%s Data/", hpath, gameid);
-		mkdir(script_h.save_path, 0755);
+	// On OS X, place in subfolder of ~/Library/Preferences.
+	using namespace Carbon;
+	FSRef home;
+	FSFindFolder(kUserDomain, kPreferencesFolderType, kDontCreateFolder, &home);
+	char hpath[32768];
+	FSRefMakePath(&home, (UInt8*) hpath, 32768);
+	script_h.save_path = new char[strlen(hpath) + strlen(gameid) + 8];
+	sprintf(script_h.save_path, "%s/%s Data/", hpath, gameid);
+	mkdir(script_h.save_path, 0755);
 #elif defined LINUX
-		// On Linux (and similar *nixen), place in ~/.gameid
-		passwd* pwd = getpwuid(getuid());
-		if (pwd) {
-			script_h.save_path = new char[strlen(pwd->pw_dir) + strlen(gameid) + 4];
-			sprintf(script_h.save_path, "%s/.%s/", pwd->pw_dir, gameid);
-			mkdir(script_h.save_path, 0755);
-		}
-		else script_h.save_path = archive_path;
+	// On Linux (and similar *nixen), place in ~/.gameid
+	passwd* pwd = getpwuid(getuid());
+	if (pwd) {
+	    script_h.save_path = new char[strlen(pwd->pw_dir) + strlen(gameid) + 4];
+	    sprintf(script_h.save_path, "%s/.%s/", pwd->pw_dir, gameid);
+	    mkdir(script_h.save_path, 0755);
+	}
+	else script_h.save_path = archive_path;
 #else
-		// Fall back on default ONScripter behaviour if we don't have any better ideas.
-		script_h.save_path = archive_path;
+	// Fall back on default ONScripter behaviour if we don't have
+	// any better ideas.
+	script_h.save_path = archive_path;
 #endif
-	}
-	if ( script_h.game_identifier ) {
-		delete[] script_h.game_identifier; 
-		script_h.game_identifier = NULL; 
-	}
+    }
+    if ( script_h.game_identifier ) {
+	delete[] script_h.game_identifier; 
+	script_h.game_identifier = NULL; 
+    }
 
     initSDL();
 
     image_surface = SDL_CreateRGBSurface( SDL_SWSURFACE, 1, 1, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000 );
 
     accumulation_surface = AnimationInfo::allocSurface( screen_width, screen_height );
+    accumulation_comp_surface = AnimationInfo::allocSurface( screen_width, screen_height );
     effect_src_surface   = AnimationInfo::allocSurface( screen_width, screen_height );
     effect_dst_surface   = AnimationInfo::allocSurface( screen_width, screen_height );
     SDL_SetAlpha( accumulation_surface, 0, SDL_ALPHA_OPAQUE );
+    SDL_SetAlpha( accumulation_comp_surface, 0, SDL_ALPHA_OPAQUE );
     SDL_SetAlpha( effect_src_surface, 0, SDL_ALPHA_OPAQUE );
     SDL_SetAlpha( effect_dst_surface, 0, SDL_ALPHA_OPAQUE );
     screenshot_surface   = NULL;
@@ -665,8 +691,7 @@ void ONScripterLabel::reset()
     key_pressed_flag = false;
     shift_pressed_status = 0;
     ctrl_pressed_status = 0;
-    display_mode = next_display_mode = NORMAL_DISPLAY_MODE;
-    current_refresh_mode = REFRESH_NORMAL_MODE;
+    display_mode = NORMAL_DISPLAY_MODE;
     event_mode = IDLE_EVENT_MODE;
     all_sprite_hide_flag = false;
 
@@ -808,7 +833,19 @@ void ONScripterLabel::flushDirect( SDL_Rect &rect, int refresh_mode )
     //printf("flush %d: %d %d %d %d\n", refresh_mode, rect.x, rect.y, rect.w, rect.h );
 
     refreshSurface( accumulation_surface, &rect, refresh_mode );
-
+    if (refresh_mode != REFRESH_NONE_MODE &&
+	!(refresh_mode & REFRESH_CURSOR_MODE)){
+        if (refresh_mode & REFRESH_SHADOW_MODE)
+            refreshSurface(accumulation_comp_surface, &rect,
+			   (refresh_mode & ~REFRESH_SHADOW_MODE
+			                 & ~REFRESH_TEXT_MODE)
+			                 | REFRESH_COMP_MODE);
+        else
+            refreshSurface(accumulation_comp_surface, &rect,
+			   refresh_mode | refresh_shadow_text_mode
+			                | REFRESH_COMP_MODE);
+    }
+ 
     SDL_BlitSurface( accumulation_surface, &rect, screen_surface, &rect );
     SDL_UpdateRect( screen_surface, rect.x, rect.y, rect.w, rect.h );
 }
@@ -860,7 +897,7 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
         }
 
         if ( exbtn_d_button_link.exbtn_ctl ){
-            decodeExbtnControl( accumulation_surface, exbtn_d_button_link.exbtn_ctl, &check_src_rect, &check_dst_rect );
+            decodeExbtnControl( exbtn_d_button_link.exbtn_ctl, &check_src_rect, &check_dst_rect );
         }
 
         if ( p_button_link ){
@@ -880,7 +917,7 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
                 sprite_info[ p_button_link->sprite_no ].setCell(1);
                 sprite_info[ p_button_link->sprite_no ].visible = true;
                 if ( p_button_link->button_type == ButtonLink::EX_SPRITE_BUTTON ){
-                    decodeExbtnControl( accumulation_surface, p_button_link->exbtn_ctl, &check_src_rect, &check_dst_rect );
+                    decodeExbtnControl( p_button_link->exbtn_ctl, &check_src_rect, &check_dst_rect );
                 }
             }
             else if ( p_button_link->button_type == ButtonLink::TMP_SPRITE_BUTTON ){
@@ -1010,189 +1047,171 @@ int ONScripterLabel::parseLine( )
             tmp = script_h.getStringBuffer() + strlen(script_h.getStringBuffer());
         int len = tmp - script_h.getStringBuffer() - string_buffer_offset - 1;
 #ifdef INSANI
-		/*
-		 * This block takes the current word being considered for line-wrapping and checks
-		 * it to see if it contains an inline command of forms:
-		 *   !s<int>
-		 *   !d<int>
-		 *   !w<int>
-		 *   !sd
-		 *   #rrggbb
-		 * If it does, then we subtract the length of the command from the length of the
-		 * word, then compare it to see if it is at the end of a line or not.
-		 *
-		 *
-		 */
-		char tocheck[255];
-		char *tocheckiterator;
-        if(len > 0){
-        	strncpy (tocheck, script_h.getStringBuffer()+string_buffer_offset+1, len);
-        	tocheck[len] = '\0';
-		}
-
+	/*
+	 * This block takes the current word being considered for
+	 * line-wrapping and checks it to see if it contains an inline
+	 * command of forms:
+	 *
+	 *   !s<int>
+	 *   !d<int>
+	 *   !w<int>
+	 *   !sd
+	 *   #rrggbb
+	 *
+	 * If it does, then we subtract the length of the command from
+	 * the length of the word, then compare it to see if it is at
+	 * the end of a line or not.
+	 *
+	 *
+	 */
+	char tocheck[255];
+	char *tocheck_it;
+        if (len > 0) {
+	    strncpy(tocheck,
+		    script_h.getStringBuffer() + string_buffer_offset + 1,
+		    len);
+	    tocheck[len] = '\0';
+	}
+	
         // In the case of !s ...
-        if(strstr(tocheck, "!s"))
-        {
-			tocheckiterator = strstr(tocheck, "!s");
-
-			// ... we loop for every !s we find ...
-			while(strstr(tocheckiterator, "!s"))
-			{
-				tocheckiterator = strstr(tocheckiterator, "!s");
-
-				// There are two possible cases here -- either we're seeing !sd -- in
-				// which case we subtract 3 from the length -- or !s<number> -- in which
-				// case we subtract some variable number from the length.
-
-				// case: !sd
-				if(tocheckiterator[2] == 'd')
-				{
-					strcpy(tocheckiterator, tocheckiterator+3);
-					len = len - 3;
-				}
-				// case: !s<number>
-				else
-				{
-					int bang_s_flag = 1;
-					int bang_s_num = 0;
-					char bang_s_iterator;
-
-					// Here, we walk through the characters that fall after the !s -- for instance,
-					// if tocheckiterator starts out as !s3000oogabooga, then bang_s_iterator will
-					// be 3, then 0, then 0, then 0, and finally o -- at which point it detects that
-					// we're no longer in a number and exits out.
-					while(bang_s_flag == 1)
-					{
-						bang_s_iterator = tocheckiterator[2+bang_s_num];
-
-						if((bang_s_iterator >= '0') && (bang_s_iterator <= '9'))
-						{
-							bang_s_num++;
-						}
-						else bang_s_flag = 0;
-					}
-					// Then, so long as it wasn't a solitary !s with no numbers after it (in which
-					// case it should be printed), we subtract the requisite number from the length --
-					// in the case of !s1 it would be 3, and in the case of !s20 it would be 4, etc.
-					if(bang_s_num > 0)
-					{
-						len = len - bang_s_num - 2;
-						strcpy(tocheckiterator, tocheckiterator+bang_s_num+2);
-					}
-					else strcpy(tocheckiterator, tocheckiterator+1);
-				}
-			}
+        if(strstr(tocheck, "!s")) {
+	    tocheck_it = strstr(tocheck, "!s");
+	    
+	    // ... we loop for every !s we find ...
+	    while(strstr(tocheck_it, "!s")) {
+		tocheck_it = strstr(tocheck_it, "!s");
+		
+		// There are two possible cases here -- either we're
+		// seeing !sd -- in which case we subtract 3 from the
+		// length -- or !s<number> -- in which case we
+		// subtract some variable number from the length.
+		
+		// case: !sd
+		if(tocheck_it[2] == 'd') {
+		    strcpy(tocheck_it, tocheck_it + 3);
+		    len = len - 3;
 		}
-
-		// In the case of !d<int> ...
-		if(strstr(tocheck, "!d"))
-        {
-			tocheckiterator = strstr(tocheck, "!d");
-
-			// ... we loop for every !d we find ...
-			while(strstr(tocheckiterator, "!d"))
-			{
-				tocheckiterator = strstr(tocheckiterator, "!d");
-
-				// Unlike in the case of !s, there's only one possible case here.
-
-				// case: !d<number>
-				int bang_d_flag = 1;
-				int bang_d_num = 0;
-				char bang_d_iterator;
-
-				// Follows the pattern of !s<num> as above.
-				while(bang_d_flag == 1)
-				{
-					bang_d_iterator = tocheckiterator[2+bang_d_num];
-
-					if((bang_d_iterator >= '0') && (bang_d_iterator <= '9'))
-					{
-						bang_d_num++;
-					}
-					else bang_d_flag = 0;
-				}
-				// Follows the pattern of !s<num> as above.
-				if(bang_d_num > 0)
-				{
-					len = len - bang_d_num - 2;
-					strcpy(tocheckiterator, tocheckiterator+bang_d_num+2);
-				}
-				else strcpy(tocheckiterator, tocheckiterator+1);
-			}
+		// case: !s<number>
+		else {
+		    int bang_s_num = 0;
+		    char bang_s_it;
+		    
+		    // Here, we walk through the characters that fall
+		    // after the !s -- for instance, if
+		    // tocheckiterator starts out as !s3000oogabooga,
+		    // then bang_s_iterator will be 3, then 0, then 0,
+		    // then 0, and finally o -- at which point it
+		    // detects that we're no longer in a number and
+		    // exits out.
+		    while (1) {
+			bang_s_it = tocheck_it[2 + bang_s_num];
+			if((bang_s_it >= '0') && (bang_s_it <= '9'))
+			    bang_s_num++;
+			else break;
+		    }
+		    // Then, so long as it wasn't a solitary !s with
+		    // no numbers after it (in which case it should be
+		    // printed), we subtract the requisite number from
+		    // the length -- in the case of !s1 it would be 3,
+		    // and in the case of !s20 it would be 4, etc.
+		    if(bang_s_num > 0) {
+			len = len - bang_s_num - 2;
+			strcpy(tocheck_it, tocheck_it + bang_s_num + 2);
+		    }
+		    else strcpy(tocheck_it, tocheck_it + 1);
 		}
+	    }
+	}
 
-		// In the case of !w<int> ...
-		if(strstr(tocheck, "!w"))
-        {
-			tocheckiterator = strstr(tocheck, "!w");
-
-			// ... we loop for every !w we find ...
-			while(strstr(tocheckiterator, "!w"))
-			{
-				tocheckiterator = strstr(tocheckiterator, "!w");
-
-				// Unlike in the case of !s, there's only one possible case here.
-
-				// case: !w<number>
-				int bang_w_flag = 1;
-				int bang_w_num = 0;
-				char bang_w_iterator;
-
-				// Follows the pattern of !s<num> as above.
-				while(bang_w_flag == 1)
-				{
-					bang_w_iterator = tocheckiterator[2+bang_w_num];
-
-					if((bang_w_iterator >= '0') && (bang_w_iterator <= '9'))
-					{
-						bang_w_num++;
-					}
-					else bang_w_flag = 0;
-				}
-				// Follows the pattern of !s<num> as above.
-				if(bang_w_num > 0)
-				{
-					len = len - bang_w_num - 2;
-					strcpy(tocheckiterator, tocheckiterator+bang_w_num+2);
-				}
-				else strcpy(tocheckiterator, tocheckiterator+1);
-			}
+	// In the case of !d<int> ...
+	if(strstr(tocheck, "!d")) {
+	    tocheck_it = strstr(tocheck, "!d");
+	    
+	    // ... we loop for every !d we find ...
+	    while(strstr(tocheck_it, "!d")) {
+		tocheck_it = strstr(tocheck_it, "!d");
+		
+		// Unlike in the case of !s, there's only one possible
+		// case here.
+		
+		// case: !d<number>
+		int bang_d_num = 0;
+		char bang_d_it;
+		
+		// Follows the pattern of !s<num> as above.
+		while (1) {
+		    bang_d_it = tocheck_it[2 + bang_d_num];
+		    if((bang_d_it >= '0') && (bang_d_it <= '9'))
+			bang_d_num++;
+		    else break;
 		}
-
-		// In the case of #rrggbb ...
-		if(strstr(tocheck, "#"))
-		{
-			tocheckiterator = strstr(tocheck, "#");
-
-			while(strstr(tocheckiterator, "#"))
-			{
-				tocheckiterator = strstr(tocheckiterator, "#");
-
-				int pound_color_flag = 1;
-				int pound_color_num = 0;
-				char pound_color_iterator;
-
-				while(pound_color_flag == 1)
-				{
-					pound_color_iterator = tocheckiterator[1+pound_color_num];
-
-					if( ((pound_color_iterator >= '0') && (pound_color_iterator <= '9')) ||
-					    ((pound_color_iterator >= 'a') && (pound_color_iterator <= 'f')) ||
-					    ((pound_color_iterator >= 'A') && (pound_color_iterator <= 'F')) )
-					{
-						pound_color_num++;
-					}
-					else pound_color_flag = 0;
-				}
-				if(pound_color_num >= 6)
-				{
-					len = len - 7;
-					strcpy(tocheckiterator, tocheckiterator+7);
-				}
-				else strcpy(tocheckiterator, tocheckiterator+1);
-			}
+		// Follows the pattern of !s<num> as above.
+		if(bang_d_num > 0) {
+		    len = len - bang_d_num - 2;
+		    strcpy(tocheck_it, tocheck_it + bang_d_num + 2);
 		}
+		else strcpy(tocheck_it, tocheck_it + 1);
+	    }
+	}
+	
+	// In the case of !w<int> ...
+	if(strstr(tocheck, "!w")) {
+	    tocheck_it = strstr(tocheck, "!w");
+	    
+	    // ... we loop for every !w we find ...
+	    while (strstr(tocheck_it, "!w")) {
+		tocheck_it = strstr(tocheck_it, "!w");
+		
+		// Unlike in the case of !s, there's only one possible
+		// case here.
+		
+		// case: !w<number>
+		int bang_w_num = 0;
+		char bang_w_it;
+		
+		// Follows the pattern of !s<num> as above.
+		while (1) {
+		    bang_w_it = tocheck_it[2 + bang_w_num];
+		    
+		    if ((bang_w_it >= '0') && (bang_w_it <= '9'))
+			bang_w_num++;
+		    else break;
+		}
+		// Follows the pattern of !s<num> as above.
+		if (bang_w_num > 0) {
+		    len = len - bang_w_num - 2;
+		    strcpy(tocheck_it, tocheck_it + bang_w_num + 2);
+		}
+		else strcpy(tocheck_it, tocheck_it + 1);
+	    }
+	}
+	
+	// In the case of #rrggbb ...
+	if(strstr(tocheck, "#")) {
+	    tocheck_it = strstr(tocheck, "#");
+	    
+	    while(strstr(tocheck_it, "#")) {
+		tocheck_it = strstr(tocheck_it, "#");
+		
+		int hash_color_num = 0;
+		char c_it;
+
+		while (1) {
+		    c_it = tocheck_it[1 + hash_color_num];
+		    
+		    if (((c_it >= '0') && (c_it <= '9')) ||
+			((c_it >= 'a') && (c_it <= 'f')) ||
+			((c_it >= 'A') && (c_it <= 'F')))
+			hash_color_num++;
+		    else break;
+		}
+		if (hash_color_num >= 6) {
+		    len = len - 7;
+		    strcpy(tocheck_it, tocheck_it + 7);
+		}
+		else strcpy(tocheck_it, tocheck_it + 1);
+	    }
+	}
 #endif
         if (len > 0 && sentence_font.isEndOfLine(len)){
             current_text_buffer->addBuffer( 0x0a );
@@ -1218,7 +1237,7 @@ int ONScripterLabel::parseLine( )
     return ret;
 }
 
-SDL_Surface *ONScripterLabel::loadImage( char *file_name )
+SDL_Surface *ONScripterLabel::loadImage( char *file_name, bool *has_alpha )
 {
     char* alt_buffer = 0;
     if ( !file_name ) return NULL;
@@ -1239,12 +1258,13 @@ SDL_Surface *ONScripterLabel::loadImage( char *file_name )
     }
 
     if ( length == 0 ){
-        if (strcmp(file_name, "uoncur.bmp" ) && strcmp(file_name, "uoffcur.bmp") &&
-                   strcmp(file_name, "doncur.bmp" ) && strcmp(file_name, "doffcur.bmp") &&
-                   strcmp(file_name, "cursor0.bmp") && strcmp(file_name, "cursor1.bmp"))
-        {
+        if (strcmp(file_name, "uoncur.bmp" ) &&
+	    strcmp(file_name, "uoffcur.bmp") &&
+	    strcmp(file_name, "doncur.bmp" ) &&
+	    strcmp(file_name, "doffcur.bmp") &&
+	    strcmp(file_name, "cursor0.bmp") &&
+	    strcmp(file_name, "cursor1.bmp"))
             fprintf( stderr, " *** can't find file [%s] ***\n", file_name );
-        }
         return NULL;
     }
     if ( filelog_flag )
@@ -1270,6 +1290,7 @@ SDL_Surface *ONScripterLabel::loadImage( char *file_name )
         tmp = IMG_LoadJPG_RW(src);
         SDL_RWclose(src);
     }
+    if (has_alpha) *has_alpha = tmp->format->Amask;
 
     delete[] buffer;
     if ( !tmp ){
@@ -1468,7 +1489,7 @@ struct ONScripterLabel::ButtonLink *ONScripterLabel::getSelectableSentence( char
     return button_link;
 }
 
-void ONScripterLabel::decodeExbtnControl( SDL_Surface *surface, const char *ctl_str, SDL_Rect *check_src_rect, SDL_Rect *check_dst_rect )
+void ONScripterLabel::decodeExbtnControl( const char *ctl_str, SDL_Rect *check_src_rect, SDL_Rect *check_dst_rect )
 {
     char sound_name[256];
     int i, sprite_no, sprite_no2, cell_no;
@@ -1483,7 +1504,7 @@ void ONScripterLabel::decodeExbtnControl( SDL_Surface *surface, const char *ctl_
                 sprite_no2 = getNumberFromBuffer( &ctl_str );
             }
             for (i=sprite_no ; i<=sprite_no2 ; i++)
-                refreshSprite( surface, i, false, cell_no, NULL, NULL );
+                refreshSprite( i, false, cell_no, NULL, NULL );
         }
         else if (com == 'P' || com == 'p'){
             sprite_no = getNumberFromBuffer( &ctl_str );
@@ -1493,7 +1514,7 @@ void ONScripterLabel::decodeExbtnControl( SDL_Surface *surface, const char *ctl_
             }
             else
                 cell_no = 0;
-            refreshSprite( surface, sprite_no, true, cell_no, check_src_rect, check_dst_rect );
+            refreshSprite( sprite_no, true, cell_no, check_src_rect, check_dst_rect );
         }
         else if (com == 'S' || com == 's'){
             sprite_no = getNumberFromBuffer( &ctl_str );
@@ -1598,7 +1619,8 @@ void ONScripterLabel::saveEnvData()
         writeInt( DEFAULT_VOLUME - se_volume, output_flag );
         writeInt( DEFAULT_VOLUME - music_volume, output_flag );
         writeInt( kidokumode_flag?1:0, output_flag );
-        writeInt( 0, output_flag ); // ?
+        writeChar( 0, output_flag ); // ?
+	writeInt( 1000, output_flag );
 
         if (i==1) break;
         allocFileIOBuf();
@@ -1610,19 +1632,9 @@ void ONScripterLabel::saveEnvData()
 
 int ONScripterLabel::refreshMode()
 {
-    int ret = REFRESH_NORMAL_MODE;
-
-    if ( next_display_mode == TEXT_DISPLAY_MODE ||
-         (system_menu_mode == SYSTEM_NULL) &&
-         erase_text_window_mode == 0 &&
-         (current_refresh_mode & REFRESH_SHADOW_MODE) &&
-         text_on_flag ){
-        ret = refresh_shadow_text_mode;
-    }
-
-    if (system_menu_mode == SYSTEM_NULL) current_refresh_mode = ret;
-
-    return ret;
+    return display_mode == TEXT_DISPLAY_MODE
+	 ? refresh_shadow_text_mode
+	 : REFRESH_NORMAL_MODE;
 }
 
 void ONScripterLabel::quit()

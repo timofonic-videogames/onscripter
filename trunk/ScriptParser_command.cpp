@@ -2,7 +2,7 @@
  *
  *  ScriptParser_command.cpp - Define command executer of ONScripter
  *
- *  Copyright (c) 2001-2006 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2007 Ogapee. All rights reserved.
  *
  *  ogapee@aqua.dti2.ne.jp
  *
@@ -120,7 +120,7 @@ int ScriptParser::textgosubCommand()
 {
     if ( current_mode != DEFINE_MODE ) errorAndExit( "textgosub: not in the define section" );
 
-    setStr( &textgosub_label, script_h.readLabel()+1 );
+    setStr( &textgosub_label, script_h.readStr()+1 );
     script_h.enableTextgosub(true);
     
     return RET_CONTINUE;
@@ -332,7 +332,12 @@ int ScriptParser::returnCommand()
     
     current_label_info = script_h.getLabelByAddress( last_nest_info->next_script );
     current_line = script_h.getLineByAddress( last_nest_info->next_script );
-    script_h.setCurrent( last_nest_info->next_script );
+    
+    char *buf = script_h.getNext();
+    if ( buf[0] == 0x0a || buf[0] == ':' || buf[0] == ';' )
+	script_h.setCurrent( last_nest_info->next_script );
+    else
+	setCurrentLabel(script_h.readStr()+1);
     
     last_nest_info = last_nest_info->previous;
     delete last_nest_info->next;
@@ -345,7 +350,7 @@ int ScriptParser::pretextgosubCommand()
 {
     if ( current_mode != DEFINE_MODE ) errorAndExit( "pretextgosub: not in the define section" );
 
-    setStr( &pretextgosub_label, script_h.readLabel()+1 );
+    setStr( &pretextgosub_label, script_h.readStr()+1 );
     
     return RET_CONTINUE;
 }
@@ -373,7 +378,7 @@ int ScriptParser::nsadirCommand()
         delete[] nsa_path;
     }
     nsa_path = new char[ strlen(buf) + 2 ];
-    sprintf( nsa_path, RELATIVEPATH "%s%c", buf, DELIMITER );
+    sprintf( nsa_path, "%s%c", buf, DELIMITER );
 
     return RET_CONTINUE;
 }
@@ -412,8 +417,8 @@ int ScriptParser::nextCommand()
     val = script_h.variable_data[ last_nest_info->var_no ].num;
     
     if ( break_flag ||
-         last_nest_info->step >= 0 && val > last_nest_info->to ||
-         last_nest_info->step < 0  && val < last_nest_info->to ){
+         last_nest_info->step > 0 && val > last_nest_info->to ||
+         last_nest_info->step < 0 && val < last_nest_info->to ){
         break_flag = false;
         last_nest_info = last_nest_info->previous;
 
@@ -614,7 +619,7 @@ int ScriptParser::loadgosubCommand()
 {
     if ( current_mode != DEFINE_MODE ) errorAndExit( "loadgosub: not in the define section" );
 
-    setStr( &loadgosub_label, script_h.readLabel()+1 );
+    setStr( &loadgosub_label, script_h.readStr()+1 );
 
     return RET_CONTINUE;
 }
@@ -735,19 +740,13 @@ int ScriptParser::ifCommand()
     while(1){
         if (script_h.compareString("fchk")){
             script_h.readLabel();
-            if (script_h.getNext()[0] == '*')
-                buf = script_h.readLabel();
-            else
-                buf = script_h.readStr();
+	    buf = script_h.readStr();
             f = (script_h.findAndAddLog( script_h.log_info[ScriptHandler::FILE_LOG], buf, false ) != NULL);
             //printf("fchk %s(%d,%d) ", tmp_string_buffer, (findAndAddFileLog( tmp_string_buffer, fasle )), condition_flag );
         }
         else if (script_h.compareString("lchk")){
             script_h.readLabel();
-            if (script_h.getNext()[0] == '*')
-                buf = script_h.readLabel();
-            else
-                buf = script_h.readStr();
+	    buf = script_h.readStr();
             f = (script_h.findAndAddLog( script_h.log_info[ScriptHandler::LABEL_LOG], buf+1, false ) != NULL);
             //printf("lchk %s (%d,%d)\n", buf, f, condition_flag );
         }
@@ -839,7 +838,7 @@ int ScriptParser::humanzCommand()
 
 int ScriptParser::gotoCommand()
 {
-    setCurrentLabel( script_h.readLabel()+1 );
+    setCurrentLabel( script_h.readStr()+1 );
     
     return RET_CONTINUE;
 }
@@ -857,7 +856,7 @@ void ScriptParser::gosubReal( const char *label, char *next_script )
 
 int ScriptParser::gosubCommand()
 {
-    const char *buf = script_h.readLabel();
+    const char *buf = script_h.readStr();
     gosubReal( buf+1, script_h.getNext() );
 
     return RET_CONTINUE;
@@ -929,7 +928,8 @@ int ScriptParser::forCommand()
         errorAndExit( "for: no =" );
 
     script_h.setCurrent(script_h.getNext() + 1);
-    script_h.setInt( &script_h.pushed_variable, script_h.readInt() );
+    int from = script_h.readInt();
+    script_h.setInt( &script_h.pushed_variable, from );
     
     if ( !script_h.compareString("to") )
         errorAndExit( "for: no to" );
@@ -945,6 +945,9 @@ int ScriptParser::forCommand()
     else{
         last_nest_info->step = 1;
     }
+
+    break_flag = last_nest_info->step > 0 && from > last_nest_info->to ||
+		 last_nest_info->step < 0 && from < last_nest_info->to;
     
     /* ---------------------------------------- */
     /* Step forward callee's label info */
@@ -1159,7 +1162,7 @@ int ScriptParser::breakCommand()
         delete last_nest_info->next;
         last_nest_info->next = NULL;
         
-        setCurrentLabel( script_h.readLabel()+1 );
+        setCurrentLabel( script_h.readStr()+1 );
     }
     else{
         break_flag = true;

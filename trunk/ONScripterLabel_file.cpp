@@ -42,7 +42,7 @@ extern "C" void c2pstrcpy(Str255 dst, const char *src);	//#include <TextUtils.h>
 
 #define SAVEFILE_MAGIC_NUMBER "ONS"
 #define SAVEFILE_VERSION_MAJOR 2
-#define SAVEFILE_VERSION_MINOR 2
+#define SAVEFILE_VERSION_MINOR 4
 
 #define READ_LENGTH 4096
 
@@ -487,8 +487,7 @@ int ONScripterLabel::loadSaveFile( int no )
     num_chars_in_sentence = 0;
     cached_text_buffer = current_text_buffer;
 
-    display_mode = next_display_mode = TEXT_DISPLAY_MODE;
-    current_refresh_mode = REFRESH_NORMAL_MODE;
+    display_mode = shelter_display_mode = TEXT_DISPLAY_MODE;
 
     event_mode = tmp_event_mode;
     if ( event_mode & WAIT_BUTTON_MODE ) event_mode = WAIT_SLEEP_MODE; // Re-execute the selectCommand, etc.
@@ -535,14 +534,8 @@ int ONScripterLabel::saveSaveFile( int no )
         memcpy(file_io_buf, save_data_buf, save_data_len);
         file_io_buf_ptr = save_data_len;
         if (saveFileIOBuf( filename )){
-            //fprintf( stderr, "can't open save file %s for writing\n", filename );
             return -1;
         }
-
-        //size_t magic_len = strlen(SAVEFILE_MAGIC_NUMBER)+2;
-        //sprintf( filename, RELATIVEPATH "sav%csave%d.dat", DELIMITER, no );
-        //if (saveFileIOBuf( filename, magic_len ))
-        //    fprintf( stderr, "can't open save file %s for writing (not an error)\n", filename );
     }
 
     return 0;

@@ -2,7 +2,7 @@
  *
  *  ScriptParser.cpp - Define block parser of ONScripter
  *
- *  Copyright (c) 2001-2006 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2007 Ogapee. All rights reserved.
  *
  *  ogapee@aqua.dti2.ne.jp
  *
@@ -817,8 +817,10 @@ int ScriptParser::readEffect( EffectLink *effect )
     return num;
 }
 
-ScriptParser::EffectLink *ScriptParser::parseEffect()
+ScriptParser::EffectLink *ScriptParser::parseEffect(bool init_flag)
 {
+    if (init_flag) tmp_effect.anim.remove();
+
     int num = readEffect(&tmp_effect);
 
     if (num > 1) return &tmp_effect;

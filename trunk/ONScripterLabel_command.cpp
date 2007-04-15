@@ -2,7 +2,7 @@
  *
  *  ONScripterLabel_command.cpp - Command executer of ONScripter
  *
- *  Copyright (c) 2001-2006 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2007 Ogapee. All rights reserved.
  *
  *  ogapee@aqua.dti2.ne.jp
  *
@@ -124,7 +124,7 @@ int ONScripterLabel::vCommand()
 {
     char buf[256];
 
-    sprintf(buf, RELATIVEPATH "wav%c%s.wav", DELIMITER, script_h.getStringBuffer()+1);
+    sprintf(buf, "wav%c%s.wav", DELIMITER, script_h.getStringBuffer()+1);
     playSound(buf, SOUND_WAVE|SOUND_OGG, false, MIX_WAVE_CHANNEL);
 
     return RET_CONTINUE;
@@ -145,7 +145,7 @@ int ONScripterLabel::trapCommand()
         return RET_CONTINUE;
     }
 
-    const char *buf = script_h.readLabel();
+    const char *buf = script_h.readStr();
     if ( buf[0] == '*' ){
         setStr(&trap_dist, buf+1);
     }
@@ -177,7 +177,7 @@ int ONScripterLabel::textonCommand()
     text_on_flag = true;
     if ( !(display_mode & TEXT_DISPLAY_MODE) ){
         dirty_rect.fill( screen_width, screen_height );
-        display_mode = next_display_mode = TEXT_DISPLAY_MODE;
+        display_mode = TEXT_DISPLAY_MODE;
         flush(refreshMode());
     }
 
@@ -189,7 +189,7 @@ int ONScripterLabel::textoffCommand()
     text_on_flag = false;
     if ( display_mode & TEXT_DISPLAY_MODE ){
         dirty_rect.fill( screen_width, screen_height );
-        display_mode = next_display_mode = NORMAL_DISPLAY_MODE;
+        display_mode = NORMAL_DISPLAY_MODE;
         flush(refreshMode());
     }
 
@@ -254,7 +254,7 @@ int ONScripterLabel::talCommand()
     }
 
     if ( event_mode & EFFECT_EVENT_MODE ){
-        return doEffect( parseEffect(), NULL, TACHI_EFFECT_IMAGE );
+        return doEffect( parseEffect(false), NULL, TACHI_EFFECT_IMAGE );
     }
     else{
         if (no >= 0){
@@ -262,7 +262,7 @@ int ONScripterLabel::talCommand()
             dirty_rect.add( tachi_info[ no ].pos );
         }
 
-        return setEffect( parseEffect() );
+        return setEffect( parseEffect(true) );
    }
 }
 
@@ -272,7 +272,7 @@ int ONScripterLabel::tablegotoCommand()
     int no = script_h.readInt();
 
     while( script_h.getEndStatus() & ScriptHandler::END_COMMA ){
-        const char *buf = script_h.readLabel();
+        const char *buf = script_h.readStr();
         if ( count++ == no ){
             setCurrentLabel( buf+1 );
             break;
@@ -329,6 +329,8 @@ int ONScripterLabel::strspCommand()
     }
 
     ai->trans_mode = AnimationInfo::TRANS_STRING;
+    ai->trans = 256;
+    ai->visible = true;
     ai->is_single_line = false;
     ai->is_tight_region = false;
     setupAnimationInfo(ai, &fi);
@@ -439,7 +441,7 @@ int ONScripterLabel::sp_rgb_gradationCommand()
 
 int ONScripterLabel::spstrCommand()
 {
-    decodeExbtnControl( accumulation_surface, script_h.readStr() );
+    decodeExbtnControl( script_h.readStr() );
 
     return RET_CONTINUE;
 }
@@ -602,8 +604,8 @@ int ONScripterLabel::setwindow3Command()
     clearCurrentTextBuffer();
     indent_offset = 0;
     line_enter_status = 0;
+    display_mode = NORMAL_DISPLAY_MODE;
     flush( refreshMode(), &sentence_font_info.pos );
-    display_mode = next_display_mode = NORMAL_DISPLAY_MODE;
 
     return RET_CONTINUE;
 }
@@ -630,12 +632,11 @@ int ONScripterLabel::setwindowCommand()
 {
     setwindowCore();
 
-    dirty_rect.add( sentence_font_info.pos );
     lookbackflushCommand();
     indent_offset = 0;
     line_enter_status = 0;
+    display_mode = NORMAL_DISPLAY_MODE;
     flush( refreshMode(), &sentence_font_info.pos );
-    display_mode = next_display_mode = NORMAL_DISPLAY_MODE;
 
     return RET_CONTINUE;
 }
@@ -752,7 +753,7 @@ int ONScripterLabel::selectCommand()
 
                 // Label part
                 if (select_mode != SELECT_NUM_MODE){
-                    script_h.readLabel();
+                    script_h.readStr();
                     setStr( &slink->label, script_h.getStringBuffer()+1 );
                     //printf("Select label %s\n", slink->label );
                 }
@@ -824,7 +825,6 @@ int ONScripterLabel::selectCommand()
 
         flush( refreshMode() );
 
-        flushEvent();
         event_mode = WAIT_TEXT_MODE | WAIT_BUTTON_MODE | WAIT_TIMER_MODE;
         advancePhase();
         refreshMouseOverButton();
@@ -1118,10 +1118,10 @@ int ONScripterLabel::printCommand()
     if ( ret != RET_NOMATCH ) return ret;
 
     if ( event_mode & EFFECT_EVENT_MODE ){
-        return doEffect( parseEffect(), NULL, TACHI_EFFECT_IMAGE );
+        return doEffect( parseEffect(false), NULL, TACHI_EFFECT_IMAGE );
     }
     else{
-        return setEffect( parseEffect() );
+        return setEffect( parseEffect(true) );
     }
 }
 
@@ -1519,6 +1519,7 @@ int ONScripterLabel::loadgameCommand()
         indent_offset = 0;
         line_enter_status = 0;
         string_buffer_offset = 0;
+	break_flag = false;
 
         refreshMouseOverButton();
 
@@ -1546,7 +1547,7 @@ int ONScripterLabel::ldCommand()
     if (no >= 0) buf = script_h.readStr();
 
     if ( event_mode & EFFECT_EVENT_MODE ){
-        return doEffect( parseEffect(), NULL, TACHI_EFFECT_IMAGE );
+        return doEffect( parseEffect(false), NULL, TACHI_EFFECT_IMAGE );
     }
     else{
         if (no >= 0){
@@ -1562,7 +1563,7 @@ int ONScripterLabel::ldCommand()
             }
         }
 
-        return setEffect( parseEffect() );
+        return setEffect( parseEffect(true) );
     }
 }
 
@@ -1686,13 +1687,13 @@ int ONScripterLabel::humanorderCommand()
     }
 
     if ( event_mode & EFFECT_EVENT_MODE ){
-        return doEffect( parseEffect(), &bg_info, bg_effect_image );
+        return doEffect( parseEffect(false), &bg_info, bg_effect_image );
     }
     else{
         for ( i=0 ; i<3 ; i++ )
             dirty_rect.add( tachi_info[i].pos );
 
-        return setEffect( parseEffect() );
+        return setEffect( parseEffect(true) );
     }
 }
 
@@ -1832,9 +1833,9 @@ int ONScripterLabel::getspsizeCommand()
     int no = script_h.readInt();
 
     script_h.readVariable();
-    script_h.setInt( &script_h.current_variable, sprite_info[no].pos.w );
+    script_h.setInt( &script_h.current_variable, sprite_info[no].pos.w * screen_ratio2 / screen_ratio1 );
     script_h.readVariable();
-    script_h.setInt( &script_h.current_variable, sprite_info[no].pos.h );
+    script_h.setInt( &script_h.current_variable, sprite_info[no].pos.h * screen_ratio2 / screen_ratio1 );
     if ( script_h.getEndStatus() & ScriptHandler::END_COMMA ){
         script_h.readVariable();
         script_h.setInt( &script_h.current_variable, sprite_info[no].num_of_cells );
@@ -2358,7 +2359,7 @@ int ONScripterLabel::dvCommand()
 {
     char buf[256];
 
-    sprintf(buf, RELATIVEPATH "voice%c%s.wav", DELIMITER, script_h.getStringBuffer()+2);
+    sprintf(buf, "voice%c%s.wav", DELIMITER, script_h.getStringBuffer()+2);
     playSound(buf, SOUND_WAVE|SOUND_OGG, false, 0);
 
     return RET_CONTINUE;
@@ -2555,7 +2556,7 @@ int ONScripterLabel::cspCommand()
             root_button_link.removeSprite(i);
             sprite_info[i].remove();
         }
-    else{
+    else if (no >= 0 && no < MAX_SPRITE_NUM) {
         if ( sprite_info[no].visible )
             dirty_rect.add( sprite_info[no].pos );
         root_button_link.removeSprite(no);
@@ -2638,7 +2639,7 @@ int ONScripterLabel::clCommand()
     char loc = script_h.readLabel()[0];
 
     if ( event_mode & EFFECT_EVENT_MODE ){
-        return doEffect( parseEffect(), NULL, TACHI_EFFECT_IMAGE );
+        return doEffect( parseEffect(false), NULL, TACHI_EFFECT_IMAGE );
     }
     else{
         if ( loc == 'l' || loc == 'a' ){
@@ -2654,7 +2655,7 @@ int ONScripterLabel::clCommand()
             tachi_info[2].remove();
         }
 
-        return setEffect( parseEffect() );
+        return setEffect( parseEffect(true) );
     }
 }
 
@@ -2716,7 +2717,7 @@ int ONScripterLabel::captionCommand()
 #if defined(MACOSX) && (SDL_COMPILEDVERSION >= 1208) /* convert sjis to utf-8 */
     char *buf1 = new char[len+1];
     strcpy(buf1, buf);
-    DirectReader::convertFromSJISToUTF8(buf2, (char *) buf1, len);
+    DirectReader::convertFromSJISToUTF8(buf2, buf1, len);
     delete[] buf1;
 #elif defined(LINUX)
 #ifdef UTF8_FILESYSTEM
@@ -2746,11 +2747,11 @@ int ONScripterLabel::btnwaitCommand()
     bool del_flag=false, textbtn_flag=false;
 
     if ( script_h.isName( "btnwait2" ) ){
-        display_mode = next_display_mode = NORMAL_DISPLAY_MODE;
+        if (erase_text_window_mode > 0) display_mode = NORMAL_DISPLAY_MODE;
     }
     else if ( script_h.isName( "btnwait" ) ){
         del_flag = true;
-        display_mode = next_display_mode = NORMAL_DISPLAY_MODE;
+        if (erase_text_window_mode > 0) display_mode = NORMAL_DISPLAY_MODE;
     }
     else if ( script_h.isName( "textbtnwait" ) ){
         textbtn_flag = true;
@@ -2792,15 +2793,9 @@ int ONScripterLabel::btnwaitCommand()
         shortcut_mouse_line = 0;
         skip_flag = false;
 
-        /* ---------------------------------------- */
-        /* Resotre csel button */
-        if ( refreshMode() & REFRESH_TEXT_MODE ){
-            display_mode = next_display_mode = TEXT_DISPLAY_MODE;
-        }
-
         if ( exbtn_d_button_link.exbtn_ctl ){
             SDL_Rect check_src_rect = {0, 0, screen_width, screen_height};
-            decodeExbtnControl( accumulation_surface, exbtn_d_button_link.exbtn_ctl, &check_src_rect );
+            decodeExbtnControl(exbtn_d_button_link.exbtn_ctl, &check_src_rect);
         }
 
         ButtonLink *p_button_link = root_button_link.next;
@@ -2820,7 +2815,6 @@ int ONScripterLabel::btnwaitCommand()
 
         flush( refreshMode() );
 
-        flushEvent();
         event_mode = WAIT_BUTTON_MODE;
         refreshMouseOverButton();
 
@@ -2844,6 +2838,9 @@ int ONScripterLabel::btnwaitCommand()
                         startTimer( automode_time );
                     //current_button_state.button = 0;
                 }
+		else if (autoclick_time > 0) {
+		    startTimer(autoclick_time);
+		}
             }
         }
 
@@ -3064,7 +3061,7 @@ int ONScripterLabel::bgCommand()
     }
 
     if ( event_mode & EFFECT_EVENT_MODE ){
-        return doEffect( parseEffect(), &bg_info, bg_effect_image );
+        return doEffect( parseEffect(false), &bg_info, bg_effect_image );
     }
     else{
         for ( int i=0 ; i<3 ; i++ )
@@ -3076,7 +3073,7 @@ int ONScripterLabel::bgCommand()
         createBackground();
         dirty_rect.fill( screen_width, screen_height );
 
-        return setEffect( parseEffect() );
+        return setEffect( parseEffect(true) );
     }
 }
 

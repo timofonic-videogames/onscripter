@@ -2,7 +2,7 @@
  *
  *  ScriptHandler.cpp - Script manipulation class
  *
- *  Copyright (c) 2001-2006 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2007 Ogapee. All rights reserved.
  *
  *  ogapee@aqua.dti2.ne.jp
  *
@@ -347,7 +347,7 @@ const char *ScriptHandler::readStr()
     while(1){
         parseStr(&buf);
         buf = checkComma(buf);
-        string_counter += strlen(string_buffer);
+        string_counter += strlen(str_string_buffer);
         if (string_counter+1 >= STRING_BUFFER_LENGTH)
             errorAndExit("readStr: string length exceeds 2048 bytes.");
         strcat(string_buffer, str_string_buffer);
@@ -380,7 +380,6 @@ int ScriptHandler::readInt()
 
 void ScriptHandler::skipToken()
 {
-    current_script = next_script;
     SKIP_SPACE( current_script );
     char *buf = current_script;
 
@@ -397,6 +396,8 @@ void ScriptHandler::skipToken()
         else
             buf++;
     }
+    if (text_flag && *buf == 0x0a) buf++;
+    
     next_script = buf;
 }
 
@@ -1218,6 +1219,22 @@ void ScriptHandler::parseStr( char **buf )
             str_string_buffer[i] = *(*buf)++;
         str_string_buffer[7] = '\0';
         current_variable.type = VAR_NONE;
+    }
+    else if ( **buf == '*' ){ // label
+        int c=0;
+        str_string_buffer[c++] = *(*buf)++;
+        SKIP_SPACE(*buf);
+        char ch = **buf;
+        while((ch >= 'a' && ch <= 'z') || 
+              (ch >= 'A' && ch <= 'Z') ||
+              (ch >= '0' && ch <= '9') ||
+              ch == '_'){
+            if (ch >= 'A' && ch <= 'Z') ch += 'a' - 'A';
+            str_string_buffer[c++] = ch;
+            ch = *++(*buf);
+        }
+        str_string_buffer[c] = '\0';
+        current_variable.type |= VAR_CONST;
     }
     else{ // str alias
         char ch, alias_buf[512];
