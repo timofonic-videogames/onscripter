@@ -55,7 +55,8 @@ void ONScripterLabel::enterSystemCall()
     event_mode = IDLE_EVENT_MODE;
     system_menu_enter_flag = true;
     yesno_caller = SYSTEM_NULL;
-    next_display_mode = TEXT_DISPLAY_MODE;
+    shelter_display_mode = display_mode;
+    display_mode = TEXT_DISPLAY_MODE;
     shelter_draw_cursor_flag = draw_cursor_flag;
     draw_cursor_flag = false;
 }
@@ -63,7 +64,7 @@ void ONScripterLabel::enterSystemCall()
 void ONScripterLabel::leaveSystemCall( bool restore_flag )
 {
     current_font = &sentence_font;
-    next_display_mode = display_mode;
+    display_mode = shelter_display_mode;
     system_menu_mode = SYSTEM_NULL;
     system_menu_enter_flag = false;
     yesno_caller = SYSTEM_NULL;
@@ -254,7 +255,7 @@ void ONScripterLabel::executeWindowErase()
         leaveSystemCall();
     }
     else{
-        next_display_mode = NORMAL_DISPLAY_MODE;
+        display_mode = NORMAL_DISPLAY_MODE;
         flush(mode_saya_flag ? REFRESH_SAYA_MODE : REFRESH_NORMAL_MODE);
 
         event_mode = WAIT_BUTTON_MODE;
@@ -302,17 +303,23 @@ void ONScripterLabel::executeSystemLoad()
         menu_font.setXY( (menu_font.num_xy[0] - strlen( load_menu_name ) / 2) / 2, 0 );
 //        uchar3 color = {0xff, 0xff, 0xff};
         // drawString( load_menu_name, color, &menu_font, true, accumulation_surface, NULL, &text_info );
-        /* The following three lines are part of a hack allowing the menu name to show up when custom right-menus are in
-           existence.  As it stands in ONScripter, these menu names get drawn in the accumulation buffer one level below
-           the menu itself -- i.e. onto the main playing field itself.  So when the user right-clicks out of the right-
-           click menu, that string remains there for the rest of play.  I do not currently understand why this is, but
-           I do know that using ButtonLink and getSelectableSentence to create a nonselectable text button instead of
-           using drawString as above will not trigger this defect.  I don't know why this is right now; more investigation
-           is warranted.  Do not recommend for integration. [Seung Park, 20060331] */
+        /* The following three lines are part of a hack allowing the
+           menu name to show up when custom right-menus are in
+           existence.  As it stands in ONScripter, these menu names
+           get drawn in the accumulation buffer one level below the
+           menu itself -- i.e. onto the main playing field itself.  So
+           when the user right-clicks out of the right- click menu,
+           that string remains there for the rest of play.  I do not
+           currently understand why this is, but I do know that using
+           ButtonLink and getSelectableSentence to create a
+           nonselectable text button instead of using drawString as
+           above will not trigger this defect.  I don't know why this
+           is right now; more investigation is warranted.  Do not
+           recommend for integration. [Seung Park, 20060331] */
         ButtonLink *ooga = getSelectableSentence( load_menu_name, &menu_font, false );
-		root_button_link.insert( ooga );
+	root_button_link.insert( ooga );
         ooga->no = 0;
-
+	
         menu_font.newLine();
         menu_font.newLine();
 
@@ -384,13 +391,19 @@ void ONScripterLabel::executeSystemSave()
         menu_font.setXY((menu_font.num_xy[0] - strlen( save_menu_name ) / 2 ) / 2, 0);
 //        uchar3 color = {0xff, 0xff, 0xff};
         // drawString( save_menu_name, color, &menu_font, true, accumulation_surface, NULL, &text_info );
-        /* The following three lines are part of a hack allowing the menu name to show up when custom right-menus are in
-           existence.  As it stands in ONScripter, these menu names get drawn in the accumulation buffer one level below
-           the menu itself -- i.e. onto the main playing field itself.  So when the user right-clicks out of the right-
-           click menu, that string remains there for the rest of play.  I do not currently understand why this is, but
-           I do know that using ButtonLink and getSelectableSentence to create a nonselectable text button instead of
-           using drawString as above will not trigger this defect.  I don't know why this is right now; more investigation
-           is warranted.  Do not recommend for integration. [Seung Park, 20060331] */
+        /* The following three lines are part of a hack allowing the
+           menu name to show up when custom right-menus are in
+           existence.  As it stands in ONScripter, these menu names
+           get drawn in the accumulation buffer one level below the
+           menu itself -- i.e. onto the main playing field itself.  So
+           when the user right-clicks out of the right- click menu,
+           that string remains there for the rest of play.  I do not
+           currently understand why this is, but I do know that using
+           ButtonLink and getSelectableSentence to create a
+           nonselectable text button instead of using drawString as
+           above will not trigger this defect.  I don't know why this
+           is right now; more investigation is warranted.  Do not
+           recommend for integration. [Seung Park, 20060331] */
         ButtonLink *ooga = getSelectableSentence( save_menu_name, &menu_font, false );
 		root_button_link.insert( ooga );
         ooga->no = 0;
@@ -471,6 +484,7 @@ void ONScripterLabel::executeSystemYesNo()
                 indent_offset = 0;
                 line_enter_status = 0;
                 string_buffer_offset = 0;
+		break_flag = false;
 
                 if (loadgosub_label)
                     gosubReal( loadgosub_label, script_h.getCurrent() );
@@ -528,13 +542,19 @@ void ONScripterLabel::executeSystemYesNo()
 //        uchar3 color = {0xff, 0xff, 0xff};
 
         // drawString( name, color, &menu_font, true, accumulation_surface, NULL, &text_info );
-        /* The following three lines are part of a hack allowing the menu name to show up when custom right-menus are in
-           existence.  As it stands in ONScripter, these menu names get drawn in the accumulation buffer one level below
-           the menu itself -- i.e. onto the main playing field itself.  So when the user right-clicks out of the right-
-           click menu, that string remains there for the rest of play.  I do not currently understand why this is, but
-           I do know that using ButtonLink and getSelectableSentence to create a nonselectable text button instead of
-           using drawString as above will not trigger this defect.  I don't know why this is right now; more investigation
-           is warranted.  Do not recommend for integration. [Seung Park, 20060331] */
+        /* The following three lines are part of a hack allowing the
+           menu name to show up when custom right-menus are in
+           existence.  As it stands in ONScripter, these menu names
+           get drawn in the accumulation buffer one level below the
+           menu itself -- i.e. onto the main playing field itself.  So
+           when the user right-clicks out of the right- click menu,
+           that string remains there for the rest of play.  I do not
+           currently understand why this is, but I do know that using
+           ButtonLink and getSelectableSentence to create a
+           nonselectable text button instead of using drawString as
+           above will not trigger this defect.  I don't know why this
+           is right now; more investigation is warranted.  Do not
+           recommend for integration. [Seung Park, 20060331] */
         ButtonLink *ooga = getSelectableSentence( name, &menu_font, false );
         root_button_link.insert( ooga );
         ooga->no = 0;

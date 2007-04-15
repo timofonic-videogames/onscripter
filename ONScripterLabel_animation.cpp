@@ -2,7 +2,7 @@
  * 
  *  ONScripter_animation.cpp - Methods to manipulate AnimationInfo
  *
- *  Copyright (c) 2001-2005 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2007 Ogapee. All rights reserved.
  *
  *  ogapee@aqua.dti2.ne.jp
  *
@@ -155,7 +155,7 @@ void ONScripterLabel::setupAnimationInfo( AnimationInfo *anim, FontInfo *info )
             xy_bak[1] = f_info.xy[1];
             
             int xy[2] = {0, 0};
-            f_info.setXY(f_info.num_xy[0]-1, f_info.num_xy[1]-1);
+            f_info.setXY(f_info.num_xy[0], f_info.num_xy[1]);
             pos = f_info.calcUpdatedArea(xy, screen_ratio1, screen_ratio2);
 
             f_info.xy[0] = xy_bak[0];
@@ -179,13 +179,14 @@ void ONScripterLabel::setupAnimationInfo( AnimationInfo *anim, FontInfo *info )
         }
     }
     else{
-        SDL_Surface *surface = loadImage( anim->file_name );
+	bool has_alpha;
+        SDL_Surface *surface = loadImage( anim->file_name, &has_alpha );
 
         SDL_Surface *surface_m = NULL;
         if (anim->trans_mode == AnimationInfo::TRANS_MASK)
             surface_m = loadImage( anim->mask_file_name );
         
-        anim->setupImage(surface, surface_m);
+        anim->setupImage(surface, surface_m, has_alpha);
 
         if ( surface ) SDL_FreeSurface(surface);
         if ( surface_m ) SDL_FreeSurface(surface_m);

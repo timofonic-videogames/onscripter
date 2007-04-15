@@ -2,7 +2,7 @@
  *
  *  ONScripterLabel_effect.cpp - Effect executer of ONScripter
  *
- *  Copyright (c) 2001-2005 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2007 Ogapee. All rights reserved.
  *
  *  ogapee@aqua.dti2.ne.jp
  *
@@ -38,15 +38,15 @@ int ONScripterLabel::setEffect( EffectLink *effect )
     return RET_WAIT | RET_REREAD;
 }
 
-int ONScripterLabel::doEffect( EffectLink *effect, AnimationInfo *anim, int effect_image )
+int ONScripterLabel::doEffect( EffectLink *effect, AnimationInfo *anim, int effect_image, bool clear_dirty_region )
 {
-	int prevduration = effect->duration;
 #ifdef INSANI
-	if ( ctrl_pressed_status || skip_to_wait ) effect->duration = 1;
+    int prevduration = effect->duration;
+    if ( ctrl_pressed_status || skip_to_wait ) effect->duration = 1;
 #endif
     effect_start_time = SDL_GetTicks();
     if ( effect_counter == 0 ) effect_start_time_old = effect_start_time - 1;
-    //printf("effect_counter %d timer between %d %d\n",effect_counter,effect_start_time,effect_start_time_old);
+
     effect_timer_resolution = effect_start_time - effect_start_time_old;
     effect_start_time_old = effect_start_time;
 
@@ -58,18 +58,40 @@ int ONScripterLabel::doEffect( EffectLink *effect, AnimationInfo *anim, int effe
 
         switch( effect_image ){
           case DIRECT_EFFECT_IMAGE:
-            break;
+	      break;
 
           case COLOR_EFFECT_IMAGE:
           case BG_EFFECT_IMAGE:
           case TACHI_EFFECT_IMAGE:
-            if (effect_no == 1){
-                refreshSurface( effect_dst_surface, &dirty_rect.bounding_box, refreshMode() );
-            }
-            else{
-                refreshSurface( effect_dst_surface, NULL, refreshMode() );
-            }
-            break;
+	      int refresh_mode = refreshMode();
+	      if (effect_no == 1) {
+		  refreshSurface(effect_dst_surface, &dirty_rect.bounding_box,
+				 refresh_mode);
+		  if (refresh_mode & REFRESH_SHADOW_MODE)
+		      refreshSurface(accumulation_comp_surface,
+				     &dirty_rect.bounding_box,
+				     (refresh_mode & ~REFRESH_SHADOW_MODE
+				                   & ~REFRESH_TEXT_MODE)
+				                   | REFRESH_COMP_MODE);
+                else
+                    refreshSurface(accumulation_comp_surface,
+				   &dirty_rect.bounding_box,
+				   refresh_mode | refresh_shadow_text_mode
+				                | REFRESH_COMP_MODE);
+	      }
+	      else {
+		  refreshSurface(effect_dst_surface, NULL, refresh_mode);
+		  if (refresh_mode & REFRESH_SHADOW_MODE)
+		      refreshSurface(accumulation_comp_surface, NULL,
+				     (refresh_mode & ~REFRESH_SHADOW_MODE
+				                   & ~REFRESH_TEXT_MODE)
+				                   | REFRESH_COMP_MODE);
+		  else
+		      refreshSurface(accumulation_comp_surface, NULL,
+				     refresh_mode | refresh_shadow_text_mode
+				                  | REFRESH_COMP_MODE);
+	      }
+	      break;
         }
 
         /* Load mask image */
@@ -326,17 +348,20 @@ int ONScripterLabel::doEffect( EffectLink *effect, AnimationInfo *anim, int effe
     if ( effect_counter < effect->duration && effect_no != 1 ){
         if ( effect_no != 0 ) flush( REFRESH_NONE_MODE, NULL, false );
 #ifdef INSANI
-		effect->duration = prevduration;
+	effect->duration = prevduration;
 #endif
         return RET_WAIT | RET_REREAD;
     }
-    else{
-        SDL_BlitSurface( effect_dst_surface, &dirty_rect.bounding_box, accumulation_surface, &dirty_rect.bounding_box );
-
-        if ( effect_no != 0 ) flush(REFRESH_NONE_MODE);
-        if ( effect_no == 1 ) effect_counter = 0;
+    else {
+        SDL_BlitSurface(effect_dst_surface,   &dirty_rect.bounding_box,
+			accumulation_surface, &dirty_rect.bounding_box);
+	
+        if (effect_no)
+	    flush(REFRESH_NONE_MODE, NULL, clear_dirty_region);
+        if (effect_no == 1)
+	    effect_counter = 0;
 #ifdef INSANI
-		effect->duration = prevduration;
+	effect->duration = prevduration;
 #endif
         event_mode = IDLE_EVENT_MODE;
 

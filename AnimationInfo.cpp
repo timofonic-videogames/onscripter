@@ -2,7 +2,7 @@
  * 
  *  AnimationInfo.cpp - General image storage class of ONScripter
  *
- *  Copyright (c) 2001-2006 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2007 Ogapee. All rights reserved.
  *
  *  ogapee@aqua.dti2.ne.jp
  *
@@ -72,7 +72,9 @@ void AnimationInfo::reset()
     pos.x = pos.y = 0;
     visible = false;
     abs_flag = true;
-
+    scale_x = scale_y = rot = 0;
+    blending_mode = 0;
+    
     font_size_xy[0] = font_size_xy[1] = -1;
     font_pitch = -1;
 }
@@ -582,7 +584,7 @@ void AnimationInfo::fill( Uint8 r, Uint8 g, Uint8 b, Uint8 a )
     SDL_UnlockSurface( image_surface );
 }
 
-void AnimationInfo::setupImage( SDL_Surface *surface, SDL_Surface *surface_m )
+void AnimationInfo::setupImage( SDL_Surface *surface, SDL_Surface *surface_m, bool has_alpha )
 {
     if (surface == NULL) return;
     SDL_LockSurface( surface );
@@ -591,7 +593,7 @@ void AnimationInfo::setupImage( SDL_Surface *surface, SDL_Surface *surface_m )
     int w = surface->w;
     int h = surface->h;
     int w2 = w / num_of_cells;
-    if (trans_mode == TRANS_ALPHA)
+    if (trans_mode == TRANS_ALPHA && !has_alpha)
         w = (w2/2) * num_of_cells;
 
     allocImage(w, h);
@@ -627,16 +629,25 @@ void AnimationInfo::setupImage( SDL_Surface *surface, SDL_Surface *surface_m )
 
     int i, j, c;
     if ( trans_mode == TRANS_ALPHA ){
-        for (i=0 ; i<h ; i++){
-            for (c=0 ; c<num_of_cells ; c++){
-                for (j=0 ; j<w2/2 ; j++, buffer++){
-                    SET_PIXEL(*buffer, (*(buffer+(w2/2)) & 0xff) ^ 0xff);
-                }
-                buffer += (w2 - w2/2);
+        if (has_alpha) {
+            for (i=0 ; i<h ; i++){
+                for (j=0 ; j<w ; j++, buffer++)
+                    SET_PIXEL(*buffer, *buffer >> 24);
+                buffer_dst += dst_margin;
             }
-            buffer += surface->w - w2*num_of_cells;
-            buffer_dst += dst_margin;
         }
+        else {	
+	    for (i=0 ; i<h ; i++){
+		for (c=0 ; c<num_of_cells ; c++){
+		    for (j=0 ; j<w2/2 ; j++, buffer++){
+			SET_PIXEL(*buffer, (*(buffer+(w2/2)) & 0xff) ^ 0xff);
+		    }
+		    buffer += (w2 - w2/2);
+		}
+		buffer += surface->w - w2*num_of_cells;
+		buffer_dst += dst_margin;
+	    }
+	}
     }
     else if ( trans_mode == TRANS_MASK ){
         if (surface_m){
