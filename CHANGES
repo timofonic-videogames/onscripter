@@ -1,9 +1,17 @@
 2007-04-25
 
-  Merge in zalas' patch to support both SAR and NSA archives at the
-  same time, an adapted version of the `drawfix' patch to speed up
-  screen updates in windowed mode, and a patch from Roine Gustafsson
-  that reduces flicker when sprites are changed.
+  Merge in an adapted version of the `drawfix' patch to speed up
+  screen updates in windowed mode, plus a number of other patches:
+
+  Support both SAR and NSA archives at the same time (zalas)
+
+  Reduce flicker when sprites are changed (Roine Gustafsson)
+
+  Fix gcc detection on OS X (Roine)
+
+  Display missing game data error as a dialog on OS X (Roine)
+
+  Support multiple games without game IDs at the same time (Roine)
 
 
 2007-04-15
