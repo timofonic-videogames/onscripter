@@ -1,3 +1,10 @@
+2007-04-25
+
+  Merge in zalas' patch to support both SAR and NSA archives at the
+  same time, and an adapted version of the `drawfix' patch to speed up
+  screen updates in windowed mode.
+
+
 2007-04-15
 
   Merge in useful fixes from onscripter-20070206.
