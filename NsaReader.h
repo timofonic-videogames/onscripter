@@ -47,7 +47,8 @@ public:
     
 private:
     bool sar_flag;
-    struct ArchiveInfo archive_info2[MAX_EXTRA_ARCHIVE];
+    struct ArchiveInfo archive_info_nsa; // for the arc.nsa file
+    struct ArchiveInfo archive_info2[MAX_EXTRA_ARCHIVE]; // for the arc1.nsa, arc2.nsa files
     int num_of_nsa_archives;
     char *nsa_archive_ext;
 

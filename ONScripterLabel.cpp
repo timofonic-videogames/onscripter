@@ -817,9 +817,10 @@ void ONScripterLabel::flush( int refresh_mode, SDL_Rect *rect, bool clear_dirty_
                 flushDirect( dirty_rect.bounding_box, refresh_mode );
             }
             else{
-                for ( int i=0 ; i<dirty_rect.num_history ; i++ ){
+		int i = 0;
+                while (i < dirty_rect.num_history)
                     //printf("%d: ", i );
-                    flushDirect( dirty_rect.history[i], refresh_mode );
+                    flushDirect( dirty_rect.history[i], refresh_mode, ++i == dirty_rect.num_history  );
                 }
             }
         }
@@ -828,7 +829,7 @@ void ONScripterLabel::flush( int refresh_mode, SDL_Rect *rect, bool clear_dirty_
     if ( clear_dirty_flag ) dirty_rect.clear();
 }
 
-void ONScripterLabel::flushDirect( SDL_Rect &rect, int refresh_mode )
+void ONScripterLabel::flushDirect( SDL_Rect &rect, int refresh_mode, bool updaterect )
 {
     //printf("flush %d: %d %d %d %d\n", refresh_mode, rect.x, rect.y, rect.w, rect.h );
 
@@ -847,7 +848,7 @@ void ONScripterLabel::flushDirect( SDL_Rect &rect, int refresh_mode )
     }
  
     SDL_BlitSurface( accumulation_surface, &rect, screen_surface, &rect );
-    SDL_UpdateRect( screen_surface, rect.x, rect.y, rect.w, rect.h );
+    if (updaterect) SDL_UpdateRect( screen_surface, rect.x, rect.y, rect.w, rect.h );
 }
 
 void ONScripterLabel::mouseOverCheck( int x, int y )
