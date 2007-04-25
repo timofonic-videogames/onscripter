@@ -1534,8 +1534,9 @@ int ONScripterLabel::loadgameCommand()
 
 int ONScripterLabel::ldCommand()
 {
-    int ret = leaveTextDisplayMode();
-    if ( ret != RET_NOMATCH ) return ret;
+    // Don't remove text to animate sprites
+    //int ret = leaveTextDisplayMode();
+    //if ( ret != RET_NOMATCH ) return ret;
 
     char loc = script_h.readLabel()[0];
     int no = -1;
@@ -2633,8 +2634,9 @@ int ONScripterLabel::clickCommand()
 
 int ONScripterLabel::clCommand()
 {
-    int ret = leaveTextDisplayMode();
-    if ( ret != RET_NOMATCH ) return ret;
+    // Don't remove text to animate sprites
+    //int ret = leaveTextDisplayMode();
+    //if ( ret != RET_NOMATCH ) return ret;
 
     char loc = script_h.readLabel()[0];
 
