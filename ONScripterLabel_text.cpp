@@ -179,13 +179,13 @@ void ONScripterLabel::drawChar( char* text, FontInfo *info, bool flush_flag, boo
     color.b = info->color[2];
     drawGlyph( surface, info, color, text, xy, false, cache_info, clip, dst_rect );
 
+    info->addShadeArea(dst_rect, shade_distance);
     if ( surface == accumulation_surface &&
          !flush_flag &&
          (!clip || AnimationInfo::doClipping( &dst_rect, clip ) == 0) ){
         dirty_rect.add( dst_rect );
     }
     else if ( flush_flag ){
-        info->addShadeArea(dst_rect, shade_distance);
         flushDirect( dst_rect, REFRESH_NONE_MODE );
     }
 
