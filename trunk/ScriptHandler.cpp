@@ -24,6 +24,9 @@
 // Modified by Haeleth, Autumn 2006, to better support OS X/Linux packaging.
 
 #include "ScriptHandler.h"
+#ifdef MACOSX
+#include <Carbon/Carbon.h>
+#endif
 
 #define TMP_SCRIPT_BUF_LEN 4096
 #define STRING_BUFFER_LENGTH 2048
@@ -51,6 +54,7 @@ ScriptHandler::ScriptHandler()
     
 	save_path = NULL;
     game_identifier = NULL;
+    game_hash = 0;
 }
 
 ScriptHandler::~ScriptHandler()
@@ -891,7 +895,13 @@ int ScriptHandler::readScript( char *path )
     }
 
     if (fp == NULL){
+#ifdef MACOSX
+        // Note: \p Pascal strings require compilation with -fpascal-strings
+        StandardAlert( kAlertStopAlert, "\pMissing game data", "\pNo game data found. "
+                       "This application must be run from a directory containing ONScripter game data.", NULL, NULL );
+#else
         fprintf( stderr, "can't open any of 0.txt, 00.txt, nscript.dat and nscript.___\n" );
+#endif
         return -1;
     }
 
@@ -942,6 +952,7 @@ int ScriptHandler::readScript( char *path )
     delete[] tmp_script_buf;
 
     script_buffer_length = p_script_buffer - script_buffer;
+    game_hash = script_buffer_length;  // Good hash value
 
     /* ---------------------------------------- */
     /* screen size and value check */

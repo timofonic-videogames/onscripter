@@ -238,6 +238,7 @@ public:
     
     char *game_identifier;
     char *save_path;
+    int  game_hash;
 
     BaseReader *cBR;
     
