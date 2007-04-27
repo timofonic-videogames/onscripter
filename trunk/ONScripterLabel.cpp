@@ -333,6 +333,54 @@ void ONScripterLabel::initSDL()
     }
 #endif
 
+#ifdef RCA_SCALE
+    scr_stretch_x = 1.0;
+    scr_stretch_y = 1.0;
+
+    if (scaled_flag) {
+        const SDL_VideoInfo* info = SDL_GetVideoInfo();
+        int native_width = info->current_w;
+        int native_height = info->current_h;
+        
+        // Resize up to fill screen
+        scr_stretch_x = (float)native_width / (float)screen_width;
+        scr_stretch_y = (float)native_height / (float)screen_height;
+        if (!widescreen_flag) {
+            // Constrain aspect to same as game
+            if (scr_stretch_x > scr_stretch_y) {
+                scr_stretch_x = scr_stretch_y;
+                screen_height = native_height;
+                screen_width *= scr_stretch_x;
+            } else { 
+                scr_stretch_y = scr_stretch_x;
+                screen_width = native_width;
+                screen_height *= scr_stretch_y;
+            }
+        } else {
+            screen_width = native_width;
+            screen_height = native_height;
+        }
+    }
+    else if (widescreen_flag) {
+        const SDL_VideoInfo* info = SDL_GetVideoInfo();
+        int native_width = info->current_w;
+        int native_height = info->current_h;
+        
+        // Resize to screen aspect ratio
+        const float screen_asp = (float)screen_width / (float)screen_height;
+        const float native_asp = (float)native_width / (float)native_height;
+        const float aspquot = native_asp / screen_asp;
+        if (aspquot >1.01) {
+            // Widescreen; make gamearea wider
+            scr_stretch_x = (float)screen_height * native_asp / (float)screen_width;
+            screen_width = screen_height * native_asp;
+        } else if (aspquot < 0.99) {
+            scr_stretch_y = (float)screen_width / native_asp / (float)screen_height;
+            screen_height = screen_width / native_asp;
+        }
+    }
+
+#endif
     screen_surface = SDL_SetVideoMode( screen_width, screen_height, screen_bpp, DEFAULT_VIDEO_SURFACE_FLAG|(fullscreen_mode?SDL_FULLSCREEN:0) );
 
     /* ---------------------------------------- */
@@ -506,6 +554,18 @@ void ONScripterLabel::setKeyEXE(const char *filename)
 {
     setStr(&key_exe_file, filename);
 }
+
+#ifdef RCA_SCALE
+void ONScripterLabel::setWidescreen()
+{
+    widescreen_flag = true;
+}
+
+void ONScripterLabel::setScaled()
+{
+    scaled_flag = true;
+}
+#endif
 
 int ONScripterLabel::init()
 {
@@ -823,9 +883,9 @@ void ONScripterLabel::flush( int refresh_mode, SDL_Rect *rect, bool clear_dirty_
             }
             else{
 		int i = 0;
-                while (i < dirty_rect.num_history)
-                    //printf("%d: ", i );
-                    flushDirect( dirty_rect.history[i], refresh_mode, ++i == dirty_rect.num_history  );
+                while (i < dirty_rect.num_history) {
+                    flushDirect( dirty_rect.history[i], refresh_mode, i == dirty_rect.num_history );
+		    ++i;
                 }
             }
         }

@@ -408,8 +408,29 @@ void ONScripterLabel::createBackground()
             bg_info.trans_mode = AnimationInfo::TRANS_COPY;
             setupAnimationInfo( &bg_info );
             if (bg_info.image_surface){
+#ifndef RCA_SCALE
                 bg_info.pos.x = (screen_width - bg_info.image_surface->w) / 2;
                 bg_info.pos.y = (screen_height - bg_info.image_surface->h) / 2;
+#else
+                bg_info.pos.x = (screen_width - bg_info.image_surface->w *
+				 scr_stretch_x) / 2;
+                bg_info.pos.y = (screen_height - bg_info.image_surface->h *
+				 scr_stretch_y) / 2;
+                if (screen_width != bg_info.image_surface->w) {
+                    SDL_PixelFormat *fmt = bg_info.image_surface->format;
+                    SDL_Surface* ret =
+			SDL_CreateRGBSurface( SDL_SWSURFACE,
+					      screen_width, screen_height,
+                                              fmt->BitsPerPixel,
+					      fmt->Rmask, fmt->Gmask,
+					      fmt->Bmask, fmt->Amask );
+                    resizeSurface( bg_info.image_surface, ret );
+                    SDL_FreeSurface( bg_info.image_surface );
+                    bg_info.image_surface = ret;
+                    bg_info.pos.w = image_surface->w = screen_width;
+                    bg_info.pos.h = image_surface->h = screen_height;
+                }
+#endif
             }
             bg_effect_image = BG_EFFECT_IMAGE;
         }

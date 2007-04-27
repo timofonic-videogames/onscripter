@@ -1,3 +1,13 @@
+2007-04-27
+
+  Merge in Roine's scaling patch.  This is considered experimental,
+  and will currently only be enabled if RCA_SCALE is defined at
+  compile-time.
+
+  Note that the build is currently broken by something (something
+  else, that is); I'm still trying to find out what.  :(
+
+
 2007-04-25
 
   Merge in an adapted version of the `drawfix' patch to speed up
