@@ -882,12 +882,10 @@ void ONScripterLabel::flush( int refresh_mode, SDL_Rect *rect, bool clear_dirty_
                 flushDirect( dirty_rect.bounding_box, refresh_mode );
             }
             else{
-		int i = 0;
-                while (i < dirty_rect.num_history) {
-                    flushDirect( dirty_rect.history[i], refresh_mode, i == dirty_rect.num_history );
-		    ++i;
-                }
-            }
+		for (int i = 0; i < dirty_rect.num_history; ++i)
+                    flushDirect( dirty_rect.history[i], refresh_mode, false );
+		SDL_UpdateRects( screen_surface, dirty_rect.num_history, dirty_rect.history );
+	    }
         }
     }
 
