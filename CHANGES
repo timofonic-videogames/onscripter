@@ -4,8 +4,7 @@
   and will currently only be enabled if RCA_SCALE is defined at
   compile-time.
 
-  Note that the build is currently broken by something (something
-  else, that is); I'm still trying to find out what.  :(
+  Fix a silly bug in the previous mergings.
 
 
 2007-04-25
