@@ -231,6 +231,9 @@ protected:
 
     /* ---------------------------------------- */
     /* Global definitions */
+#ifdef RCA_SCALE
+    float scr_stretch_x, scr_stretch_y;
+#endif
     int screen_ratio1, screen_ratio2;
     int screen_width, screen_height;
     int screen_texture_width, screen_texture_height;

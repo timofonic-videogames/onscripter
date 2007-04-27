@@ -49,6 +49,10 @@ void optionHelp()
 #endif
     printf( "      --fullscreen\tstart in fullscreen mode\n");
     printf( "      --window\t\tstart in window mode\n");
+#ifdef RCA_SCALE
+    printf( "      --widescreen\tTransform game to match widescreen monitors\n");
+    printf( "      --scale\t\tScale game to native display size. Yields small sharp text.\n");
+#endif
     printf( "      --force-button-shortcut\tignore useescspc and getenter command\n");
     printf( "      --enable-wheeldown-advance\tadvance the text on mouse wheeldown event\n");
     printf( "      --disable-rescale\tdo not rescale the images in the archives when compiled with -DPDA\n");
@@ -149,6 +153,14 @@ int main( int argc, char **argv )
                 argv++;
                 ons.setKeyEXE(argv[0]);
             }
+#ifdef RCA_SCALE
+            else if ( !strcmp( argv[0]+1, "-widescreen" ) ){
+                ons.setWidescreen();
+            }
+            else if ( !strcmp( argv[0]+1, "-scale" ) ){
+                ons.setScaled();
+            }
+#endif
             else{
                 printf(" unknown option %s\n", argv[0] );
             }

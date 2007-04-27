@@ -261,9 +261,12 @@ void AnimationInfo::blendOnSurface( SDL_Surface *dst_surface, int dst_x, int dst
 #endif
 
     Uint32 mask2, mask1;
-    
+    Uint32* srcmax = (Uint32*)image_surface->pixels + image_surface->w * image_surface->h;
+
     for (int i=0 ; i<dst_rect.h ; i++){
         for (int j=0 ; j<dst_rect.w ; j++, src_buffer++, dst_buffer++){
+	    // If we've run out of source area, ignore the remainder.
+	    if (src_buffer >= srcmax) goto break2;
             BLEND_PIXEL();
         }
         src_buffer += total_width - dst_rect.w;
@@ -274,7 +277,7 @@ void AnimationInfo::blendOnSurface( SDL_Surface *dst_surface, int dst_x, int dst
 #endif        
         dst_buffer += dst_surface->w  - dst_rect.w;
     }
-
+break2:
     SDL_UnlockSurface( image_surface );
     SDL_UnlockSurface( dst_surface );
 }

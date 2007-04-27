@@ -107,6 +107,10 @@ public:
     void disableRescale();
     void enableEdit();
     void setKeyEXE(const char *path);
+#ifdef RCA_SCALE
+    void setWidescreen();
+    void setScaled();
+#endif
 
     int  init();
     int  eventLoop();
@@ -357,6 +361,10 @@ private:
     bool disable_rescale_flag;
     bool edit_flag;
     char *key_exe_file;
+#ifdef RCA_SCALE
+    bool widescreen_flag;
+    bool scaled_flag;
+#endif
 
     // ----------------------------------------
     // Global definitions

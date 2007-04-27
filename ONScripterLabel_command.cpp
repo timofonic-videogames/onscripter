@@ -300,8 +300,13 @@ int ONScripterLabel::strspCommand()
 
     FontInfo fi;
     fi.is_newline_accepted = true;
+#ifndef RCA_SCALE
     ai->pos.x = script_h.readInt();
     ai->pos.y = script_h.readInt();
+#else
+    ai->pos.x = script_h.readInt() * scr_stretch_x;
+    ai->pos.y = script_h.readInt() * scr_stretch_y;
+#endif
     fi.num_xy[0] = script_h.readInt();
     fi.num_xy[1] = script_h.readInt();
     fi.font_size_xy[0] = script_h.readInt();
@@ -585,16 +590,63 @@ void ONScripterLabel::setwindowCore()
         sentence_font_info.setImageName( buf );
         parseTaggedString( &sentence_font_info );
         setupAnimationInfo( &sentence_font_info );
+#ifndef RCA_SCALE
         sentence_font_info.pos.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
         sentence_font_info.pos.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
-#if 0
+#   if 0
         if ( sentence_font_info.image_surface ){
             sentence_font_info.pos.w = sentence_font_info.image_surface->w * screen_ratio1 / screen_ratio2;
             sentence_font_info.pos.h = sentence_font_info.image_surface->h * screen_ratio1 / screen_ratio2;
         }
-#endif
+#   endif	    
         sentence_font.window_color[0] = sentence_font.window_color[1] = sentence_font.window_color[2] = 0xff;
     }
+#else // if RCA_SCALE
+        sentence_font_info.pos.x = script_h.readInt() * screen_ratio1 * scr_stretch_x / screen_ratio2;
+        sentence_font_info.pos.y = script_h.readInt() * screen_ratio1 * scr_stretch_y / screen_ratio2;
+        if ( sentence_font_info.image_surface && (scr_stretch_y > 1.0 || scr_stretch_x > 1.0)) {
+            SDL_Surface* src = sentence_font_info.image_surface;                    
+            SDL_PixelFormat *fmt = src->format;                  
+            SDL_Surface* dst = SDL_CreateRGBSurface( SDL_SWSURFACE,
+                                                     scr_stretch_x*src->w,
+                                                     scr_stretch_y*src->h,
+                                                     fmt->BitsPerPixel, fmt->Rmask, fmt->Gmask, fmt->Bmask, fmt->Amask );
+            resizeSurface( src, dst );
+            sentence_font_info.image_surface = dst;
+            sentence_font_info.pos.w *= scr_stretch_x;
+            sentence_font_info.pos.h *= scr_stretch_y;
+            SDL_FreeSurface( src );
+	}
+        sentence_font.window_color[0] = sentence_font.window_color[1] = sentence_font.window_color[2] = 0xff;
+    }
+
+    // Scale and reposition window size if screen is bigger than game
+    if (scr_stretch_x > 1.0) {
+        sentence_font_info.pos.w = sentence_font_info.pos.w * scr_stretch_x;
+        sentence_font.top_xy[0] = sentence_font.top_xy[0] * scr_stretch_x;
+#   if 1
+        // Either increase number of characters on screen
+        sentence_font.num_xy[0] = sentence_font.num_xy[0] * scr_stretch_x;
+#   else
+        // Or increase font size
+        sentence_font.pitch_xy[0] = sentence_font.pitch_xy[0] * scr_stretch_x;
+        sentence_font.font_size_xy[0] = sentence_font.font_size_xy[0] * scr_stretch_x;        
+#   endif
+    }
+    if (scr_stretch_y > 1.0) {
+        sentence_font_info.pos.h = sentence_font_info.pos.h * scr_stretch_y;
+        sentence_font.top_xy[1] = sentence_font.top_xy[1] * scr_stretch_y;
+#   if 1
+        // Either increase number of characters on screen
+        sentence_font.num_xy[1] = sentence_font.num_xy[1] * scr_stretch_y;
+#   else
+        // Or increase font size
+        sentence_font.pitch_xy[1] = sentence_font.pitch_xy[1] * scr_stretch_y;
+        sentence_font.font_size_xy[1] = sentence_font.font_size_xy[1] * scr_stretch_y;
+#   endif
+
+    }
+#endif
 }
 
 int ONScripterLabel::setwindow3Command()
@@ -1354,8 +1406,14 @@ int ONScripterLabel::lspCommand()
     const char *buf = script_h.readStr();
     sprite_info[ no ].setImageName( buf );
 
+#ifdef RCA_SCALE
+    sprite_info[ no ].pos.x = script_h.readInt() * screen_ratio1 * scr_stretch_x / screen_ratio2;
+    sprite_info[ no ].pos.y = script_h.readInt() * screen_ratio1 * scr_stretch_y / screen_ratio2;
+#else
     sprite_info[ no ].pos.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
     sprite_info[ no ].pos.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
+#endif
+    
     if ( script_h.getEndStatus() & ScriptHandler::END_COMMA )
         sprite_info[ no ].trans = script_h.readInt();
     else
@@ -1363,6 +1421,23 @@ int ONScripterLabel::lspCommand()
 
     parseTaggedString( &sprite_info[ no ] );
     setupAnimationInfo( &sprite_info[ no ] );
+#ifdef RCA_SCALE
+    if (sprite_info[ no ].image_surface 
+        && ( scr_stretch_y > 1.0 || scr_stretch_x > 1.0 )) {
+        SDL_Surface* src = sprite_info[ no ].image_surface;
+        SDL_PixelFormat *fmt = src->format;
+        SDL_Surface* dst = SDL_CreateRGBSurface( SDL_SWSURFACE, 
+                                                 scr_stretch_x*src->w,
+                                                 scr_stretch_y*src->h,
+                                                 fmt->BitsPerPixel, fmt->Rmask, fmt->Gmask, fmt->Bmask, fmt->Amask );
+        resizeSurface( src, dst );
+        sprite_info[ no ].image_surface = dst;
+        sprite_info[ no ].pos.w *= scr_stretch_x;
+        sprite_info[ no ].pos.h *= scr_stretch_y;
+        SDL_FreeSurface( src );
+
+    }
+#endif
     if ( sprite_info[no].visible )
         dirty_rect.add( sprite_info[no].pos );
 
@@ -1558,6 +1633,24 @@ int ONScripterLabel::ldCommand()
             setupAnimationInfo( &tachi_info[ no ] );
             if ( tachi_info[ no ].image_surface ){
                 tachi_info[ no ].visible = true;
+#ifdef RCA_SCALE
+                if (scr_stretch_y > 1.0) {
+                    // RCA: Stretch characters to screen size.
+                    // Note all stretches are with Y-scale, so they don't get distorted (FIXME assumes widescreen)
+                    SDL_Surface* src = tachi_info[ no ].image_surface;
+                    SDL_PixelFormat *fmt = src->format;
+                    SDL_Surface* dst = SDL_CreateRGBSurface( SDL_SWSURFACE, 
+                                                             scr_stretch_y*src->w, 
+                                                             scr_stretch_y*src->h,
+                                                             fmt->BitsPerPixel, fmt->Rmask, fmt->Gmask, fmt->Bmask, fmt->Amask );
+                    resizeSurface( src, dst );
+                    tachi_info[ no ].image_surface = dst;
+                    tachi_info[ no ].pos.w *= scr_stretch_y;
+                    tachi_info[ no ].pos.h *= scr_stretch_y;
+                    SDL_FreeSurface( src );
+                    
+                }
+#endif
                 tachi_info[ no ].pos.x = screen_width * (no+1) / 4 - tachi_info[ no ].pos.w / 2;
                 tachi_info[ no ].pos.y = underline_value - tachi_info[ no ].image_surface->h + 1;
                 dirty_rect.add( tachi_info[ no ].pos );
@@ -1834,9 +1927,17 @@ int ONScripterLabel::getspsizeCommand()
     int no = script_h.readInt();
 
     script_h.readVariable();
+#ifndef RCA_SCALE
     script_h.setInt( &script_h.current_variable, sprite_info[no].pos.w * screen_ratio2 / screen_ratio1 );
+#else
+    script_h.setInt( &script_h.current_variable, sprite_info[no].pos.w * screen_ratio2 / ( screen_ratio1 * scr_stretch_x ) );
+#endif
     script_h.readVariable();
+#ifndef RCA_SCALE
     script_h.setInt( &script_h.current_variable, sprite_info[no].pos.h * screen_ratio2 / screen_ratio1 );
+#else
+    script_h.setInt( &script_h.current_variable, sprite_info[no].pos.h * screen_ratio2 / ( screen_ratio1 * scr_stretch_y ) );
+#endif
     if ( script_h.getEndStatus() & ScriptHandler::END_COMMA ){
         script_h.readVariable();
         script_h.setInt( &script_h.current_variable, sprite_info[no].num_of_cells );
@@ -2047,11 +2148,19 @@ int ONScripterLabel::getcursorposCommand()
 {
     script_h.readInt();
     //script_h.setInt( &script_h.current_variable, sentence_font.x() );
+#ifndef RCA_SCALE
     script_h.setInt( &script_h.current_variable, sentence_font.x()-sentence_font.ruby_offset_xy[0] ); // workaround for possibly a bug in the original
+#else
+    script_h.setInt( &script_h.current_variable, sentence_font.x()/scr_stretch_x-sentence_font.ruby_offset_xy[0] ); // workaround for possibly a bug in the original
+#endif
 
     script_h.readInt();
     //script_h.setInt( &script_h.current_variable, sentence_font.y() );
+#ifndef RCA_SCALE
     script_h.setInt( &script_h.current_variable, sentence_font.y()-sentence_font.ruby_offset_xy[1] ); // workaround for possibly a bug in the original
+#else
+    script_h.setInt( &script_h.current_variable, sentence_font.y()/scr_stretch_y-sentence_font.ruby_offset_xy[1] ); // workaround for possibly a bug in the original
+#endif
 
     return RET_CONTINUE;
 }
@@ -2379,8 +2488,13 @@ int ONScripterLabel::drawsp3Command()
     int sprite_no = script_h.readInt();
     int cell_no = script_h.readInt();
     int alpha = script_h.readInt();
+#ifndef RCA_SCALE
     int x = script_h.readInt() * screen_ratio1 / screen_ratio2;
     int y = script_h.readInt() * screen_ratio1 / screen_ratio2;
+#else
+    int x = script_h.readInt() * screen_ratio1 * scr_stretch_x / screen_ratio2;
+    int y = script_h.readInt() * screen_ratio1 * scr_stretch_y / screen_ratio2;
+#endif
 
     // |mat[0][0] mat[0][1]|
     // |mat[1][0] mat[1][1]|
@@ -2405,8 +2519,13 @@ int ONScripterLabel::drawsp2Command()
     int sprite_no = script_h.readInt();
     int cell_no = script_h.readInt();
     int alpha = script_h.readInt();
+#ifndef RCA_SCALE
     int x = script_h.readInt() * screen_ratio1 / screen_ratio2;
     int y = script_h.readInt() * screen_ratio1 / screen_ratio2;
+#else
+    int x = script_h.readInt() * screen_ratio1 * scr_stretch_x / screen_ratio2;
+    int y = script_h.readInt() * screen_ratio1 * scr_stretch_y / screen_ratio2;
+#endif
     int scale_x = script_h.readInt();
     int scale_y = script_h.readInt();
     int rot = script_h.readInt();
@@ -2551,8 +2670,13 @@ int ONScripterLabel::cspCommand()
             if ( sprite_info[i].visible )
                 dirty_rect.add( sprite_info[i].pos );
             if ( sprite_info[i].image_name ){
+#ifndef RCA_SCALE
                 sprite_info[i].pos.x = -1000 * screen_ratio1 / screen_ratio2;
                 sprite_info[i].pos.y = -1000 * screen_ratio1 / screen_ratio2;
+#else
+                sprite_info[i].pos.x = -10000 * screen_ratio1 / screen_ratio2;
+                sprite_info[i].pos.y = -10000 * screen_ratio1 / screen_ratio2;
+#endif
             }
             root_button_link.removeSprite(i);
             sprite_info[i].remove();
@@ -2889,6 +3013,25 @@ int ONScripterLabel::btndefCommand()
             parseTaggedString( &btndef_info );
             btndef_info.trans_mode = AnimationInfo::TRANS_COPY;
             setupAnimationInfo( &btndef_info );
+#ifdef RCA_SCALE
+            if (btndef_info.image_surface
+                && (scr_stretch_x > 1.0 || scr_stretch_y > 1.0 )) {
+                // Scale and reposition buttons if screen is bigger than game
+                SDL_Surface* src = btndef_info.image_surface;
+                SDL_PixelFormat *fmt = src->format;
+                SDL_Surface* dst = SDL_CreateRGBSurface( SDL_SWSURFACE, 
+                                                         scr_stretch_x*src->w, 
+                                                         scr_stretch_y*src->h,
+                                                         fmt->BitsPerPixel, fmt->Rmask, fmt->Gmask, fmt->Bmask, fmt->Amask );
+                resizeSurface( src, dst );
+                btndef_info.image_surface = dst;
+                btndef_info.pos.w *= scr_stretch_x;
+                btndef_info.pos.h *= scr_stretch_y;
+                SDL_FreeSurface( src );
+            }
+  
+            if (btndef_info.image_surface)
+#endif
             SDL_SetAlpha( btndef_info.image_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
         }
     }
@@ -2907,14 +3050,26 @@ int ONScripterLabel::btnCommand()
     ButtonLink *button = new ButtonLink();
 
     button->no           = script_h.readInt();
+#ifndef RCA_SCALE
     button->image_rect.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
     button->image_rect.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
     button->image_rect.w = script_h.readInt() * screen_ratio1 / screen_ratio2;
     button->image_rect.h = script_h.readInt() * screen_ratio1 / screen_ratio2;
+#else
+    button->image_rect.x = script_h.readInt() * screen_ratio1 * scr_stretch_x / screen_ratio2;
+    button->image_rect.y = script_h.readInt() * screen_ratio1 * scr_stretch_y / screen_ratio2;
+    button->image_rect.w = script_h.readInt() * screen_ratio1 * scr_stretch_x / screen_ratio2;
+    button->image_rect.h = script_h.readInt() * screen_ratio1 * scr_stretch_y / screen_ratio2;
+#endif
     button->select_rect = button->image_rect;
 
+#ifndef RCA_SCALE
     src_rect.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
     src_rect.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
+#else
+    src_rect.x = script_h.readInt() * screen_ratio1 * scr_stretch_x / screen_ratio2;
+    src_rect.y = script_h.readInt() * screen_ratio1 * scr_stretch_y / screen_ratio2;
+#endif
     if (btndef_info.image_surface &&
         src_rect.x + button->image_rect.w > btndef_info.image_surface->w){
         button->image_rect.w = btndef_info.image_surface->w - src_rect.x;
@@ -3158,8 +3313,13 @@ int ONScripterLabel::amspCommand()
 {
     int no = script_h.readInt();
     dirty_rect.add( sprite_info[ no ].pos );
+#ifndef RCA_SCALE
     sprite_info[ no ].pos.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
     sprite_info[ no ].pos.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
+#else
+    sprite_info[ no ].pos.x = script_h.readInt() * screen_ratio1 * scr_stretch_x / screen_ratio2;
+    sprite_info[ no ].pos.y = script_h.readInt() * screen_ratio1 * scr_stretch_y / screen_ratio2;
+#endif
 
     if ( script_h.getEndStatus() & ScriptHandler::END_COMMA )
         sprite_info[ no ].trans = script_h.readInt();
