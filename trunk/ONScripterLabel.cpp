@@ -571,16 +571,58 @@ int ONScripterLabel::init()
 {
     if (archive_path == NULL) {
 #ifdef MACOSX
-	// On OS X, store archives etc in the application bundle by default.
+    // On Mac OS X, store archives etc in the application bundle by default,
+    // but fall back to the application root directory if bundle doesn't
+    // contain any script files.
 	using namespace Carbon;
-	ProcessSerialNumber psn;
-	GetCurrentProcess(&psn);
-	FSRef bundle;
-	GetProcessBundleLocation(&psn, &bundle);
-	char bpath[32768];
-	FSRefMakePath(&bundle, (UInt8*) bpath, 32768);
-	archive_path = new char[strlen(bpath) + 32];
-	sprintf(archive_path, "%s/Contents/Resources/", bpath);
+    const int maxpath=32768;
+    UInt8 path[maxpath];
+    CFBundleRef bundle = CFBundleGetMainBundle();
+    if (bundle) {
+        CFURLRef resourceurl = CFBundleCopyResourcesDirectoryURL(bundle);
+        if (resourceurl) {
+            Boolean validpath = CFURLGetFileSystemRepresentation(resourceurl,true,path,maxpath);
+            CFRelease(resourceurl);
+            if (validpath) {
+                archive_path = new char[strlen((char*)path+1)];
+                strcpy(archive_path,(char*)path);
+                strcat(archive_path,"/");
+            }
+        }
+        
+        if (archive_path) {
+            // Verify the archive path by checking for the script file
+            const char* scriptfiles[] = {"0.txt","00.txt","nscr_sec.dat","nscript.___","nscript.dat",NULL};
+            char** p = (char**)&scriptfiles;
+            for(;*p;p++) {
+                sprintf((char*)path,"%s%s",archive_path,*p);
+                FSRef ref;
+                OSErr err = FSPathMakeRef(path, &ref, NULL);
+                if(err == noErr
+                   && FSGetCatalogInfo(&ref, kFSCatInfoNone, NULL, NULL, NULL, NULL) == noErr)
+                    break;
+            }
+            
+            if (!*p) {
+                // There were no script files in the application bundle.
+                // Set archive_path to the application path and assume there are script files there
+                CFURLRef bundleurl = CFBundleCopyBundleURL(bundle);
+                if (bundleurl) {
+                    CFURLRef archiveurl = CFURLCreateCopyDeletingLastPathComponent( kCFAllocatorDefault, bundleurl );
+                    if (archiveurl) {
+                        Boolean validpath = CFURLGetFileSystemRepresentation(archiveurl,true,path,maxpath);
+                        CFRelease(archiveurl);
+                        if (validpath) {
+                            archive_path = new char[strlen((char*)path+1)];
+                            strcpy(archive_path,(char*)path);
+                            strcat(archive_path,"/");
+                        }
+                    }
+                    CFRelease(bundleurl);
+                }
+            }
+        }
+    }
 #else
 	// On Linux, the path is unpredictable and should be set by
 	// using "-r PATH" in a launcher script.  On other platforms
@@ -626,14 +668,14 @@ int ONScripterLabel::init()
 	    script_h.save_path = archive_path;
 	}
 #elif defined MACOSX
-	// On OS X, place in subfolder of ~/Library/Preferences.
+    // On Mac OS X, place in ~/Library/Application Support/<gameid>/
 	using namespace Carbon;
-	FSRef home;
-	FSFindFolder(kUserDomain, kPreferencesFolderType, kDontCreateFolder, &home);
-	char hpath[32768];
-	FSRefMakePath(&home, (UInt8*) hpath, 32768);
-	script_h.save_path = new char[strlen(hpath) + strlen(gameid) + 8];
-	sprintf(script_h.save_path, "%s/%s Data/", hpath, gameid);
+    FSRef appsupport;
+    FSFindFolder(kUserDomain, kApplicationSupportFolderType, kDontCreateFolder, &appsupport);
+    char path[32768];
+    FSRefMakePath(&appsupport, (UInt8*) path, 32768);
+    script_h.save_path = new char[strlen(path) + strlen(gameid) + 2];
+    sprintf(script_h.save_path, "%s/%s/", path, gameid);
 	mkdir(script_h.save_path, 0755);
 #elif defined LINUX
 	// On Linux (and similar *nixen), place in ~/.gameid

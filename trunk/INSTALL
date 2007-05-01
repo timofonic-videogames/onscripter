@@ -17,3 +17,5 @@ This is the usual
 
 For Windows builds, use a MinGW toolchain in the MSYS environment.
 
+OS X users have the alternative of an Xcode project kindly contributed
+by Roine Gustafsson.  You'll find it in the "macosx" directory.

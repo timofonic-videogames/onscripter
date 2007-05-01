@@ -1,3 +1,17 @@
+2007-05-01
+
+  Merge in some more changes from Roine designed to make life better
+  for OS X users:
+
+  Include an Xcode project to simplify Mac builds.
+
+  If game resources are not in the app's bundle, look for them in the
+  application path instead.
+
+  Store saves and other data under Application Support, not
+  Preferences.
+
+
 2007-04-27
 
   Merge in Roine's scaling patch.  This is considered experimental,
