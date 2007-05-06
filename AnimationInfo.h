@@ -31,7 +31,7 @@ typedef unsigned char uchar3[3];
 
 class AnimationInfo{
 public:
-#ifdef BPP16
+#if defined(BPP16)
     typedef Uint16 ONSBuf;
 #else
     typedef Uint32 ONSBuf;
@@ -76,7 +76,7 @@ public:
     int scale_x, scale_y, rot; // for lsp2
     int blending_mode; // 0...normal, 1...additive
     int cos_i, sin_i;
-    
+
     int font_size_xy[2]; // used by prnum and lsp string
     int font_pitch; // used by lsp string
     int remaining_time;

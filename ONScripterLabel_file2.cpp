@@ -65,13 +65,8 @@ int ONScripterLabel::loadSaveFile2( int file_version )
     sentence_font.ttf_font  = NULL;
     sentence_font.top_xy[0] = readInt();
     sentence_font.top_xy[1] = readInt();
-#ifndef RCA_SCALE
     sentence_font.num_xy[0] = readInt();
     sentence_font.num_xy[1] = readInt();
-#else
-    sentence_font.num_xy[0] = readInt() * scr_stretch_x;
-    sentence_font.num_xy[1] = readInt() * scr_stretch_y;
-#endif
     sentence_font.font_size_xy[0] = readInt();
     sentence_font.font_size_xy[1] = readInt();
     sentence_font.pitch_xy[0] = readInt();
@@ -83,13 +78,8 @@ int ONScripterLabel::loadSaveFile2( int file_version )
     sentence_font.wait_time = readInt();
     sentence_font_info.pos.x = readInt() * screen_ratio1 / screen_ratio2;
     sentence_font_info.pos.y = readInt() * screen_ratio1 / screen_ratio2;
-#ifndef RCA_SCALE
     sentence_font_info.pos.w = (readInt() + 1 - sentence_font_info.pos.x * screen_ratio1 / screen_ratio2) * screen_ratio1 / screen_ratio2;
     sentence_font_info.pos.h = (readInt() + 1 - sentence_font_info.pos.y * screen_ratio1 / screen_ratio2) * screen_ratio1 / screen_ratio2;
-#else
-    sentence_font_info.pos.w = (readInt() + 1 - sentence_font_info.pos.x * screen_ratio1 / screen_ratio2) * screen_ratio1 * scr_stretch_x / screen_ratio2;
-    sentence_font_info.pos.h = (readInt() + 1 - sentence_font_info.pos.y * screen_ratio1 / screen_ratio2) * screen_ratio1 * scr_stretch_y / screen_ratio2;
-#endif
     readStr( &sentence_font_info.image_name );
     if ( !sentence_font.is_transparent && sentence_font_info.image_name ){
         parseTaggedString( &sentence_font_info );
@@ -116,52 +106,19 @@ int ONScripterLabel::loadSaveFile2( int file_version )
         if ( tachi_info[i].image_name ){
             parseTaggedString( &tachi_info[i] );
             setupAnimationInfo( &tachi_info[i] );
-#ifdef RCA_SCALE
-
-            if (scr_stretch_y > 1.0) {
-                // RCA: Stretch characters to screen size.
-                // Note all stretches are with Y-scale, so they don't get distorted (FIXME assumes widescreen)
-                SDL_Surface* src = tachi_info[i].image_surface;
-                SDL_PixelFormat *fmt = src->format;
-                SDL_Surface* dst = SDL_CreateRGBSurface( SDL_SWSURFACE,
-                                                         scr_stretch_y*src->w,
-                                                         scr_stretch_y*src->h,
-                                                         fmt->BitsPerPixel, fmt->Rmask, fmt->Gmask, fmt->Bmask, fmt->Amask );
-                resizeSurface( src, dst );
-                tachi_info[i].image_surface = dst;
-                tachi_info[i].pos.w = src->w*scr_stretch_y;
-                tachi_info[i].pos.h = src->h*scr_stretch_y;
-                SDL_FreeSurface( src );
-            }
-#endif
         }
     }
 
-#ifndef RCA_SCALE
-    for ( i=0 ; i<3 ; i++ ) 
+    for ( i=0 ; i<3 ; i++ )
         tachi_info[i].pos.x = readInt() * screen_ratio1 / screen_ratio2;
-#else
-    for ( i=0 ; i<3 ; i++ ) {
-	readInt();
-        tachi_info[i].pos.x = screen_width * (i+1) / 4 - tachi_info[i].pos.w / 2;  // RCA Ignore saved value
-    }
-#endif
 
-#ifndef RCA_SCALE
     for ( i=0 ; i<3 ; i++ )
         tachi_info[i].pos.y = readInt() * screen_ratio1 / screen_ratio2;
-#else
-    for ( i=0 ; i<3 ; i++ ) {
-	readInt();
-        if (tachi_info[i].image_surface)
-            tachi_info[i].pos.y = underline_value - tachi_info[i].image_surface->h + 1;  // RCA Ignore saved value
-    }
-#endif
 
     readInt(); // 0
     readInt(); // 0
     readInt(); // 0
-
+    
     if (file_version >= 203){
         readInt(); // -1
         readInt(); // -1
@@ -180,7 +137,7 @@ int ONScripterLabel::loadSaveFile2( int file_version )
         if ( readInt() == 1 ) sprite_info[i].visible = true;
         else                  sprite_info[i].visible = false;
         sprite_info[i].current_cell = readInt();
-	if (file_version >= 203) readInt(); // -1
+        if (file_version >= 203) readInt(); // -1
     }
 
     readVariables( 0, script_h.global_variable_border );
@@ -415,7 +372,6 @@ int ONScripterLabel::loadSaveFile2( int file_version )
         readInt();
     }
     
-   
     int text_num = readInt();
     start_text_buffer = current_text_buffer;
     for ( i=0 ; i<text_num ; i++ ){
@@ -424,7 +380,7 @@ int ONScripterLabel::loadSaveFile2( int file_version )
             current_text_buffer->buffer2[current_text_buffer->buffer2_count] = readChar();
         }
         while( current_text_buffer->buffer2[current_text_buffer->buffer2_count++] );
-	if (file_version == 203) readChar(); 
+        if (file_version == 203) readChar(); // 0
         current_text_buffer->buffer2_count--;
         current_text_buffer = current_text_buffer->next;
     }
@@ -446,8 +402,7 @@ int ONScripterLabel::loadSaveFile2( int file_version )
     }
     script_h.setCurrent( buf );
 
-    display_mode = shelter_display_mode = NORMAL_DISPLAY_MODE;
-
+    display_mode = shelter_display_mode = TEXT_DISPLAY_MODE;
     clickstr_state = CLICK_NONE;
     event_mode = 0;//WAIT_SLEEP_MODE;
     draw_cursor_flag = false;
@@ -477,13 +432,8 @@ void ONScripterLabel::saveSaveFile2( bool output_flag )
     
     writeInt( sentence_font.top_xy[0], output_flag );
     writeInt( sentence_font.top_xy[1], output_flag );
-#ifndef RCA_SCALE
     writeInt( sentence_font.num_xy[0], output_flag );
     writeInt( sentence_font.num_xy[1], output_flag );
-#else
-    writeInt( sentence_font.num_xy[0] / scr_stretch_x, output_flag );  // RCA Subject to rounding errors
-    writeInt( sentence_font.num_xy[1] / scr_stretch_y, output_flag );  // RCA Subject to rounding errors
-#endif
     writeInt( sentence_font.font_size_xy[0], output_flag );
     writeInt( sentence_font.font_size_xy[1], output_flag );
     writeInt( sentence_font.pitch_xy[0], output_flag );
@@ -494,13 +444,8 @@ void ONScripterLabel::saveSaveFile2( bool output_flag )
     writeInt( sentence_font.wait_time, output_flag );
     writeInt( sentence_font_info.pos.x * screen_ratio2 / screen_ratio1, output_flag );
     writeInt( sentence_font_info.pos.y * screen_ratio2 / screen_ratio1, output_flag );
-#ifndef RCA_SCALE
     writeInt( sentence_font_info.pos.w * screen_ratio2 / screen_ratio1 + sentence_font_info.pos.x * screen_ratio2 / screen_ratio1 - 1, output_flag );
     writeInt( sentence_font_info.pos.h * screen_ratio2 / screen_ratio1 + sentence_font_info.pos.y * screen_ratio2 / screen_ratio1 - 1, output_flag );
-#else
-    writeInt( sentence_font_info.pos.w / scr_stretch_x * screen_ratio2 / screen_ratio1 + sentence_font_info.pos.x * screen_ratio2 / screen_ratio1 - 1, output_flag );
-    writeInt( sentence_font_info.pos.h / scr_stretch_y * screen_ratio2 / screen_ratio1 + sentence_font_info.pos.y * screen_ratio2 / screen_ratio1 - 1, output_flag );
-#endif
     writeStr( sentence_font_info.image_name, output_flag );
 
     writeInt( (cursor_info[0].abs_flag)?0:1, output_flag );
@@ -515,18 +460,9 @@ void ONScripterLabel::saveSaveFile2( bool output_flag )
         writeStr( tachi_info[i].image_name, output_flag );
 
     for ( i=0 ; i<3 ; i++ )
-#ifndef RCA_SCALE
         writeInt( tachi_info[i].pos.x * screen_ratio2 / screen_ratio1, output_flag );
-#else
-        writeInt( tachi_info[i].pos.x / scr_stretch_x * screen_ratio2 / screen_ratio1, output_flag );
-#endif
 
     for ( i=0 ; i<3 ; i++ )
-#ifdef RCA_SCALE
-        if (tachi_info[i].image_surface)
-            writeInt( underline_value - tachi_info[i].image_surface->h/scr_stretch_y + 1, output_flag );
-        else
-#endif
         writeInt( tachi_info[i].pos.y * screen_ratio2 / screen_ratio1, output_flag );
 
     writeInt( 0, output_flag );
@@ -543,7 +479,7 @@ void ONScripterLabel::saveSaveFile2( bool output_flag )
         writeInt( sprite_info[i].pos.y * screen_ratio2 / screen_ratio1, output_flag );
         writeInt( sprite_info[i].visible?1:0, output_flag );
         writeInt( sprite_info[i].current_cell, output_flag );
-	writeInt( -1, output_flag );
+        writeInt( -1, output_flag );
     }
 
     writeVariables( 0, script_h.global_variable_border, output_flag );
@@ -642,7 +578,7 @@ void ONScripterLabel::saveSaveFile2( bool output_flag )
             writeInt( 0, output_flag );
         }
     }
-    
+
     writeInt( 1, output_flag );
     writeInt( 0, output_flag );
     writeInt( 1, output_flag );
@@ -662,15 +598,13 @@ void ONScripterLabel::saveSaveFile2( bool output_flag )
     writeInt( ruby_struct.font_size_xy[0], output_flag );
     writeInt( ruby_struct.font_size_xy[1], output_flag );
     writeStr( ruby_struct.font_name, output_flag );
-
+    
     writeInt( 0, output_flag );
     
     for ( i=0 ; i<MAX_SPRITE2_NUM ; i++ ){
         writeStr( sprite2_info[i].image_name, output_flag );
-        writeInt( sprite2_info[i].pos.x * screen_ratio2 / screen_ratio1,
-		  output_flag );
-        writeInt( sprite2_info[i].pos.y * screen_ratio2 / screen_ratio1,
-		  output_flag );
+        writeInt( sprite2_info[i].pos.x * screen_ratio2 / screen_ratio1, output_flag );
+        writeInt( sprite2_info[i].pos.y * screen_ratio2 / screen_ratio1, output_flag );
         writeInt( sprite2_info[i].scale_x, output_flag );
         writeInt( sprite2_info[i].scale_y, output_flag );
         writeInt( sprite2_info[i].rot, output_flag );
@@ -688,8 +622,8 @@ void ONScripterLabel::saveSaveFile2( bool output_flag )
     writeInt( 0, output_flag );
     writeInt( 0, output_flag );
     writeInt( 0, output_flag );
-
-    TextBuffer* tb = current_text_buffer;
+    
+    TextBuffer *tb = current_text_buffer;
     int text_num = 0;
     while( tb != start_text_buffer ){
         tb = tb->previous;

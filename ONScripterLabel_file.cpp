@@ -21,8 +21,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Modified by Haeleth, Autumn 2006, to better support OS X/Linux packaging.
-
 #include "ONScripterLabel.h"
 
 #if defined(LINUX) || defined(MACOSX)
@@ -52,7 +50,7 @@ void ONScripterLabel::searchSaveFile( SaveFileInfo &save_file_info, int no )
 
     script_h.getStringFromInteger( save_file_info.sjis_no, no, (num_save_file >= 10)?2:1 );
 #if defined(LINUX) || defined(MACOSX)
-    sprintf( file_name, "%ssave%d.dat", script_h.save_path, no );
+    sprintf( file_name, "%ssave%d.dat", archive_path, no );
     struct stat buf;
     struct tm *tm;
     if ( stat( file_name, &buf ) != 0 ){
@@ -60,13 +58,13 @@ void ONScripterLabel::searchSaveFile( SaveFileInfo &save_file_info, int no )
         return;
     }
     tm = localtime( &buf.st_mtime );
-
+        
     save_file_info.month  = tm->tm_mon + 1;
     save_file_info.day    = tm->tm_mday;
     save_file_info.hour   = tm->tm_hour;
     save_file_info.minute = tm->tm_min;
 #elif defined(WIN32)
-    sprintf( file_name, "%ssave%d.dat", script_h.save_path, no );
+    sprintf( file_name, "%ssave%d.dat", archive_path, no );
     HANDLE  handle;
     FILETIME    tm, ltm;
     SYSTEMTIME  stm;
@@ -77,7 +75,7 @@ void ONScripterLabel::searchSaveFile( SaveFileInfo &save_file_info, int no )
         save_file_info.valid = false;
         return;
     }
-
+            
     GetFileTime( handle, NULL, NULL, &tm );
     FileTimeToLocalFileTime( &tm, &ltm );
     FileTimeToSystemTime( &ltm, &stm );
@@ -88,7 +86,7 @@ void ONScripterLabel::searchSaveFile( SaveFileInfo &save_file_info, int no )
     save_file_info.hour   = stm.wHour;
     save_file_info.minute = stm.wMinute;
 #elif defined(MACOS9)
-	sprintf( file_name, "%ssave%d.dat", script_h.save_path, no );
+	sprintf( file_name, "%ssave%d.dat", archive_path, no );
 	CInfoPBRec  pb;
 	Str255      p_file_name;
 	FSSpec      file_spec;
@@ -112,7 +110,7 @@ void ONScripterLabel::searchSaveFile( SaveFileInfo &save_file_info, int no )
 	save_file_info.hour   = tm.hour;
 	save_file_info.minute = tm.minute;
 #elif defined(PSP)
-    sprintf( file_name, "%ssave%d.dat", script_h.save_path, no );
+    sprintf( file_name, "%ssave%d.dat", archive_path, no );
     SceIoStat buf;
     if ( sceIoGetstat(file_name, &buf)<0 ){
         save_file_info.valid = false;
@@ -149,14 +147,14 @@ int ONScripterLabel::loadSaveFile( int no )
     char filename[16];
     sprintf( filename, "save%d.dat", no );
     if (loadFileIOBuf( filename )){
-        //fprintf( stderr, "can't open save file %s\n", filename );
+        fprintf( stderr, "can't open save file %s\n", filename );
         return -1;
     }
 
     char *str = NULL;
     int  i, j, k, address;
     int  file_version;
-
+    
     /* ---------------------------------------- */
     /* Load magic number */
     for ( i=0 ; i<(int)strlen( SAVEFILE_MAGIC_NUMBER ) ; i++ )
@@ -173,7 +171,7 @@ int ONScripterLabel::loadSaveFile( int no )
         if ( readInt() != 0xff ) ons_ver0_flag = true;
         if ( readInt() != 0xff ) ons_ver0_flag = true;
         if ( readInt() != 0xff ) ons_ver0_flag = true;
-
+        
         file_io_buf_ptr = 0;
         if ( !ons_ver0_flag ){
             printf("Save file version is unknown\n" );
@@ -185,7 +183,7 @@ int ONScripterLabel::loadSaveFile( int no )
         file_version = readChar() * 100;
         file_version += readChar();
     }
-    //printf("Save file version is %d.%d\n", file_version/100, file_version%100 );
+    printf("Save file version is %d.%d\n", file_version/100, file_version%100 );
     if ( file_version > SAVEFILE_VERSION_MAJOR*100 + SAVEFILE_VERSION_MINOR ){
         fprintf( stderr, "Save file is newer than %d.%d, please use the latest ONScripter.\n", SAVEFILE_VERSION_MAJOR, SAVEFILE_VERSION_MINOR );
         return -1;
@@ -193,7 +191,7 @@ int ONScripterLabel::loadSaveFile( int no )
 
     if ( file_version >= 200 )
         return loadSaveFile2( file_version );
-
+    
     deleteNestInfo();
 
     /* ---------------------------------------- */
@@ -210,7 +208,7 @@ int ONScripterLabel::loadSaveFile( int no )
         num_xy[1] = readInt();
         current_text_buffer->num = (num_xy[0]*2+1)*num_xy[1];
         if (sentence_font.getTateyokoMode() == FontInfo::TATE_MODE)
-            current_text_buffer->num = (num_xy[1]*2+1)*num_xy[0];
+            current_text_buffer->num = (num_xy[1]*2+1)*num_xy[1];
         int xy[2];
         xy[0] = readInt();
         xy[1] = readInt();
@@ -297,7 +295,7 @@ int ONScripterLabel::loadSaveFile( int no )
         sentence_font.window_color[i] = readInt();
     readStr( &sentence_font_info.image_name );
 
-    sentence_font_info.pos.x = readInt() * screen_ratio1 / screen_ratio2;
+    sentence_font_info.pos.x = readInt() * screen_ratio1 / screen_ratio2; 
     sentence_font_info.pos.y = readInt() * screen_ratio1 / screen_ratio2;
     sentence_font_info.pos.w = readInt() * screen_ratio1 / screen_ratio2;
     sentence_font_info.pos.h = readInt() * screen_ratio1 / screen_ratio2;
@@ -322,7 +320,7 @@ int ONScripterLabel::loadSaveFile( int no )
     while( 1 ){
         readStr( &str );
         current_label_info = script_h.lookupLabel( str );
-
+        
         current_line = readInt() + 2;
         char *buf = current_label_info.label_header;
         while( buf < current_label_info.start_address ){
@@ -331,7 +329,7 @@ int ONScripterLabel::loadSaveFile( int no )
         }
 
         offset = readInt();
-
+            
         script_h.setCurrent( current_label_info.label_header );
         script_h.skipLine( current_line );
 
@@ -345,7 +343,7 @@ int ONScripterLabel::loadSaveFile( int no )
         else{
             offset += readInt();
         }
-
+        
         if ( readChar() == 0 ) break;
 
         last_nest_info->next = new NestInfo();
@@ -354,7 +352,7 @@ int ONScripterLabel::loadSaveFile( int no )
         last_nest_info->next_script = script_h.getCurrent() + offset;
     }
     script_h.setCurrent( script_h.getCurrent() + offset );
-
+    
     int tmp_event_mode = readChar();
 
     /* ---------------------------------------- */
@@ -378,7 +376,7 @@ int ONScripterLabel::loadSaveFile( int no )
         monocro_color_lut[i][1] = (monocro_color[1] * i) >> 8;
         monocro_color_lut[i][2] = (monocro_color[2] * i) >> 8;
     }
-
+    
     /* Load nega flag */
     if ( file_version >= 104 ){
         nega_mode = (unsigned char)readChar();
@@ -394,7 +392,7 @@ int ONScripterLabel::loadSaveFile( int no )
     readStr( &bg_info.file_name );
     setupAnimationInfo( &bg_info );
     bg_effect_image = (EFFECT_IMAGE)readChar();
-
+    
     if (bg_effect_image == COLOR_EFFECT_IMAGE){
         bg_info.allocImage( screen_width, screen_height );
         bg_info.fill( bg_info.color[0], bg_info.color[1], bg_info.color[2], 0xff );
@@ -461,7 +459,7 @@ int ONScripterLabel::loadSaveFile( int no )
         setStr( &midi_file_name, NULL );
         midi_play_loop_flag = false;
     }
-
+    
     if ( current_cd_track >= 0 ){
         playCDAudio();
     }
@@ -477,7 +475,7 @@ int ONScripterLabel::loadSaveFile( int no )
     /* ---------------------------------------- */
     /* Load rmode flag */
     rmode_flag = (readChar()==1)?true:false;
-
+    
     /* ---------------------------------------- */
     /* Load text on flag */
     text_on_flag = (readChar()==1)?true:false;
@@ -497,9 +495,9 @@ int ONScripterLabel::loadSaveFile( int no )
     else
         event_mode |= WAIT_TIMER_MODE;
     if (event_mode & WAIT_INPUT_MODE) event_mode |= WAIT_TEXT_MODE;
-
+    
     draw_cursor_flag = (clickstr_state == CLICK_NONE)?false:true;
-
+    
     return 0;
 }
 
@@ -524,18 +522,24 @@ int ONScripterLabel::saveSaveFile( int no )
         save_data_len = file_io_buf_ptr;
         memcpy(save_data_buf, file_io_buf, save_data_len);
     }
-
+    
     if ( no >= 0 ){
         saveAll();
 
         char filename[16];
         sprintf( filename, "save%d.dat", no );
-
+        
         memcpy(file_io_buf, save_data_buf, save_data_len);
         file_io_buf_ptr = save_data_len;
         if (saveFileIOBuf( filename )){
+            fprintf( stderr, "can't open save file %s for writing\n", filename );
             return -1;
         }
+
+        size_t magic_len = strlen(SAVEFILE_MAGIC_NUMBER)+2;
+        sprintf( filename, RELATIVEPATH "sav%csave%d.dat", DELIMITER, no );
+        if (saveFileIOBuf( filename, magic_len ))
+            fprintf( stderr, "can't open save file %s for writing (not an error)\n", filename );
     }
 
     return 0;

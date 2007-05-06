@@ -21,10 +21,55 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Modified by Haeleth, Autumn 2006: fix typos, separate save and root paths
-
 #include "ONScripterLabel.h"
 #include "version.h"
+
+#if defined(PSP)
+#include <pspkernel.h>
+#include <pspdebug.h>
+#include <pspctrl.h>
+#include <pspdisplay.h>
+#include <stdio.h>
+#include <pspmoduleinfo.h>
+#include <psppower.h>
+
+int psp_power_resume_number = 0;
+
+int exit_callback(int arg1, int arg2, void *common)
+{
+    sceKernelExitGame();
+    return 0;
+}
+
+int power_callback(int unknown, int pwrflags, void *common)
+{
+    if (pwrflags & PSP_POWER_CB_RESUMING)
+        psp_power_resume_number++;
+    
+    return 0;
+}
+
+int CallbackThread(SceSize args, void *argp)
+{
+    int cbid;
+    cbid = sceKernelCreateCallback("Exit Callback", exit_callback, NULL);
+    sceKernelRegisterExitCallback(cbid);
+    cbid = sceKernelCreateCallback("Power Callback", power_callback, NULL);
+    scePowerRegisterCallback(0, cbid);
+    sceKernelSleepThreadCB();
+
+    return 0;
+}
+
+int SetupCallbacks(void)
+{
+    int thid = 0;
+    thid = sceKernelCreateThread("update_thread", CallbackThread, 0x11, 0xFA0, 0, 0);
+    if (thid >= 0)
+        sceKernelStartThread(thid, 0, 0);
+    return thid;
+}
+#endif
 
 void optionHelp()
 {
@@ -34,25 +79,9 @@ void optionHelp()
     printf( "  -f, --font file\tset a TTF font file\n");
     printf( "      --registry file\tset a registry file\n");
     printf( "      --dll file\tset a dll file\n");
-#if   defined WIN32
     printf( "  -r, --root path\tset the root path to the archives\n");
-    printf( "  -s, --save path\tset the path to use for saved games (default: folder in All Users profile)\n");
-#elif defined MACOSX
-    printf( "  -r, --root path\tset the root path to the archives (default: Resources in ONScripter bundle)\n");
-    printf( "  -s, --save path\tset the path to use for saved games (default: folder in ~/Library/Preferences)\n");
-#elif defined LINUX
-    printf( "  -r, --root path\tset the root path to the archives\n");
-    printf( "  -s, --save path\tset the path to use for saved games (default: hidden subdirectory in ~)\n");
-#else
-    printf( "  -r, --root path\tset the root path to the archives\n");
-    printf( "  -s, --save path\tset the path to use for saved games (default: same as root path)\n");
-#endif
-    printf( "      --fullscreen\tstart in fullscreen mode\n");
+    printf( "      --fullcsreen\tstart in fullscreen mode\n");
     printf( "      --window\t\tstart in window mode\n");
-#ifdef RCA_SCALE
-    printf( "      --widescreen\tTransform game to match widescreen monitors\n");
-    printf( "      --scale\t\tScale game to native display size. Yields small sharp text.\n");
-#endif
     printf( "      --force-button-shortcut\tignore useescspc and getenter command\n");
     printf( "      --enable-wheeldown-advance\tadvance the text on mouse wheeldown event\n");
     printf( "      --disable-rescale\tdo not rescale the images in the archives when compiled with -DPDA\n");
@@ -65,13 +94,12 @@ void optionHelp()
 
 void optionVersion()
 {
-    printf("ONScripter version %s(%d.%02d)\n", ONS_VERSION, NSC_VERSION/100, NSC_VERSION%100 );
     printf("Written by Ogapee <ogapee@aqua.dti2.ne.jp>\n\n");
     printf("Copyright (c) 2001-2006 Ogapee.\n");
     printf("This is free software; see the source for copying conditions.\n");
     exit(0);
 }
-#ifdef QWS
+#if defined(QWS)
 int SDL_main( int argc, char **argv )
 #elif defined(PSP)
 extern "C" int main( int argc, char **argv )
@@ -79,11 +107,14 @@ extern "C" int main( int argc, char **argv )
 int main( int argc, char **argv )
 #endif
 {
+    printf("ONScripter version %s(%d.%02d)\n", ONS_VERSION, NSC_VERSION/100, NSC_VERSION%100 );
+
     ONScripterLabel ons;
 
-#ifdef PSP
+#if defined(PSP)
     ons.disableRescale();
     ons.enableButtonShortCut();
+    SetupCallbacks();
 #endif
 
     // ----------------------------------------
@@ -125,11 +156,6 @@ int main( int argc, char **argv )
                 argv++;
                 ons.setArchivePath(argv[0]);
             }
-            else if ( !strcmp( argv[0]+1, "s" ) || !strcmp( argv[0]+1, "-save" ) ){
-                argc--;
-                argv++;
-                ons.setSavePath(argv[0]);
-            }
             else if ( !strcmp( argv[0]+1, "-fullscreen" ) ){
                 ons.setFullscreenMode();
             }
@@ -153,14 +179,6 @@ int main( int argc, char **argv )
                 argv++;
                 ons.setKeyEXE(argv[0]);
             }
-#ifdef RCA_SCALE
-            else if ( !strcmp( argv[0]+1, "-widescreen" ) ){
-                ons.setWidescreen();
-            }
-            else if ( !strcmp( argv[0]+1, "-scale" ) ){
-                ons.setScaled();
-            }
-#endif
             else{
                 printf(" unknown option %s\n", argv[0] );
             }

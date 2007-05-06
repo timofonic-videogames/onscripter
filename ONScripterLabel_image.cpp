@@ -49,7 +49,7 @@ int ONScripterLabel::resizeSurface( SDL_Surface *src, SDL_Surface *dst )
     return 0;
 }
 
-#ifdef BPP16
+#if defined(BPP16)
 #define blend_pixel(){\
     Uint32 s1 = (*src1_buffer | *src1_buffer << 16) & 0x07e0f81f; \
     Uint32 s2 = (*src2_buffer | *src2_buffer << 16) & 0x07e0f81f; \
@@ -177,7 +177,7 @@ void ONScripterLabel::alphaBlend32( SDL_Surface *dst_surface, SDL_Rect dst_rect,
 
     unsigned char *src_buffer = (unsigned char*)src_surface->pixels + src_surface->pitch * y2 + x2;
     ONSBuf *dst_buffer = (AnimationInfo::ONSBuf *)dst_surface->pixels + dst_surface->w * dst_rect.y + dst_rect.x;
-#ifdef BPP16
+#if defined(BPP16)    
     Uint32 src_color = ((color.r & 0xf8) << 8 |
                         (color.g & 0xfc) << 3 |
                         (color.b & 0xf8) >> 3);
@@ -196,7 +196,7 @@ void ONScripterLabel::alphaBlend32( SDL_Surface *dst_surface, SDL_Rect dst_rect,
             mask2 = *src_buffer >> fmt->Bloss;
             mask1 = mask2 ^ fmt->Bmask;
             
-#ifdef BPP16
+#if defined(BPP16)
             Uint32 d1 = (*dst_buffer | *dst_buffer << 16) & 0x07e0f81f;
 
             mask_rb = (d1 + ((src_color-d1) * mask2 >> 5)) & 0x07e0f81f; // red, green and blue pixel
@@ -265,91 +265,94 @@ void ONScripterLabel::refreshSurface( SDL_Surface *surface, SDL_Rect *clip_src, 
     SDL_Rect clip = {0, 0, surface->w, surface->h};
     if (clip_src) if ( AnimationInfo::doClipping( &clip, clip_src ) ) return;
 
-    bool is_drawable = !(refresh_mode & REFRESH_COMP_MODE);
-    
+    bool is_drawable = true;
+    if (refresh_mode & REFRESH_COMP_MODE) is_drawable = false;
+
     int i, top;
-    if (is_drawable) {
-	SDL_FillRect( surface, &clip, SDL_MapRGB( surface->format, 0, 0, 0) );
-	drawTaggedSurface( surface, &bg_info, clip );
+    if (is_drawable){
+        SDL_FillRect( surface, &clip, SDL_MapRGB( surface->format, 0, 0, 0) );
+        drawTaggedSurface( surface, &bg_info, clip );
+    }
     
-	if ( !all_sprite_hide_flag ){
-	    if ( z_order < 10 && refresh_mode & REFRESH_SAYA_MODE )
-		top = 9;
-	    else
-		top = z_order;
-	    for ( i=MAX_SPRITE_NUM-1 ; i>top ; i-- ){
-		if ( sprite_info[i].image_surface && sprite_info[i].visible ){
-		    drawTaggedSurface( surface, &sprite_info[i], clip );
-		}
-	    }
-	}
-	
-	for ( i=0 ; i<3 ; i++ ){
-	    if (human_order[2-i] >= 0 && tachi_info[human_order[2-i]].image_surface){
-		drawTaggedSurface( surface, &tachi_info[human_order[2-i]], clip );
-	    }
-	}
+    if ( !all_sprite_hide_flag && is_drawable ){
+        if ( z_order < 10 && refresh_mode & REFRESH_SAYA_MODE )
+            top = 9;
+        else
+            top = z_order;
+        for ( i=MAX_SPRITE_NUM-1 ; i>top ; i-- ){
+            if ( sprite_info[i].image_surface && sprite_info[i].visible ){
+                drawTaggedSurface( surface, &sprite_info[i], clip );
+            }
+        }
+    }
+
+    if ( is_drawable ){
+        for ( i=0 ; i<3 ; i++ ){
+            if (human_order[2-i] >= 0 && tachi_info[human_order[2-i]].image_surface){
+                drawTaggedSurface( surface, &tachi_info[human_order[2-i]], clip );
+            }
+        }
     }
 
     if ( windowback_flag ){
-	if (is_drawable) {
-	    if ( nega_mode == 1 ) makeNegaSurface( surface, clip );
-	    if ( monocro_flag )   makeMonochromeSurface( surface, clip );
-	    if ( nega_mode == 2 ) makeNegaSurface( surface, clip );
-	    SDL_BlitSurface(surface, &clip, accumulation_comp_surface, &clip);
-	}
+        if (is_drawable){
+            if ( nega_mode == 1 ) makeNegaSurface( surface, clip );
+            if ( monocro_flag )   makeMonochromeSurface( surface, clip );
+            if ( nega_mode == 2 ) makeNegaSurface( surface, clip );
+        }
 
+        if (is_drawable)
+            SDL_BlitSurface( surface, &clip, accumulation_comp_surface, &clip );
+            
         if (refresh_mode & REFRESH_SHADOW_MODE)
             shadowTextDisplay( surface, clip );
         if (refresh_mode & REFRESH_TEXT_MODE)
             text_info.blendOnSurface( surface, 0, 0, clip );
 
-	is_drawable = true;
+        is_drawable = true;
     }
 
-    if (is_drawable) {
-	if ( !all_sprite_hide_flag ){
-	    if ( refresh_mode & REFRESH_SAYA_MODE )
-		top = 10;
-	    else
-		top = 0;
-	    for ( i=z_order ; i>=top ; i-- ){
-		if ( sprite_info[i].image_surface && sprite_info[i].visible ){
-		    drawTaggedSurface( surface, &sprite_info[i], clip );
-		}
-	    }
-	}
+    if ( !all_sprite_hide_flag && is_drawable ){
+        if ( refresh_mode & REFRESH_SAYA_MODE )
+            top = 10;
+        else
+            top = 0;
+        for ( i=z_order ; i>=top ; i-- ){
+            if ( sprite_info[i].image_surface && sprite_info[i].visible ){
+                drawTaggedSurface( surface, &sprite_info[i], clip );
+            }
+        }
+    }
 
-	if ( !windowback_flag ){
-	    if ( nega_mode == 1 ) makeNegaSurface( surface, clip );
-	    if ( monocro_flag )   makeMonochromeSurface( surface, clip );
-	    if ( nega_mode == 2 ) makeNegaSurface( surface, clip );
-	}
+    if ( !windowback_flag && is_drawable ){
+        if ( nega_mode == 1 ) makeNegaSurface( surface, clip );
+        if ( monocro_flag )   makeMonochromeSurface( surface, clip );
+        if ( nega_mode == 2 ) makeNegaSurface( surface, clip );
+    }
     
-	if ( !( refresh_mode & REFRESH_SAYA_MODE ) ){
-	    for ( i=0 ; i<MAX_PARAM_NUM ; i++ ){
-		if ( bar_info[i] ) {
-		    drawTaggedSurface( surface, bar_info[i], clip );
-		}
-	    }
-	    for ( i=0 ; i<MAX_PARAM_NUM ; i++ ){
-		if ( prnum_info[i] ){
-		    drawTaggedSurface( surface, prnum_info[i], clip );
-		}
-	    }
-	}
+    if ( !( refresh_mode & REFRESH_SAYA_MODE ) && is_drawable ){
+        for ( i=0 ; i<MAX_PARAM_NUM ; i++ ){
+            if ( bar_info[i] ) {
+                drawTaggedSurface( surface, bar_info[i], clip );
+            }
+        }
+        for ( i=0 ; i<MAX_PARAM_NUM ; i++ ){
+            if ( prnum_info[i] ){
+                drawTaggedSurface( surface, prnum_info[i], clip );
+            }
+        }
     }
 
     if ( !windowback_flag ){
-	if (is_drawable)
+        if (is_drawable)
             SDL_BlitSurface( surface, &clip, accumulation_comp_surface, &clip );
-
+        
         if (refresh_mode & REFRESH_SHADOW_MODE)
             shadowTextDisplay( surface, clip );
         if (refresh_mode & REFRESH_TEXT_MODE)
             text_info.blendOnSurface( surface, 0, 0, clip );
 
-	is_drawable = true;
+        is_drawable = true;
     }
 
     if ( refresh_mode & REFRESH_CURSOR_MODE && !textgosub_label ){
@@ -368,9 +371,8 @@ void ONScripterLabel::refreshSurface( SDL_Surface *surface, SDL_Rect *clip_src, 
     }
 }
 
-void ONScripterLabel::refreshSprite( int sprite_no, bool active_flag,
-				     int cell_no, SDL_Rect *check_src_rect,
-				     SDL_Rect *check_dst_rect )
+void ONScripterLabel::refreshSprite( int sprite_no, bool active_flag, int cell_no,
+                                     SDL_Rect *check_src_rect, SDL_Rect *check_dst_rect )
 {
     if ( sprite_info[sprite_no].image_name && 
          ( sprite_info[ sprite_no ].visible != active_flag ||
@@ -408,29 +410,8 @@ void ONScripterLabel::createBackground()
             bg_info.trans_mode = AnimationInfo::TRANS_COPY;
             setupAnimationInfo( &bg_info );
             if (bg_info.image_surface){
-#ifndef RCA_SCALE
                 bg_info.pos.x = (screen_width - bg_info.image_surface->w) / 2;
                 bg_info.pos.y = (screen_height - bg_info.image_surface->h) / 2;
-#else
-                bg_info.pos.x = (screen_width - bg_info.image_surface->w *
-				 scr_stretch_x) / 2;
-                bg_info.pos.y = (screen_height - bg_info.image_surface->h *
-				 scr_stretch_y) / 2;
-                if (screen_width != bg_info.image_surface->w) {
-                    SDL_PixelFormat *fmt = bg_info.image_surface->format;
-                    SDL_Surface* ret =
-			SDL_CreateRGBSurface( SDL_SWSURFACE,
-					      screen_width, screen_height,
-                                              fmt->BitsPerPixel,
-					      fmt->Rmask, fmt->Gmask,
-					      fmt->Bmask, fmt->Amask );
-                    resizeSurface( bg_info.image_surface, ret );
-                    SDL_FreeSurface( bg_info.image_surface );
-                    bg_info.image_surface = ret;
-                    bg_info.pos.w = image_surface->w = screen_width;
-                    bg_info.pos.h = image_surface->h = screen_height;
-                }
-#endif
             }
             bg_effect_image = BG_EFFECT_IMAGE;
         }

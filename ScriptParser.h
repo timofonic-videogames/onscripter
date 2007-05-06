@@ -21,8 +21,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Modified by Haeleth, Autumn 2006, to better support OS X/Linux packaging.
-
 #ifndef __SCRIPT_PARSER_H__
 #define __SCRIPT_PARSER_H__
 
@@ -61,7 +59,7 @@ public:
     int open();
     int parseLine();
 
-    FILE *fopen(const char *path, const char *mode, const bool save = false);
+    FILE *fopen(const char *path, const char *mode);
     void saveGlovalData();
 
     /* Command */
@@ -231,9 +229,6 @@ protected:
 
     /* ---------------------------------------- */
     /* Global definitions */
-#ifdef RCA_SCALE
-    float scr_stretch_x, scr_stretch_y;
-#endif
     int screen_ratio1, screen_ratio2;
     int screen_width, screen_height;
     int screen_texture_width, screen_texture_height;

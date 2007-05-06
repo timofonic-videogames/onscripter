@@ -2,7 +2,7 @@
  *
  *  SarReader.cpp - Reader from a SAR archive
  *
- *  Copyright (c) 2001-2006 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2007 Ogapee. All rights reserved.
  *
  *  ogapee@aqua.dti2.ne.jp
  *
@@ -23,6 +23,10 @@
 
 #include "SarReader.h"
 #define WRITE_LENGTH 4096
+
+#if defined(PSP)
+extern int psp_power_resume_number;
+#endif
 
 SarReader::SarReader( char *path, const unsigned char *key_table )
         :DirectReader( path, key_table )
@@ -286,6 +290,14 @@ size_t SarReader::getFileSub( ArchiveInfo *ai, const char *file_name, unsigned c
 {
     unsigned int i = getIndexFromFile( ai, file_name );
     if ( i == ai->num_of_files ) return 0;
+
+#if defined(PSP)
+    if (ai->power_resume_number != psp_power_resume_number){
+        FILE *fp = fopen(ai->file_name, "rb");
+        ai->file_handle = fp;
+        ai->power_resume_number = psp_power_resume_number;
+    }
+#endif
 
     int type = ai->fi_list[i].compression_type;
     if ( type == NO_COMPRESSION ) type = getRegisteredCompressionType( file_name );

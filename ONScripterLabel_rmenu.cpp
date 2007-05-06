@@ -71,7 +71,7 @@ void ONScripterLabel::leaveSystemCall( bool restore_flag )
     key_pressed_flag = false;
 
     if ( restore_flag ){
-
+        
         current_text_buffer = cached_text_buffer;
         restoreTextBuffer();
         root_button_link.next = shelter_button_link;
@@ -96,11 +96,11 @@ void ONScripterLabel::executeSystemCall()
 {
     //printf("*****  executeSystemCall %d %d %d*****\n", system_menu_enter_flag, volatile_button_state.button, system_menu_mode );
     dirty_rect.fill( screen_width, screen_height );
-
+    
     if ( !system_menu_enter_flag ){
         enterSystemCall();
     }
-
+    
     switch( system_menu_mode ){
       case SYSTEM_SKIP:
         executeSystemSkip();
@@ -152,14 +152,14 @@ void ONScripterLabel::executeSystemMenu()
 
         if ( current_button_state.button == -1 ){
             if ( menuselectvoice_file_name[MENUSELECTVOICE_CANCEL] )
-                playSound(menuselectvoice_file_name[MENUSELECTVOICE_CANCEL],
+                playSound(menuselectvoice_file_name[MENUSELECTVOICE_CANCEL], 
                           SOUND_WAVE|SOUND_OGG, false, MIX_WAVE_CHANNEL);
             leaveSystemCall();
             return;
         }
-
+    
         if ( menuselectvoice_file_name[MENUSELECTVOICE_CLICK] )
-            playSound(menuselectvoice_file_name[MENUSELECTVOICE_CLICK],
+            playSound(menuselectvoice_file_name[MENUSELECTVOICE_CLICK], 
                       SOUND_WAVE|SOUND_OGG, false, MIX_WAVE_CHANNEL);
 
         link = root_rmenu_link.next;
@@ -266,7 +266,7 @@ void ONScripterLabel::executeWindowErase()
 void ONScripterLabel::executeSystemLoad()
 {
     SaveFileInfo save_file_info;
-
+    
     current_font = &menu_font;
     if ( event_mode & WAIT_BUTTON_MODE ){
 
@@ -295,36 +295,19 @@ void ONScripterLabel::executeSystemLoad()
         system_menu_mode = SYSTEM_LOAD;
 
         text_info.fill( 0, 0, 0, 0 );
-
+        
         menu_font.num_xy[0] = (strlen(save_item_name)+1)/2+2+13;
         menu_font.num_xy[1] = num_save_file+2;
         menu_font.top_xy[0] = (screen_width * screen_ratio2 / screen_ratio1 - menu_font.num_xy[0] * menu_font.pitch_xy[0]) / 2;
         menu_font.top_xy[1] = (screen_height * screen_ratio2 / screen_ratio1  - menu_font.num_xy[1] * menu_font.pitch_xy[1]) / 2;
         menu_font.setXY( (menu_font.num_xy[0] - strlen( load_menu_name ) / 2) / 2, 0 );
-//        uchar3 color = {0xff, 0xff, 0xff};
-        // drawString( load_menu_name, color, &menu_font, true, accumulation_surface, NULL, &text_info );
-        /* The following three lines are part of a hack allowing the
-           menu name to show up when custom right-menus are in
-           existence.  As it stands in ONScripter, these menu names
-           get drawn in the accumulation buffer one level below the
-           menu itself -- i.e. onto the main playing field itself.  So
-           when the user right-clicks out of the right- click menu,
-           that string remains there for the rest of play.  I do not
-           currently understand why this is, but I do know that using
-           ButtonLink and getSelectableSentence to create a
-           nonselectable text button instead of using drawString as
-           above will not trigger this defect.  I don't know why this
-           is right now; more investigation is warranted.  Do not
-           recommend for integration. [Seung Park, 20060331] */
-        ButtonLink *ooga = getSelectableSentence( load_menu_name, &menu_font, false );
-	root_button_link.insert( ooga );
-        ooga->no = 0;
-	
+        uchar3 color = {0xff, 0xff, 0xff};
+        drawString( load_menu_name, color, &menu_font, true, accumulation_surface, NULL, &text_info );
         menu_font.newLine();
         menu_font.newLine();
-
+        
         flush( refreshMode() );
-
+        
         bool nofile_flag;
         char *buffer = new char[ strlen( save_item_name ) + 30 + 1 ];
 
@@ -389,33 +372,16 @@ void ONScripterLabel::executeSystemSave()
         menu_font.top_xy[0] = (screen_width * screen_ratio2 / screen_ratio1 - menu_font.num_xy[0] * menu_font.pitch_xy[0]) / 2;
         menu_font.top_xy[1] = (screen_height * screen_ratio2 / screen_ratio1  - menu_font.num_xy[1] * menu_font.pitch_xy[1]) / 2;
         menu_font.setXY((menu_font.num_xy[0] - strlen( save_menu_name ) / 2 ) / 2, 0);
-//        uchar3 color = {0xff, 0xff, 0xff};
-        // drawString( save_menu_name, color, &menu_font, true, accumulation_surface, NULL, &text_info );
-        /* The following three lines are part of a hack allowing the
-           menu name to show up when custom right-menus are in
-           existence.  As it stands in ONScripter, these menu names
-           get drawn in the accumulation buffer one level below the
-           menu itself -- i.e. onto the main playing field itself.  So
-           when the user right-clicks out of the right- click menu,
-           that string remains there for the rest of play.  I do not
-           currently understand why this is, but I do know that using
-           ButtonLink and getSelectableSentence to create a
-           nonselectable text button instead of using drawString as
-           above will not trigger this defect.  I don't know why this
-           is right now; more investigation is warranted.  Do not
-           recommend for integration. [Seung Park, 20060331] */
-        ButtonLink *ooga = getSelectableSentence( save_menu_name, &menu_font, false );
-		root_button_link.insert( ooga );
-        ooga->no = 0;
-
+        uchar3 color = {0xff, 0xff, 0xff};
+        drawString( save_menu_name, color, &menu_font, true, accumulation_surface, NULL, &text_info );
         menu_font.newLine();
         menu_font.newLine();
-
+        
         flush( refreshMode() );
-
+        
         bool nofile_flag;
         char *buffer = new char[ strlen( save_item_name ) + 30 + 1 ];
-
+    
         for ( unsigned int i=1 ; i<=num_save_file ; i++ ){
             SaveFileInfo save_file_info;
             searchSaveFile( save_file_info, i );
@@ -452,7 +418,7 @@ void ONScripterLabel::executeSystemSave()
 void ONScripterLabel::executeSystemYesNo()
 {
     char name[64] = {'\0'};
-
+	
     current_font = &menu_font;
     if ( event_mode & WAIT_BUTTON_MODE ){
 
@@ -484,7 +450,7 @@ void ONScripterLabel::executeSystemYesNo()
                 indent_offset = 0;
                 line_enter_status = 0;
                 string_buffer_offset = 0;
-		break_flag = false;
+                break_flag = false;
 
                 if (loadgosub_label)
                     gosubReal( loadgosub_label, script_h.getCurrent() );
@@ -507,7 +473,7 @@ void ONScripterLabel::executeSystemYesNo()
                           SOUND_WAVE|SOUND_OGG, false, MIX_WAVE_CHANNEL);
             system_menu_mode = yesno_caller & 0xf;
             if (yesno_caller == SYSTEM_RESET)
-				leaveSystemCall();
+                leaveSystemCall();
             advancePhase();
         }
     }
@@ -532,35 +498,18 @@ void ONScripterLabel::executeSystemYesNo()
             strcpy( name, MESSAGE_RESET_CONFIRM );
         else if ( yesno_caller ==  SYSTEM_END )
             strcpy( name, MESSAGE_END_CONFIRM );
-
-
+        
+        
         menu_font.num_xy[0] = strlen(name)/2;
         menu_font.num_xy[1] = 3;
         menu_font.top_xy[0] = (screen_width * screen_ratio2 / screen_ratio1 - menu_font.num_xy[0] * menu_font.pitch_xy[0]) / 2;
         menu_font.top_xy[1] = (screen_height * screen_ratio2 / screen_ratio1  - menu_font.num_xy[1] * menu_font.pitch_xy[1]) / 2;
         menu_font.setXY(0, 0);
-//        uchar3 color = {0xff, 0xff, 0xff};
-
-        // drawString( name, color, &menu_font, true, accumulation_surface, NULL, &text_info );
-        /* The following three lines are part of a hack allowing the
-           menu name to show up when custom right-menus are in
-           existence.  As it stands in ONScripter, these menu names
-           get drawn in the accumulation buffer one level below the
-           menu itself -- i.e. onto the main playing field itself.  So
-           when the user right-clicks out of the right- click menu,
-           that string remains there for the rest of play.  I do not
-           currently understand why this is, but I do know that using
-           ButtonLink and getSelectableSentence to create a
-           nonselectable text button instead of using drawString as
-           above will not trigger this defect.  I don't know why this
-           is right now; more investigation is warranted.  Do not
-           recommend for integration. [Seung Park, 20060331] */
-        ButtonLink *ooga = getSelectableSentence( name, &menu_font, false );
-        root_button_link.insert( ooga );
-        ooga->no = 0;
+        uchar3 color = {0xff, 0xff, 0xff};
+        drawString( name, color, &menu_font, true, accumulation_surface, NULL, &text_info );
 
         flush( refreshMode() );
-
+        
         int offset1 = strlen(name)/5;
         int offset2 = strlen(name)/2 - offset1;
         strcpy( name, MESSAGE_YES );
@@ -574,9 +523,9 @@ void ONScripterLabel::executeSystemYesNo()
         button = getSelectableSentence( name, &menu_font, false );
         root_button_link.insert( button );
         button->no = 2;
-
+        
         flush( refreshMode() );
-
+        
         event_mode = WAIT_BUTTON_MODE;
         refreshMouseOverButton();
     }
@@ -585,14 +534,14 @@ void ONScripterLabel::executeSystemYesNo()
 void ONScripterLabel::setupLookbackButton()
 {
     deleteButtonLink();
-
+    
     /* ---------------------------------------- */
     /* Previous button check */
     if ( (current_text_buffer->previous->buffer2_count > 0 ) &&
          current_text_buffer != start_text_buffer ){
         ButtonLink *button = new ButtonLink();
         root_button_link.insert( button );
-
+    
         button->no = 1;
         button->select_rect.x = sentence_font_info.pos.x;
         button->select_rect.y = sentence_font_info.pos.y;
@@ -627,7 +576,7 @@ void ONScripterLabel::setupLookbackButton()
     if ( current_text_buffer->next != cached_text_buffer ){
         ButtonLink *button = new ButtonLink();
         root_button_link.insert( button );
-
+    
         button->no = 2;
         button->select_rect.x = sentence_font_info.pos.x;
         button->select_rect.y = sentence_font_info.pos.y + sentence_font_info.pos.h*2/3;
@@ -662,7 +611,7 @@ void ONScripterLabel::executeSystemLookback()
 {
     int i;
     uchar3 color;
-
+    
     current_font = &sentence_font;
     if ( event_mode & WAIT_BUTTON_MODE ){
         if ( current_button_state.button == 0 ||
@@ -683,7 +632,7 @@ void ONScripterLabel::executeSystemLookback()
             leaveSystemCall();
             return;
         }
-
+        
         if ( current_button_state.button == 1 ||
              current_button_state.button == -2 ){
             current_text_buffer = current_text_buffer->previous;
@@ -715,7 +664,7 @@ void ONScripterLabel::executeSystemLookback()
     }
     restoreTextBuffer();
     for ( i=0 ; i<3 ; i++ ) sentence_font.color[i] = color[i];
-
+    
     dirty_rect.fill( screen_width, screen_height );
     flush( refreshMode() );
 }

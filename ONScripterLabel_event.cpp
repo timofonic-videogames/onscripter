@@ -1,8 +1,8 @@
 /* -*- C++ -*-
- *
+ * 
  *  ONScripterLabel_event.cpp - Event handler of ONScripter
  *
- *  Copyright (c) 2001-2007 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2006 Ogapee. All rights reserved.
  *
  *  ogapee@aqua.dti2.ne.jp
  *
@@ -22,7 +22,7 @@
  */
 
 #include "ONScripterLabel.h"
-#ifdef LINUX
+#if defined(LINUX)
 #include <sys/types.h>
 #include <sys/wait.h>
 #endif
@@ -34,27 +34,11 @@
 #define ONS_WAVE_EVENT    (SDL_USEREVENT+4)
 #define ONS_MUSIC_EVENT   (SDL_USEREVENT+5)
 
-// This sets up the fadeout event flag for use in mp3 fadeout.  Recommend for integration.  [Seung Park, 20060621]
-#ifdef INSANI
-#define ONS_FADE_EVENT    (SDL_USEREVENT+6)
-#endif
-
 #define EDIT_MODE_PREFIX "[EDIT MODE]  "
 #define EDIT_SELECT_STRING "MP3 vol (m)  SE vol (s)  Voice vol (v)  Numeric variable (n)"
 
 static SDL_TimerID timer_id = NULL;
 SDL_TimerID timer_cdaudio_id = NULL;
-
-// This block does two things: it sets up the timer id for mp3 fadeout, and it also sets up a timer id for midi looping --
-// the reason we have a separate midi loop timer id here is that on Mac OS X, looping midis via SDL will cause SDL itself
-// to hard crash after the first play.  So, we work around that by manually causing the midis to loop.  This OS X midi
-// workaround is the work of Ben Carter.  Recommend for integration.  [Seung Park, 20060621]
-#ifdef INSANI
-SDL_TimerID timer_mp3fadeout_id = NULL;
-#ifdef MACOSX
-SDL_TimerID timer_midi_id = NULL;
-#endif
-#endif
 bool ext_music_play_once_flag = false;
 
 extern long decodeOggVorbis(OVInfo *ovi, unsigned char *buf_dst, long len, bool do_rate_conversion);
@@ -104,26 +88,14 @@ extern "C" Uint32 cdaudioCallback( Uint32 interval, void *param )
     return interval;
 }
 
-// Pushes the mp3 fadeout event onto the stack.  Part of our mp3 fadeout enabling patch.  Recommend for integration.  [Seung Park, 20060621]
-#ifdef INSANI
-extern "C" Uint32 SDLCALL mp3fadeoutCallback( Uint32 interval, void *param )
-{
-    SDL_Event event;
-    event.type = ONS_FADE_EVENT;
-    SDL_PushEvent( &event );
-
-    return interval;
-}
-#endif
-
 /* **************************************** *
  * OS Dependent Input Translation
  * **************************************** */
 
 SDLKey transKey(SDLKey key)
 {
-#ifdef IPODLINUX
-    switch(key){
+#if defined(IPODLINUX)
+ 	switch(key){
       case SDLK_m:      key = SDLK_UP;      break; /* Menu                   */
       case SDLK_d:      key = SDLK_DOWN;    break; /* Play/Pause             */
       case SDLK_f:      key = SDLK_RIGHT;   break; /* Fast forward           */
@@ -140,7 +112,7 @@ SDLKey transKey(SDLKey key)
 
 SDLKey transJoystickButton(Uint8 button)
 {
-#ifdef PSP
+#if defined(PSP)    
     SDLKey button_map[] = { SDLK_ESCAPE, /* TRIANGLE */
                             SDLK_RETURN, /* CIRCLE   */
                             SDLK_SPACE,  /* CROSS    */
@@ -188,7 +160,7 @@ SDL_KeyboardEvent transJoystickAxis(SDL_JoyAxisEvent &jaxis)
     else{
         event.keysym.sym = SDLK_UNKNOWN;
     }
-
+    
     return event;
 }
 
@@ -199,7 +171,7 @@ void ONScripterLabel::flushEventSub( SDL_Event &event )
              (cd_play_loop_flag && !cdaudio_flag ) ){
             stopBGM( true );
             if (music_file_name)
-            playSound(music_file_name, SOUND_OGG_STREAMING|SOUND_MP3, true);
+                playSound(music_file_name, SOUND_OGG_STREAMING|SOUND_MP3, true);
             else
                 playCDAudio();
         }
@@ -207,33 +179,6 @@ void ONScripterLabel::flushEventSub( SDL_Event &event )
             stopBGM( false );
         }
     }
-
-// The event handler for the mp3 fadeout event itself.  Simply sets the volume of the mp3 being played lower and lower until it's 0,
-// and until the requisite mp3 fadeout time has passed.  Recommend for integration.  [Seung Park, 20060621]
-#ifdef INSANI
-    else if ( event.type == ONS_FADE_EVENT ){
-		if (skip_flag || draw_one_page_flag || ctrl_pressed_status || skip_to_wait ) {
-			mp3fadeout_duration = 0;
-			if ( mp3_sample ) SMPEG_setvolume( mp3_sample, 0 );
-		}
-        Uint32 tmp = SDL_GetTicks() - mp3fadeout_start;
-        if ( tmp < mp3fadeout_duration ) {
-			tmp = mp3fadeout_duration - tmp;
-            tmp *= music_volume;
-			tmp /= mp3fadeout_duration;
-
-            if ( mp3_sample ) SMPEG_setvolume( mp3_sample, tmp );
-        } else {
-            SDL_RemoveTimer( timer_mp3fadeout_id );
-            timer_mp3fadeout_id = NULL;
-
-            event_mode &= ~WAIT_TIMER_MODE;
-            stopBGM( false );
-            advancePhase();
-        }
-	}
-#endif
-
     else if ( event.type == ONS_CDAUDIO_EVENT ){
         if ( cd_play_loop_flag ){
             stopBGM( true );
@@ -244,18 +189,9 @@ void ONScripterLabel::flushEventSub( SDL_Event &event )
         }
     }
     else if ( event.type == ONS_MIDI_EVENT ){
-#if defined(MACOSX) && defined(INSANI)
-		if (!Mix_PlayingMusic())
-		{
-			ext_music_play_once_flag = !midi_play_loop_flag;
-			Mix_FreeMusic( midi_info );
-			playMIDI(midi_play_loop_flag);
-		}
-#else
-		ext_music_play_once_flag = !midi_play_loop_flag;
-		Mix_FreeMusic( midi_info );
-		playMIDI(midi_play_loop_flag);
-#endif
+        ext_music_play_once_flag = !midi_play_loop_flag;
+        Mix_FreeMusic( midi_info );
+        playMIDI(midi_play_loop_flag);
     }
     else if ( event.type == ONS_MUSIC_EVENT ){
         ext_music_play_once_flag = !music_play_loop_flag;
@@ -266,10 +202,10 @@ void ONScripterLabel::flushEventSub( SDL_Event &event )
         if ( wave_sample[event.user.code] ){
             Mix_FreeChunk( wave_sample[event.user.code] );
             wave_sample[event.user.code] = NULL;
-            if (event.user.code == MIX_LOOPBGM_CHANNEL0 &&
+            if (event.user.code == MIX_LOOPBGM_CHANNEL0 && 
                 loop_bgm_name[1] &&
                 wave_sample[MIX_LOOPBGM_CHANNEL1])
-                Mix_PlayChannel(MIX_LOOPBGM_CHANNEL1,
+                Mix_PlayChannel(MIX_LOOPBGM_CHANNEL1, 
                                 wave_sample[MIX_LOOPBGM_CHANNEL1], -1);
         }
     }
@@ -285,7 +221,7 @@ void ONScripterLabel::flushEvent()
 void ONScripterLabel::startTimer( int count )
 {
     int duration = proceedAnimation();
-
+    
     if ( duration > 0 && duration < count ){
         resetRemainingTime( duration );
         advancePhase( duration );
@@ -309,36 +245,23 @@ void ONScripterLabel::advancePhase( int count )
         if (timer_id != NULL) return;
     }
 
-        SDL_Event event;
-        event.type = ONS_TIMER_EVENT;
-        SDL_PushEvent( &event );
+    SDL_Event event;
+    event.type = ONS_TIMER_EVENT;
+    SDL_PushEvent( &event );
 }
 
 void midiCallback( int sig )
 {
-#ifdef LINUX
+#if defined(LINUX)
     int status;
     wait( &status );
 #endif
     if ( !ext_music_play_once_flag ){
-    SDL_Event event;
-    event.type = ONS_MIDI_EVENT;
-    SDL_PushEvent(&event);
+        SDL_Event event;
+        event.type = ONS_MIDI_EVENT;
+        SDL_PushEvent(&event);
     }
 }
-
-// Pushes the midi loop event onto the stack.  Part of a workaround for ONScripter
-// crashing in Mac OS X after a midi is looped for the first time.  Recommend for
-// integration.  This is the work of Ben Carter.  [Seung Park, 20060621]
-#if defined(MACOSX) && defined(INSANI)
-extern "C" Uint32 midiSDLCallback( Uint32 interval, void *param )
-{
-	SDL_Event event;
-	event.type = ONS_MIDI_EVENT;
-	SDL_PushEvent( &event );
-	return interval;
-}
-#endif
 
 extern "C" void waveCallback( int channel )
 {
@@ -350,7 +273,7 @@ extern "C" void waveCallback( int channel )
 
 void musicCallback( int sig )
 {
-#ifdef LINUX
+#if defined(LINUX)
     int status;
     wait( &status );
 #endif
@@ -386,7 +309,7 @@ void ONScripterLabel::mouseMoveEvent( SDL_MouseMotionEvent *event )
 void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
 {
     if ( variable_edit_mode ) return;
-
+    
     if ( automode_flag ){
         remaining_time = -1;
         automode_flag = false;
@@ -425,17 +348,13 @@ void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
               ( event->type == SDL_MOUSEBUTTONUP || btndown_flag ) ){
         current_button_state.button = current_over_button;
         volatile_button_state.button = current_over_button;
-#ifdef INSANI
-		//fprintf(stderr, "event_mode = %d\n", event_mode);
-		if ( event_mode & WAIT_SLEEP_MODE) skip_to_wait=1;
-#endif
         if ( event->type == SDL_MOUSEBUTTONDOWN )
             current_button_state.down_flag = true;
     }
 #if SDL_VERSION_ATLEAST(1, 2, 5)
     else if (event->button == SDL_BUTTON_WHEELUP &&
              (event_mode & WAIT_TEXT_MODE ||
-              usewheel_flag && event_mode & WAIT_BUTTON_MODE ||
+              usewheel_flag && event_mode & WAIT_BUTTON_MODE || 
               system_menu_mode == SYSTEM_LOOKBACK)){
         current_button_state.button = -2;
         volatile_button_state.button = -2;
@@ -443,7 +362,7 @@ void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
     }
     else if ( event->button == SDL_BUTTON_WHEELDOWN &&
               (enable_wheeldown_advance_flag && event_mode & WAIT_TEXT_MODE ||
-               usewheel_flag && event_mode & WAIT_BUTTON_MODE||
+               usewheel_flag && event_mode & WAIT_BUTTON_MODE|| 
                system_menu_mode == SYSTEM_LOOKBACK ) ){
         if (event_mode & WAIT_TEXT_MODE){
             current_button_state.button = 0;
@@ -456,7 +375,7 @@ void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
     }
 #endif
     else return;
-
+    
     if (event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE)){
         playClickVoice();
         stopAnimation( clickstr_state );
@@ -581,7 +500,7 @@ void ONScripterLabel::variableEditMode( SDL_KeyboardEvent *event )
     }
     else if ( variable_edit_mode >= EDIT_VARIABLE_NUM_MODE ){
         int p=0;
-
+        
         switch( variable_edit_mode ){
 
           case EDIT_VARIABLE_NUM_MODE:
@@ -609,24 +528,26 @@ void ONScripterLabel::variableEditMode( SDL_KeyboardEvent *event )
 
 void ONScripterLabel::shiftCursorOnButton( int diff )
 {
-    int num = 0;
+    int num;
     ButtonLink *button = root_button_link.next;
-    while (button) { button = button->next; ++num; }
+    for (num=0 ; button ; num++) 
+        button = button->next;
 
     shortcut_mouse_line += diff;
-    if      (shortcut_mouse_line < 0)    shortcut_mouse_line = num - 1;
+    if      (shortcut_mouse_line < 0)    shortcut_mouse_line = num-1;
     else if (shortcut_mouse_line >= num) shortcut_mouse_line = 0;
-    
-    button = root_button_link.next;
-    for (int i = 0; i < shortcut_mouse_line; ++i) button  = button->next;
 
-    if (button) {
+    button = root_button_link.next;
+    for (int i=0 ; i<shortcut_mouse_line ; i++) 
+        button  = button->next;
+    
+    if (button){
         int x = button->select_rect.x;
         int y = button->select_rect.y;
-        if (x < 0) x = 0;
-        else if (x >= screen_width) x = screen_width - 1;
-        if (y < 0) y = 0;
-        else if (y >= screen_height) y = screen_height - 1;
+        if      (x < 0)             x = 0;
+        else if (x >= screen_width) x = screen_width-1;
+        if      (y < 0)              y = 0;
+        else if (y >= screen_height) y = screen_height-1;
         SDL_WarpMouse(x, y);
     }
 }
@@ -690,7 +611,7 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
         automode_flag = false;
         return;
     }
-
+    
     if ( event->type == SDL_KEYUP ){
         if ( variable_edit_mode ){
             variableEditMode( event );
@@ -705,56 +626,57 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
             SDL_WM_SetCaption( wm_edit_string, wm_icon_string );
         }
     }
-
-    if (event->type == SDL_KEYUP &&
-        (event->keysym.sym == SDLK_RETURN ||
+    
+    if (event->type == SDL_KEYUP && 
+        (event->keysym.sym == SDLK_RETURN || 
          event->keysym.sym == SDLK_KP_ENTER ||
          event->keysym.sym == SDLK_SPACE ||
          event->keysym.sym == SDLK_s))
-            skip_flag = false;
-
+        skip_flag = false;
+    
     if ( shift_pressed_status && event->keysym.sym == SDLK_q && current_mode == NORMAL_MODE ){
         endCommand();
     }
 
-    if ( (trap_mode & TRAP_LEFT_CLICK) &&
+    if ( (trap_mode & TRAP_LEFT_CLICK) && 
          (event->keysym.sym == SDLK_RETURN ||
           event->keysym.sym == SDLK_KP_ENTER ||
           event->keysym.sym == SDLK_SPACE ) ){
         trapHandler();
         return;
     }
-    else if ( (trap_mode & TRAP_RIGHT_CLICK) &&
+    else if ( (trap_mode & TRAP_RIGHT_CLICK) && 
               (event->keysym.sym == SDLK_ESCAPE) ){
         trapHandler();
         return;
     }
-
+    
     if ( event_mode & WAIT_BUTTON_MODE &&
          ((event->type == SDL_KEYUP || btndown_flag) &&
           (!getenter_flag  && event->keysym.sym == SDLK_RETURN  ||
            !getenter_flag  && event->keysym.sym == SDLK_KP_ENTER ) ||
-	  (spclclk_flag || !useescspc_flag) && event->keysym.sym == SDLK_SPACE) ){
-	if ( event->keysym.sym == SDLK_RETURN ||
-	     event->keysym.sym == SDLK_KP_ENTER ||
-	     spclclk_flag && event->keysym.sym == SDLK_SPACE ){
-	    current_button_state.button = current_over_button;
-	    volatile_button_state.button = current_over_button;
-	    if ( event->type == SDL_KEYDOWN )
-		current_button_state.down_flag = true;
-	}
-	else{
-	    current_button_state.button = 0;
-	    volatile_button_state.button = 0;
-	}
-	playClickVoice();
-	stopAnimation( clickstr_state );
-	advancePhase();
-	return;
+           (spclclk_flag || !useescspc_flag) && event->keysym.sym == SDLK_SPACE) ){
+        
+        if ( event->keysym.sym == SDLK_RETURN ||
+             event->keysym.sym == SDLK_KP_ENTER ||
+             spclclk_flag && event->keysym.sym == SDLK_SPACE ){
+            current_button_state.button = current_over_button;
+            volatile_button_state.button = current_over_button;
+            if ( event->type == SDL_KEYDOWN )
+                current_button_state.down_flag = true;
+        }
+        else{
+            current_button_state.button = 0;
+            volatile_button_state.button = 0;
+        }
+        playClickVoice();
+        stopAnimation( clickstr_state );
+        advancePhase();
+        return;
     }
 
     if ( event->type == SDL_KEYDOWN ) return;
-
+    
     if ( ( event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE) ) &&
          ( autoclick_time == 0 || (event_mode & WAIT_BUTTON_MODE)) ){
         if ( !useescspc_flag && event->keysym.sym == SDLK_ESCAPE){
@@ -784,7 +706,7 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
         else if ((!getcursor_flag && event->keysym.sym == SDLK_RIGHT ||
                   event->keysym.sym == SDLK_l) &&
                  (enable_wheeldown_advance_flag && event_mode & WAIT_TEXT_MODE ||
-		  usewheel_flag && event_mode & WAIT_BUTTON_MODE||
+                  usewheel_flag && event_mode & WAIT_BUTTON_MODE || 
                   system_menu_mode == SYSTEM_LOOKBACK)){
             if (event_mode & WAIT_TEXT_MODE){
                 current_button_state.button = 0;
@@ -795,7 +717,7 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
                 volatile_button_state.button = -3;
             }
         }
-	else if ((!getcursor_flag && event->keysym.sym == SDLK_UP ||
+        else if ((!getcursor_flag && event->keysym.sym == SDLK_UP ||
                   event->keysym.sym == SDLK_k ||
                   event->keysym.sym == SDLK_p) &&
                  event_mode & WAIT_BUTTON_MODE){
@@ -879,10 +801,10 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
             return;
         }
     }
-
+    
     if ( event_mode & WAIT_INPUT_MODE && !key_pressed_flag &&
          ( autoclick_time == 0 || (event_mode & WAIT_BUTTON_MODE)) ){
-        if (event->keysym.sym == SDLK_RETURN ||
+        if (event->keysym.sym == SDLK_RETURN || 
             event->keysym.sym == SDLK_KP_ENTER ||
             event->keysym.sym == SDLK_SPACE ){
             key_pressed_flag = true;
@@ -891,8 +813,8 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
             advancePhase();
         }
     }
-
-    if ( event_mode & (WAIT_INPUT_MODE | WAIT_TEXTBTN_MODE) &&
+    
+    if ( event_mode & (WAIT_INPUT_MODE | WAIT_TEXTBTN_MODE) && 
          !key_pressed_flag ){
         if (event->keysym.sym == SDLK_s && !automode_flag ){
             skip_flag = true;
@@ -941,17 +863,6 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
             else                   menu_fullCommand();
         }
     }
-
-#ifdef INSANI
-    if ( event_mode & WAIT_SLEEP_MODE ) {
-	if (event->keysym.sym == SDLK_RETURN   ||
-	    event->keysym.sym == SDLK_KP_ENTER ||
-	    event->keysym.sym == SDLK_SPACE )
-	{
-	    skip_to_wait = 1;
-	}
-    }
-#endif
 }
 
 void ONScripterLabel::timerEvent( void )
@@ -962,7 +873,7 @@ void ONScripterLabel::timerEvent( void )
 
     if ( event_mode & WAIT_TIMER_MODE ){
         int duration = proceedAnimation();
-
+        
         if ( duration == 0 ||
              ( remaining_time >= 0 &&
                remaining_time-duration <= 0 ) ){
@@ -980,7 +891,7 @@ void ONScripterLabel::timerEvent( void )
                 }
                 else{
                     loop_flag = true;
-                    if ( automode_flag || autoclick_time > 0 )
+                    if (automode_flag || autoclick_time>0)
                         current_button_state.button = 0;
                     else if ( usewheel_flag )
                         current_button_state.button = -5;
@@ -990,12 +901,12 @@ void ONScripterLabel::timerEvent( void )
             }
 
             if ( end_flag &&
-                 event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE) &&
-                 ( clickstr_state == CLICK_WAIT ||
+                 event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE) && 
+                 ( clickstr_state == CLICK_WAIT || 
                    clickstr_state == CLICK_NEWPAGE ) ){
-                playClickVoice();
-                stopAnimation( clickstr_state );
-            }
+                playClickVoice(); 
+                stopAnimation( clickstr_state ); 
+            } 
 
             if ( end_flag || duration == 0 )
                 event_mode &= ~WAIT_TIMER_MODE;
@@ -1011,7 +922,7 @@ void ONScripterLabel::timerEvent( void )
     else if ( event_mode & EFFECT_EVENT_MODE ){
         char *current = script_h.getCurrent();
         ret = this->parseLine();
-
+        
         if ( ret & RET_CONTINUE ){
             if ( ret == RET_CONTINUE ){
                 readToken(); // skip tailing \0 and mark kidoku
@@ -1027,8 +938,8 @@ void ONScripterLabel::timerEvent( void )
         return;
     }
     else{
-        if ( system_menu_mode != SYSTEM_NULL ||
-             ( event_mode & WAIT_INPUT_MODE &&
+        if ( system_menu_mode != SYSTEM_NULL || 
+             ( event_mode & WAIT_INPUT_MODE && 
                volatile_button_state.button == -1 ) ){
             if ( !system_menu_enter_flag )
                 event_mode |= WAIT_TIMER_MODE;
@@ -1062,7 +973,7 @@ int ONScripterLabel::eventLoop()
           case SDL_MOUSEMOTION:
             mouseMoveEvent( (SDL_MouseMotionEvent*)&event );
             break;
-
+            
           case SDL_MOUSEBUTTONDOWN:
             if ( !btndown_flag ) break;
           case SDL_MOUSEBUTTONUP:
@@ -1074,7 +985,7 @@ int ONScripterLabel::eventLoop()
             event.key.keysym.sym = transJoystickButton(event.jbutton.button);
             if(event.key.keysym.sym == SDLK_UNKNOWN)
                 break;
-
+            
           case SDL_KEYDOWN:
             event.key.keysym.sym = transKey(event.key.keysym.sym);
             keyDownEvent( (SDL_KeyboardEvent*)&event );
@@ -1087,7 +998,7 @@ int ONScripterLabel::eventLoop()
             event.key.keysym.sym = transJoystickButton(event.jbutton.button);
             if(event.key.keysym.sym == SDLK_UNKNOWN)
                 break;
-
+            
           case SDL_KEYUP:
             event.key.keysym.sym = transKey(event.key.keysym.sym);
             keyUpEvent( (SDL_KeyboardEvent*)&event );
@@ -1110,19 +1021,13 @@ int ONScripterLabel::eventLoop()
               }
               break;
           }
-
+             
           case ONS_TIMER_EVENT:
             timerEvent();
             break;
-
+                
           case ONS_SOUND_EVENT:
           case ONS_CDAUDIO_EVENT:
-
-// Just adds the case for ONS_FADE_EVENT.  This is part of our mp3 fadeout enablement patch.  Recommend for integration.  [Seung Park, 20060621]
-#ifdef INSANI
-          case ONS_FADE_EVENT:
-#endif
-
           case ONS_MIDI_EVENT:
           case ONS_MUSIC_EVENT:
             flushEventSub( event );
@@ -1156,7 +1061,7 @@ int ONScripterLabel::eventLoop()
           case SDL_QUIT:
             endCommand();
             break;
-
+            
           default:
             break;
         }

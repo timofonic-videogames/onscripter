@@ -1,5 +1,5 @@
 /* -*- C++ -*-
- *
+ * 
  *  ONScripterLabel.h - Execution block parser of ONScripter
  *
  *  Copyright (c) 2001-2007 Ogapee. All rights reserved.
@@ -21,8 +21,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Modified by Haeleth, autumn 2006, to remove unnecessary diagnostics.
-
 #ifndef __ONSCRIPTER_LABEL_H__
 #define __ONSCRIPTER_LABEL_H__
 
@@ -33,14 +31,14 @@
 #include <SDL_ttf.h>
 #include <SDL_mixer.h>
 
-#ifdef MP3_MAD
+#if defined(MP3_MAD)
 #include "MadWrapper.h"
 #else
 #include <smpeg.h>
 #endif
 
-#ifdef USE_OGG_VORBIS
-#ifdef INTEGER_OGG_VORBIS
+#if defined(USE_OGG_VORBIS)
+#if defined(INTEGER_OGG_VORBIS)
 #include <tremor/ivorbisfile.h>
 #else
 #include <vorbis/vorbisfile.h>
@@ -76,7 +74,7 @@ struct OVInfo{
     int mult2;
     unsigned char *buf;
     long decoded_length;
-#ifdef USE_OGG_VORBIS
+#if defined(USE_OGG_VORBIS)
     ogg_int64_t length;
     ogg_int64_t pos;
     OggVorbis_File ovf;
@@ -87,7 +85,7 @@ class ONScripterLabel : public ScriptParser
 {
 public:
     typedef AnimationInfo::ONSBuf ONSBuf;
-
+    
     ONScripterLabel();
     ~ONScripterLabel();
 
@@ -98,7 +96,6 @@ public:
     void setFontFile(const char *filename);
     void setRegistryFile(const char *filename);
     void setDLLFile(const char *filename);
-    void setSavePath(const char *path);
     void setArchivePath(const char *path);
     void setFullscreenMode();
     void setWindowMode();
@@ -107,11 +104,7 @@ public:
     void disableRescale();
     void enableEdit();
     void setKeyEXE(const char *path);
-#ifdef RCA_SCALE
-    void setWidescreen();
-    void setScaled();
-#endif
-
+    
     int  init();
     int  eventLoop();
 
@@ -184,9 +177,6 @@ public:
     int mspCommand();
     int mpegplayCommand();
     int mp3volCommand();
-#ifdef INSANI
-    int mp3fadeoutCommand();
-#endif
     int mp3Command();
     int movemousecursorCommand();
     int monocroCommand();
@@ -284,12 +274,7 @@ public:
     int allspresumeCommand();
     int allsphideCommand();
     int amspCommand();
-
-    int insertmenuCommand();
-    int resetmenuCommand();
-    int setlayerCommand();
-    int layermessageCommand();
-
+    
 protected:
     /* ---------------------------------------- */
     /* Event related variables */
@@ -301,16 +286,12 @@ protected:
            EDIT_VOICE_VOLUME_MODE   = 5,
            EDIT_SE_VOLUME_MODE      = 6
     };
-
+    
     int variable_edit_mode;
     int variable_edit_index;
     int variable_edit_num;
     int variable_edit_sign;
-
-#ifdef INSANI
-	int skip_to_wait;
-#endif
-
+    
     void variableEditMode( SDL_KeyboardEvent *event );
     void keyDownEvent( SDL_KeyboardEvent *event );
     void keyUpEvent( SDL_KeyboardEvent *event );
@@ -325,7 +306,7 @@ protected:
     void trapHandler();
     void initSDL();
     void openAudio();
-
+    
 private:
     enum { NORMAL_DISPLAY_MODE = 0, TEXT_DISPLAY_MODE = 1 };
     enum { IDLE_EVENT_MODE      = 0,
@@ -361,10 +342,6 @@ private:
     bool disable_rescale_flag;
     bool edit_flag;
     char *key_exe_file;
-#ifdef RCA_SCALE
-    bool widescreen_flag;
-    bool scaled_flag;
-#endif
 
     // ----------------------------------------
     // Global definitions
@@ -414,11 +391,10 @@ private:
            REFRESH_SHADOW_MODE      = 4,
            REFRESH_TEXT_MODE        = 8,
            REFRESH_CURSOR_MODE      = 16,
-	   REFRESH_COMP_MODE        = 32
+           REFRESH_COMP_MODE        = 32
     };
-
+    
     int refresh_shadow_text_mode;
-    int current_refresh_mode;
     int display_mode;
     int event_mode;
     SDL_Surface *accumulation_surface; // Final image, i.e. picture_surface (+ shadow + text_surface)
@@ -428,7 +404,7 @@ private:
     SDL_Surface *effect_src_surface; // Intermediate destnation buffer for effect
     SDL_Surface *screenshot_surface; // Screenshot
     SDL_Surface *image_surface; // Reference for loadImage()
-
+    
     /* ---------------------------------------- */
     /* Button related variables */
     AnimationInfo btndef_info;
@@ -507,10 +483,10 @@ private:
     void refreshSprite( int sprite_no, bool active_flag, int cell_no, SDL_Rect *check_src_rect, SDL_Rect *check_dst_rect );
 
     void decodeExbtnControl( const char *ctl_str, SDL_Rect *check_src_rect=NULL, SDL_Rect *check_dst_rect=NULL );
-
+    
     void disableGetButtonFlag();
     int getNumberFromBuffer( const char **buf );
-
+    
     /* ---------------------------------------- */
     /* Background related variables */
     AnimationInfo bg_info;
@@ -527,7 +503,7 @@ private:
     AnimationInfo sprite_info[MAX_SPRITE_NUM];
     AnimationInfo sprite2_info[MAX_SPRITE2_NUM];
     bool all_sprite_hide_flag;
-
+    
     /* ---------------------------------------- */
     /* Parameter related variables */
     AnimationInfo *bar_info[MAX_PARAM_NUM], *prnum_info[MAX_PARAM_NUM];
@@ -543,11 +519,11 @@ private:
     void saveAll();
     void loadEnvData();
     void saveEnvData();
-
+    
     /* ---------------------------------------- */
     /* Lookback related variables */
     AnimationInfo lookback_info[4];
-
+    
     /* ---------------------------------------- */
     /* Text related variables */
     AnimationInfo text_info;
@@ -566,9 +542,9 @@ private:
         SDL_Surface *surface;
     } *root_glyph_cache, glyph_cache[NUM_GLYPH_CACHE];
 
-    int  refreshMode();
+    int refreshMode();
     void setwindowCore();
-
+    
     SDL_Surface *renderGlyph(TTF_Font *font, Uint16 text);
     void drawGlyph( SDL_Surface *dst_surface, FontInfo *info, SDL_Color &color, char *text, int xy[2], bool shadow_flag, AnimationInfo *cache_info, SDL_Rect *clip, SDL_Rect &dst_rect );
     void drawChar( char* text, FontInfo *info, bool flush_flag, bool lookback_flag, SDL_Surface *surface, AnimationInfo *cache_info, SDL_Rect *clip=NULL );
@@ -584,7 +560,7 @@ private:
     void endRuby(bool flush_flag, bool lookback_flag, SDL_Surface *surface);
     int  textCommand();
     int  processText();
-
+    
     /* ---------------------------------------- */
     /* Effect related variables */
     DirtyRect dirty_rect, dirty_rect_tmp; // only this region is updated
@@ -592,12 +568,12 @@ private:
     int effect_timer_resolution;
     int effect_start_time;
     int effect_start_time_old;
-
+    
     int  setEffect( EffectLink *effect );
     int  doEffect( EffectLink *effect, AnimationInfo *anim, int effect_image, bool clear_dirty_region=true );
     void drawEffect( SDL_Rect *dst_rect, SDL_Rect *src_rect, SDL_Surface *surface );
     void generateMosaic( SDL_Surface *src_surface, int level );
-
+    
     /* ---------------------------------------- */
     /* Select related variables */
     enum { SELECT_GOTO_MODE=0, SELECT_GOSUB_MODE=1, SELECT_NUM_MODE=2, SELECT_CSEL_MODE=3 };
@@ -620,7 +596,7 @@ private:
 
     void deleteSelectLink();
     struct ButtonLink *getSelectableSentence( char *buffer, FontInfo *info, bool flush_flag = true, bool nofile_flag = false );
-
+    
     /* ---------------------------------------- */
     /* Sound related variables */
     enum{
@@ -639,14 +615,14 @@ private:
     bool volume_on_flag; // false if mute
     SDL_AudioSpec audio_format;
     bool audio_open_flag;
-
+    
     bool wave_play_loop_flag;
     char *wave_file_name;
-
+    
     bool midi_play_loop_flag;
     char *midi_file_name;
     Mix_Music *midi_info;
-
+    
     SDL_CD *cdrom_info;
     int current_cd_track;
     bool cd_play_loop_flag;
@@ -655,14 +631,10 @@ private:
     char *music_file_name;
     unsigned char *mp3_buffer;
     SMPEG *mp3_sample;
-#ifdef INSANI
-    Uint32 mp3fadeout_start;
-    Uint32 mp3fadeout_duration;
-#endif
     OVInfo *music_ovi;
     Mix_Music *music_info;
     char *loop_bgm_name[2];
-
+    
     Mix_Chunk *wave_sample[ONS_MIX_CHANNELS+ONS_MIX_EXTRA_CHANNELS];
 
     char *music_cmd;
@@ -675,7 +647,7 @@ private:
     int playOGG(int format, unsigned char *buffer, long length, bool loop_flag, int channel);
     int playExternalMusic(bool loop_flag);
     int playMIDI(bool loop_flag);
-
+    
     int playMPEG( const char *filename, bool click_flag );
     void playAVI( const char *filename, bool click_flag );
     enum { WAVE_PLAY        = 0,
@@ -687,7 +659,7 @@ private:
     void setupWaveHeader( unsigned char *buffer, int channels, int rate, unsigned long data_length );
     OVInfo *openOggVorbis(unsigned char *buf, long len, int &channels, int &rate);
     int  closeOggVorbis(OVInfo *ovi);
-
+    
     /* ---------------------------------------- */
     /* Text event related variables */
     TTF_Font *text_font;
@@ -697,15 +669,15 @@ private:
     void shadowTextDisplay( SDL_Surface *surface, SDL_Rect &clip );
     void clearCurrentTextBuffer();
     void newPage( bool next_flag );
-
+    
     void flush( int refresh_mode, SDL_Rect *rect=NULL, bool clear_dirty_flag=true, bool direct_flag=false );
-    void flushDirect( SDL_Rect &rect, int refresh_mode, bool updaterect=true );
+    void flushDirect( SDL_Rect &rect, int refresh_mode );
     void executeLabel();
     SDL_Surface *loadImage( char *file_name, bool *has_alpha=NULL );
     int parseLine();
 
     void mouseOverCheck( int x, int y );
-
+    
     /* ---------------------------------------- */
     /* Animation */
     int  proceedAnimation();
@@ -715,7 +687,7 @@ private:
     void parseTaggedString( AnimationInfo *anim );
     void drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo *anim, SDL_Rect &clip );
     void stopAnimation( int click );
-
+    
     /* ---------------------------------------- */
     /* File I/O */
     void searchSaveFile( SaveFileInfo &info, int no );
@@ -725,7 +697,7 @@ private:
 
     int  loadSaveFile2( int file_version );
     void saveSaveFile2( bool output_flag );
-
+    
     /* ---------------------------------------- */
     /* Image processing */
     unsigned char *resize_buffer;
@@ -748,14 +720,14 @@ private:
     int  system_menu_mode;
 
     int  shelter_event_mode;
-    int  shelter_display_mode;    
+    int  shelter_display_mode;
     bool shelter_draw_cursor_flag;
     struct TextBuffer *cached_text_buffer;
-
+    
     void enterSystemCall();
     void leaveSystemCall( bool restore_flag = true );
     void executeSystemCall();
-
+    
     void executeSystemMenu();
     void executeSystemSkip();
     void executeSystemAutomode();

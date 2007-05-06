@@ -1,5 +1,5 @@
 /* -*- C++ -*-
- *
+ * 
  *  ONScripterLabel_command.cpp - Command executer of ONScripter
  *
  *  Copyright (c) 2001-2007 Ogapee. All rights reserved.
@@ -21,19 +21,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Modified by Haeleth, autumn 2006, to remove unnecessary diagnostics and support ADOS properly.
-
 #include "ONScripterLabel.h"
 #include "version.h"
-
-#include <cstdio>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <string.h>
-#include <errno.h>
-#ifdef WIN32
-#include <direct.h>
-#endif
 
 #if defined(MACOSX) && (SDL_COMPILEDVERSION >= 1208)
 #include <CoreFoundation/CoreFoundation.h>
@@ -44,15 +33,10 @@
 
 #define CONTINUOUS_PLAY
 
-#ifdef INSANI
-extern SDL_TimerID timer_mp3fadeout_id;
-extern "C" Uint32 SDLCALL mp3fadeoutCallback( Uint32 interval, void *param );
-#endif
-
 int ONScripterLabel::waveCommand()
 {
     wave_play_loop_flag = false;
-
+    
     if (script_h.isName( "waveloop" ))
         wave_play_loop_flag = true;
 
@@ -60,7 +44,7 @@ int ONScripterLabel::waveCommand()
 
     setStr(&wave_file_name, script_h.readStr());
     playSound(wave_file_name, SOUND_WAVE|SOUND_OGG, wave_play_loop_flag, MIX_WAVE_CHANNEL);
-
+        
     return RET_CONTINUE;
 }
 
@@ -80,25 +64,15 @@ int ONScripterLabel::waittimerCommand()
 {
     int count = script_h.readInt() + internal_timer - SDL_GetTicks();
     startTimer( count );
-
+    
     return RET_WAIT;
 }
 
 int ONScripterLabel::waitCommand()
 {
-#ifdef INSANI
-   int count = script_h.readInt();
-
-   if( skip_flag || draw_one_page_flag || ctrl_pressed_status || skip_to_wait ) return RET_CONTINUE;
-   else {
-	   startTimer( count );
-	   return RET_WAIT;
-   }
-#else
     startTimer( script_h.readInt() );
 
     return RET_WAIT;
-#endif
 }
 
 int ONScripterLabel::vspCommand()
@@ -107,7 +81,7 @@ int ONScripterLabel::vspCommand()
     int v  = script_h.readInt();
     sprite_info[ no ].visible = (v==1)?true:false;
     dirty_rect.add( sprite_info[no].pos );
-
+    
     return RET_CONTINUE;
 }
 
@@ -116,17 +90,17 @@ int ONScripterLabel::voicevolCommand()
     voice_volume = script_h.readInt();
 
     if ( wave_sample[0] ) Mix_Volume( 0, se_volume * 128 / 100 );
-
+    
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::vCommand()
 {
     char buf[256];
-
-    sprintf(buf, "wav%c%s.wav", DELIMITER, script_h.getStringBuffer()+1);
+    
+    sprintf(buf, RELATIVEPATH "wav%c%s.wav", DELIMITER, script_h.getStringBuffer()+1);
     playSound(buf, SOUND_WAVE|SOUND_OGG, false, MIX_WAVE_CHANNEL);
-
+    
     return RET_CONTINUE;
 }
 
@@ -152,7 +126,7 @@ int ONScripterLabel::trapCommand()
     else{
         printf("trapCommand: [%s] is not supported\n", buf );
     }
-
+              
     return RET_CONTINUE;
 }
 
@@ -225,14 +199,14 @@ int ONScripterLabel::texecCommand()
             sentence_font.newLine();
         }
     }
-
+    
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::tateyokoCommand()
 {
     sentence_font.setTateyokoMode( script_h.readInt() );
-
+    
     return RET_CONTINUE;
 }
 
@@ -240,7 +214,7 @@ int ONScripterLabel::talCommand()
 {
     int ret = leaveTextDisplayMode();
     if ( ret != RET_NOMATCH ) return ret;
-
+    
     char loc = script_h.readLabel()[0];
     int no = -1, trans = 0;
     if      ( loc == 'l' ) no = 0;
@@ -287,7 +261,7 @@ int ONScripterLabel::systemcallCommand()
     system_menu_mode = getSystemCallNo( script_h.readLabel() );
     enterSystemCall();
     advancePhase();
-
+    
     return RET_WAIT;
 }
 
@@ -297,16 +271,11 @@ int ONScripterLabel::strspCommand()
     AnimationInfo *ai = &sprite_info[sprite_no];
     ai->removeTag();
     setStr(&ai->file_name, script_h.readStr());
-
+    
     FontInfo fi;
     fi.is_newline_accepted = true;
-#ifndef RCA_SCALE
     ai->pos.x = script_h.readInt();
     ai->pos.y = script_h.readInt();
-#else
-    ai->pos.x = script_h.readInt() * scr_stretch_x;
-    ai->pos.y = script_h.readInt() * scr_stretch_y;
-#endif
     fi.num_xy[0] = script_h.readInt();
     fi.num_xy[1] = script_h.readInt();
     fi.font_size_xy[0] = script_h.readInt();
@@ -347,7 +316,7 @@ int ONScripterLabel::stopCommand()
 {
     stopBGM( false );
     wavestopCommand();
-
+    
     return RET_CONTINUE;
 }
 
@@ -372,7 +341,7 @@ int ONScripterLabel::sp_rgb_gradationCommand()
     if (surface == NULL) return RET_CONTINUE;
 
     SDL_PixelFormat *fmt = surface->format;
-
+    
     ONSBuf key_mask = (key_r >> fmt->Rloss) << fmt->Rshift |
         (key_g >> fmt->Gloss) << fmt->Gshift |
         (key_b >> fmt->Bloss) << fmt->Bshift;
@@ -398,11 +367,11 @@ int ONScripterLabel::sp_rgb_gradationCommand()
             }
         }
     }
-
+    
     // replace pixels of the key-color with the specified color in gradation
     for (i=upper_bound ; i<=lower_bound ; i++){
         ONSBuf *buf = (ONSBuf *)surface->pixels + surface->w * i;
-#ifdef BPP16
+#if defined(BPP16)    
         unsigned char *alphap = si->alpha_buf + surface->w * i;
 #else
 #if SDL_BYTEORDER == SDL_LIL_ENDIAN
@@ -422,22 +391,22 @@ int ONScripterLabel::sp_rgb_gradationCommand()
             color |= (upper_g >> fmt->Gloss) << fmt->Gshift;
             color |= (upper_b >> fmt->Bloss) << fmt->Bshift;
         }
-
+        
         for (j=0 ; j<surface->w ; j++, buf++){
             if ((*buf & rgb_mask) == key_mask){
                 *buf = color;
                 *alphap = alpha;
             }
-#ifdef BPP16
+#if defined(BPP16)                
             alphap++;
 #else
             alphap += 4;
-#endif
+#endif                
         }
     }
-
+    
     SDL_UnlockSurface(surface);
-
+    
     if ( si->visible )
         dirty_rect.add( si->pos );
 
@@ -447,7 +416,7 @@ int ONScripterLabel::sp_rgb_gradationCommand()
 int ONScripterLabel::spstrCommand()
 {
     decodeExbtnControl( script_h.readStr() );
-
+    
     return RET_CONTINUE;
 }
 
@@ -460,10 +429,10 @@ int ONScripterLabel::spreloadCommand()
 
     parseTaggedString( si );
     setupAnimationInfo( si );
-
+    
     if ( si->visible )
         dirty_rect.add( si->pos );
-
+    
     return RET_CONTINUE;
 }
 
@@ -471,7 +440,7 @@ int ONScripterLabel::splitCommand()
 {
     script_h.readStr();
     const char *save_buf = script_h.saveStringBuffer();
-
+    
     char delimiter = script_h.readStr()[0];
 
     char token[256];
@@ -481,7 +450,7 @@ int ONScripterLabel::splitCommand()
         while( save_buf[c] != delimiter && save_buf[c] != '\0' ) c++;
         memcpy( token, save_buf, c );
         token[c] = '\0';
-
+        
         script_h.readVariable();
         if ( script_h.current_variable.type & ScriptHandler::VAR_INT ||
              script_h.current_variable.type & ScriptHandler::VAR_ARRAY ){
@@ -494,7 +463,7 @@ int ONScripterLabel::splitCommand()
         save_buf += c;
         if (save_buf[0] != '\0') save_buf++;
     }
-
+    
     return RET_CONTINUE;
 }
 
@@ -539,12 +508,12 @@ int ONScripterLabel::spbtnCommand()
     return RET_CONTINUE;
 }
 
-int ONScripterLabel::skipoffCommand()
-{
-    skip_flag = false;
-
-    return RET_CONTINUE;
-}
+int ONScripterLabel::skipoffCommand() 
+{ 
+    skip_flag = false; 
+ 
+    return RET_CONTINUE; 
+} 
 
 int ONScripterLabel::sevolCommand()
 {
@@ -555,7 +524,7 @@ int ONScripterLabel::sevolCommand()
 
     if ( wave_sample[MIX_LOOPBGM_CHANNEL0] ) Mix_Volume( MIX_LOOPBGM_CHANNEL0, se_volume * 128 / 100 );
     if ( wave_sample[MIX_LOOPBGM_CHANNEL1] ) Mix_Volume( MIX_LOOPBGM_CHANNEL1, se_volume * 128 / 100 );
-
+    
     return RET_CONTINUE;
 }
 
@@ -590,75 +559,28 @@ void ONScripterLabel::setwindowCore()
         sentence_font_info.setImageName( buf );
         parseTaggedString( &sentence_font_info );
         setupAnimationInfo( &sentence_font_info );
-#ifndef RCA_SCALE
         sentence_font_info.pos.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
         sentence_font_info.pos.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
-#   if 0
+#if 0        
         if ( sentence_font_info.image_surface ){
             sentence_font_info.pos.w = sentence_font_info.image_surface->w * screen_ratio1 / screen_ratio2;
             sentence_font_info.pos.h = sentence_font_info.image_surface->h * screen_ratio1 / screen_ratio2;
         }
-#   endif	    
+#endif        
         sentence_font.window_color[0] = sentence_font.window_color[1] = sentence_font.window_color[2] = 0xff;
     }
-#else // if RCA_SCALE
-        sentence_font_info.pos.x = script_h.readInt() * screen_ratio1 * scr_stretch_x / screen_ratio2;
-        sentence_font_info.pos.y = script_h.readInt() * screen_ratio1 * scr_stretch_y / screen_ratio2;
-        if ( sentence_font_info.image_surface && (scr_stretch_y > 1.0 || scr_stretch_x > 1.0)) {
-            SDL_Surface* src = sentence_font_info.image_surface;                    
-            SDL_PixelFormat *fmt = src->format;                  
-            SDL_Surface* dst = SDL_CreateRGBSurface( SDL_SWSURFACE,
-                                                     scr_stretch_x*src->w,
-                                                     scr_stretch_y*src->h,
-                                                     fmt->BitsPerPixel, fmt->Rmask, fmt->Gmask, fmt->Bmask, fmt->Amask );
-            resizeSurface( src, dst );
-            sentence_font_info.image_surface = dst;
-            sentence_font_info.pos.w *= scr_stretch_x;
-            sentence_font_info.pos.h *= scr_stretch_y;
-            SDL_FreeSurface( src );
-	}
-        sentence_font.window_color[0] = sentence_font.window_color[1] = sentence_font.window_color[2] = 0xff;
-    }
-
-    // Scale and reposition window size if screen is bigger than game
-    if (scr_stretch_x > 1.0) {
-        sentence_font_info.pos.w = sentence_font_info.pos.w * scr_stretch_x;
-        sentence_font.top_xy[0] = sentence_font.top_xy[0] * scr_stretch_x;
-#   if 1
-        // Either increase number of characters on screen
-        sentence_font.num_xy[0] = sentence_font.num_xy[0] * scr_stretch_x;
-#   else
-        // Or increase font size
-        sentence_font.pitch_xy[0] = sentence_font.pitch_xy[0] * scr_stretch_x;
-        sentence_font.font_size_xy[0] = sentence_font.font_size_xy[0] * scr_stretch_x;        
-#   endif
-    }
-    if (scr_stretch_y > 1.0) {
-        sentence_font_info.pos.h = sentence_font_info.pos.h * scr_stretch_y;
-        sentence_font.top_xy[1] = sentence_font.top_xy[1] * scr_stretch_y;
-#   if 1
-        // Either increase number of characters on screen
-        sentence_font.num_xy[1] = sentence_font.num_xy[1] * scr_stretch_y;
-#   else
-        // Or increase font size
-        sentence_font.pitch_xy[1] = sentence_font.pitch_xy[1] * scr_stretch_y;
-        sentence_font.font_size_xy[1] = sentence_font.font_size_xy[1] * scr_stretch_y;
-#   endif
-
-    }
-#endif
 }
 
 int ONScripterLabel::setwindow3Command()
 {
     setwindowCore();
-
+    
     clearCurrentTextBuffer();
     indent_offset = 0;
     line_enter_status = 0;
     display_mode = NORMAL_DISPLAY_MODE;
     flush( refreshMode(), &sentence_font_info.pos );
-
+    
     return RET_CONTINUE;
 }
 
@@ -683,13 +605,13 @@ int ONScripterLabel::setwindow2Command()
 int ONScripterLabel::setwindowCommand()
 {
     setwindowCore();
-
+    
     lookbackflushCommand();
     indent_offset = 0;
     line_enter_status = 0;
     display_mode = NORMAL_DISPLAY_MODE;
     flush( refreshMode(), &sentence_font_info.pos );
-
+    
     return RET_CONTINUE;
 }
 
@@ -703,7 +625,7 @@ int ONScripterLabel::setcursorCommand()
     else{
         abs_flag = false;
     }
-
+    
     int no = script_h.readInt();
     script_h.readStr();
     const char* buf = script_h.saveStringBuffer();
@@ -711,7 +633,7 @@ int ONScripterLabel::setcursorCommand()
     int y = script_h.readInt() * screen_ratio1 / screen_ratio2;
 
     loadCursor( no, buf, x, y, abs_flag );
-
+    
     return RET_CONTINUE;
 }
 
@@ -738,11 +660,11 @@ int ONScripterLabel::selectCommand()
     }
 
     if ( event_mode & WAIT_BUTTON_MODE ){
-
+        
         if ( current_button_state.button <= 0 ) return RET_WAIT | RET_REREAD;
-
+        
         if ( selectvoice_file_name[SELECTVOICE_SELECT] )
-            playSound(selectvoice_file_name[SELECTVOICE_SELECT],
+            playSound(selectvoice_file_name[SELECTVOICE_SELECT], 
                       SOUND_WAVE|SOUND_OGG, false, MIX_WAVE_CHANNEL );
 
         event_mode = IDLE_EVENT_MODE;
@@ -819,7 +741,7 @@ int ONScripterLabel::selectCommand()
                 //printf("comma %d\n", comma_flag);
                 char *buf = script_h.getNext() + 1; // consume eol
                 while ( *buf == ' ' || *buf == '\t' ) buf++;
-
+                
                 if (comma_flag && *buf == ',')
                     errorAndExit( "select: double comma." );
 
@@ -830,12 +752,12 @@ int ONScripterLabel::selectCommand()
                     while ( *buf == ' ' || *buf == '\t' ) buf++;
                 }
                 script_h.setCurrent(buf);
-
+                
                 if (*buf == 0x0a){
                     comma_flag |= comma2_flag;
                     continue;
                 }
-
+                
                 if (!comma_flag && !comma2_flag){
                     select_label_info.next_script = buf;
                     //printf("select: stop at the end of line\n");
@@ -876,7 +798,7 @@ int ONScripterLabel::selectCommand()
         sentence_font.xy[1] = xy[1];
 
         flush( refreshMode() );
-
+        
         event_mode = WAIT_TEXT_MODE | WAIT_BUTTON_MODE | WAIT_TIMER_MODE;
         advancePhase();
         refreshMouseOverButton();
@@ -919,27 +841,14 @@ int ONScripterLabel::savescreenshotCommand()
     }
 
     const char *buf = script_h.readStr();
-    char filename[4096];
-
+    char filename[256];
+    
     char *ext = strrchr( buf, '.' );
     if ( ext && (!strcmp( ext+1, "BMP" ) || !strcmp( ext+1, "bmp" ) ) ){
-        sprintf( filename, "%s%s", script_h.save_path, buf );
-        int last_delim = 0;
-	for ( unsigned int i=0 ; i<strlen( filename ) ; i++ ) {
-            if ( filename[i] == '/' || filename[i] == '\\' ) {
+        sprintf( filename, "%s%s", archive_path, buf );
+        for ( unsigned int i=0 ; i<strlen( filename ) ; i++ )
+            if ( filename[i] == '/' || filename[i] == '\\' )
                 filename[i] = DELIMITER;
-		last_delim = i;
-	    }
-	}
-	if (last_delim) {	
-	    filename[last_delim] = 0;
-	    mkdir(filename
-#ifndef WIN32
-		  , 0755
-#endif
-		);
-	    filename[last_delim] = DELIMITER;
-	}
         SDL_SaveBMP( screenshot_surface, filename );
     }
     else
@@ -970,7 +879,7 @@ int ONScripterLabel::savegameCommand()
         errorAndExit("savegame: the specified number is less than 0.");
     else{
         shelter_event_mode = event_mode;
-        saveSaveFile( no );
+        saveSaveFile( no ); 
     }
 
     return RET_CONTINUE;
@@ -993,11 +902,11 @@ int ONScripterLabel::savefileexistCommand()
 int ONScripterLabel::rndCommand()
 {
     int upper, lower;
-
+    
     if ( script_h.isName( "rnd2" ) ){
         script_h.readInt();
         script_h.pushVariable();
-
+        
         lower = script_h.readInt();
         upper = script_h.readInt();
     }
@@ -1032,10 +941,10 @@ int ONScripterLabel::resetCommand()
 {
     resetSub();
     clearCurrentTextBuffer();
-
+    
     setCurrentLabel( "start" );
     saveSaveFile(-1);
-
+    
     return RET_CONTINUE;
 }
 
@@ -1043,7 +952,7 @@ int ONScripterLabel::repaintCommand()
 {
     dirty_rect.fill( screen_width, screen_height );
     flush( refreshMode() );
-
+    
     return RET_CONTINUE;
 }
 
@@ -1065,15 +974,6 @@ int ONScripterLabel::quakeCommand()
     tmp_effect.duration = script_h.readInt();
     if ( tmp_effect.duration < tmp_effect.no * 4 ) tmp_effect.duration = tmp_effect.no * 4;
     tmp_effect.effect   = CUSTOM_EFFECT_NO + quake_type;
-
-#ifdef INSANI
-	if ( ctrl_pressed_status || skip_to_wait )
-	{
-		dirty_rect.fill( screen_width, screen_height );
-        SDL_BlitSurface( accumulation_surface, NULL, effect_dst_surface, NULL );
-        return RET_CONTINUE;
-	}
-#endif
 
     if ( event_mode & EFFECT_EVENT_MODE ){
         return doEffect( &tmp_effect, NULL, DIRECT_EFFECT_IMAGE );
@@ -1144,7 +1044,7 @@ int ONScripterLabel::prnumCommand()
     prnum_info[no]->num_of_cells = 1;
     prnum_info[no]->setCell(0);
     prnum_info[no]->color_list = new uchar3[ prnum_info[no]->num_of_cells ];
-
+    
     prnum_info[no]->param = script_h.readInt();
     prnum_info[no]->pos.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
     prnum_info[no]->pos.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
@@ -1160,7 +1060,7 @@ int ONScripterLabel::prnumCommand()
 
     setupAnimationInfo( prnum_info[no] );
     dirty_rect.add( prnum_info[no]->pos );
-
+    
     return RET_CONTINUE;
 }
 
@@ -1193,19 +1093,19 @@ int ONScripterLabel::playCommand()
     if ( buf[0] == '*' ){
         cd_play_loop_flag = loop_flag;
         int new_cd_track = atoi( buf + 1 );
-#ifdef CONTINUOUS_PLAY
+#ifdef CONTINUOUS_PLAY        
         if ( current_cd_track != new_cd_track ) {
-#endif
+#endif        
             stopBGM( false );
             current_cd_track = new_cd_track;
             playCDAudio();
-#ifdef CONTINUOUS_PLAY
+#ifdef CONTINUOUS_PLAY        
         }
 #endif
     }
     else{ // play MIDI
         stopBGM( false );
-
+        
         setStr(&midi_file_name, buf);
         midi_play_loop_flag = loop_flag;
         if (playSound(midi_file_name, SOUND_MIDI, midi_play_loop_flag) != SOUND_MIDI){
@@ -1252,7 +1152,7 @@ int ONScripterLabel::mpegplayCommand()
 {
     script_h.readStr();
     const char *save_buf = script_h.saveStringBuffer();
-
+    
     bool click_flag = (script_h.readInt()==1)?true:false;
 
     stopBGM( false );
@@ -1269,19 +1169,6 @@ int ONScripterLabel::mp3volCommand()
 
     return RET_CONTINUE;
 }
-
-#ifdef INSANI
-int ONScripterLabel::mp3fadeoutCommand()
-{
-    mp3fadeout_start = SDL_GetTicks();
-    mp3fadeout_duration = script_h.readInt();
-
-    timer_mp3fadeout_id = SDL_AddTimer(20, mp3fadeoutCallback, NULL);
-
-    event_mode |= WAIT_TIMER_MODE;
-    return RET_WAIT;
-}
-#endif
 
 int ONScripterLabel::mp3Command()
 {
@@ -1307,11 +1194,11 @@ int ONScripterLabel::mp3Command()
     const char *buf = script_h.readStr();
     if (buf[0] != '\0'){
         setStr(&music_file_name, buf);
-        playSound(music_file_name,
+        playSound(music_file_name, 
                   SOUND_WAVE | SOUND_OGG_STREAMING | SOUND_MP3 | SOUND_MIDI,
                   music_play_loop_flag, MIX_BGM_CHANNEL);
     }
-
+        
     return RET_CONTINUE;
 }
 
@@ -1321,7 +1208,7 @@ int ONScripterLabel::movemousecursorCommand()
     int y = script_h.readInt();
 
     SDL_WarpMouse( x, y );
-
+    
     return RET_CONTINUE;
 }
 
@@ -1334,14 +1221,14 @@ int ONScripterLabel::monocroCommand()
     else{
         monocro_flag = true;
         readColor( &monocro_color, script_h.readStr() );
-
+        
         for (int i=0 ; i<256 ; i++){
             monocro_color_lut[i][0] = (monocro_color[0] * i) >> 8;
             monocro_color_lut[i][1] = (monocro_color[1] * i) >> 8;
             monocro_color_lut[i][2] = (monocro_color[2] * i) >> 8;
         }
     }
-
+    
     dirty_rect.fill( screen_width, screen_height );
     flush( refreshMode() );
 
@@ -1351,7 +1238,7 @@ int ONScripterLabel::monocroCommand()
 int ONScripterLabel::menu_windowCommand()
 {
     if ( fullscreen_mode ){
-#ifndef PSP
+#if !defined(PSP)
         if ( !SDL_WM_ToggleFullScreen( screen_surface ) ){
             SDL_FreeSurface(screen_surface);
             screen_surface = SDL_SetVideoMode( screen_width, screen_height, screen_bpp, DEFAULT_VIDEO_SURFACE_FLAG );
@@ -1368,7 +1255,7 @@ int ONScripterLabel::menu_windowCommand()
 int ONScripterLabel::menu_fullCommand()
 {
     if ( !fullscreen_mode ){
-#ifndef PSP
+#if !defined(PSP)
         if ( !SDL_WM_ToggleFullScreen( screen_surface ) ){
             SDL_FreeSurface(screen_surface);
             screen_surface = SDL_SetVideoMode( screen_width, screen_height, screen_bpp, DEFAULT_VIDEO_SURFACE_FLAG|SDL_FULLSCREEN );
@@ -1387,7 +1274,7 @@ int ONScripterLabel::menu_automodeCommand()
     automode_flag = true;
     skip_flag = false;
     printf("menu_automode: change to automode\n");
-
+    
     return RET_CONTINUE;
 }
 
@@ -1402,18 +1289,12 @@ int ONScripterLabel::lspCommand()
     if ( sprite_info[no].visible )
         dirty_rect.add( sprite_info[no].pos );
     sprite_info[ no ].visible = v;
-
+    
     const char *buf = script_h.readStr();
     sprite_info[ no ].setImageName( buf );
 
-#ifdef RCA_SCALE
-    sprite_info[ no ].pos.x = script_h.readInt() * screen_ratio1 * scr_stretch_x / screen_ratio2;
-    sprite_info[ no ].pos.y = script_h.readInt() * screen_ratio1 * scr_stretch_y / screen_ratio2;
-#else
     sprite_info[ no ].pos.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
     sprite_info[ no ].pos.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
-#endif
-    
     if ( script_h.getEndStatus() & ScriptHandler::END_COMMA )
         sprite_info[ no ].trans = script_h.readInt();
     else
@@ -1421,23 +1302,6 @@ int ONScripterLabel::lspCommand()
 
     parseTaggedString( &sprite_info[ no ] );
     setupAnimationInfo( &sprite_info[ no ] );
-#ifdef RCA_SCALE
-    if (sprite_info[ no ].image_surface 
-        && ( scr_stretch_y > 1.0 || scr_stretch_x > 1.0 )) {
-        SDL_Surface* src = sprite_info[ no ].image_surface;
-        SDL_PixelFormat *fmt = src->format;
-        SDL_Surface* dst = SDL_CreateRGBSurface( SDL_SWSURFACE, 
-                                                 scr_stretch_x*src->w,
-                                                 scr_stretch_y*src->h,
-                                                 fmt->BitsPerPixel, fmt->Rmask, fmt->Gmask, fmt->Bmask, fmt->Amask );
-        resizeSurface( src, dst );
-        sprite_info[ no ].image_surface = dst;
-        sprite_info[ no ].pos.w *= scr_stretch_x;
-        sprite_info[ no ].pos.h *= scr_stretch_y;
-        SDL_FreeSurface( src );
-
-    }
-#endif
     if ( sprite_info[no].visible )
         dirty_rect.add( sprite_info[no].pos );
 
@@ -1457,7 +1321,7 @@ int ONScripterLabel::loopbgmstopCommand()
         wave_sample[MIX_LOOPBGM_CHANNEL1] = NULL;
     }
     setStr(&loop_bgm_name[0], NULL);
-
+    
     return RET_CONTINUE;
 }
 
@@ -1472,7 +1336,7 @@ int ONScripterLabel::loopbgmCommand()
               SOUND_PRELOAD|SOUND_WAVE|SOUND_OGG, false, MIX_LOOPBGM_CHANNEL1);
     playSound(loop_bgm_name[0],
               SOUND_WAVE|SOUND_OGG, false, MIX_LOOPBGM_CHANNEL0);
-
+    
     return RET_CONTINUE;
 }
 
@@ -1485,7 +1349,7 @@ int ONScripterLabel::lookbackflushCommand()
     }
     clearCurrentTextBuffer();
     start_text_buffer = current_text_buffer;
-
+    
     return RET_CONTINUE;
 }
 
@@ -1516,7 +1380,7 @@ int ONScripterLabel::logspCommand()
 
     si.pos.x = script_h.readInt();
     si.pos.y = script_h.readInt();
-
+    
     si.trans_mode = AnimationInfo::TRANS_STRING;
     if (logsp2_flag){
         si.font_size_xy[0] = script_h.readInt();
@@ -1529,7 +1393,7 @@ int ONScripterLabel::logspCommand()
         si.font_size_xy[1] = sentence_font.font_size_xy[1];
         si.font_pitch = sentence_font.pitch_xy[0];
     }
-
+    
     char *current = script_h.getNext();
     int num = 0;
     while(script_h.getEndStatus() & ScriptHandler::END_COMMA){
@@ -1558,7 +1422,7 @@ int ONScripterLabel::logspCommand()
     sentence_font.is_newline_accepted = false;
     si.visible = true;
     dirty_rect.add( si.pos );
-
+    
     return RET_CONTINUE;
 }
 
@@ -1594,14 +1458,14 @@ int ONScripterLabel::loadgameCommand()
         indent_offset = 0;
         line_enter_status = 0;
         string_buffer_offset = 0;
-	break_flag = false;
+        break_flag = false;
 
         refreshMouseOverButton();
 
         if (loadgosub_label)
             gosubReal( loadgosub_label, script_h.getCurrent() );
         readToken();
-
+        
         if ( event_mode & WAIT_INPUT_MODE ) return RET_WAIT | RET_NOREAD;
         return RET_CONTINUE | RET_NOREAD;
     }
@@ -1609,9 +1473,8 @@ int ONScripterLabel::loadgameCommand()
 
 int ONScripterLabel::ldCommand()
 {
-    // Don't remove text to animate sprites
-    //int ret = leaveTextDisplayMode();
-    //if ( ret != RET_NOMATCH ) return ret;
+    int ret = leaveTextDisplayMode();
+    if ( ret != RET_NOMATCH ) return ret;
 
     char loc = script_h.readLabel()[0];
     int no = -1;
@@ -1621,7 +1484,7 @@ int ONScripterLabel::ldCommand()
 
     const char *buf = NULL;
     if (no >= 0) buf = script_h.readStr();
-
+    
     if ( event_mode & EFFECT_EVENT_MODE ){
         return doEffect( parseEffect(false), NULL, TACHI_EFFECT_IMAGE );
     }
@@ -1633,24 +1496,6 @@ int ONScripterLabel::ldCommand()
             setupAnimationInfo( &tachi_info[ no ] );
             if ( tachi_info[ no ].image_surface ){
                 tachi_info[ no ].visible = true;
-#ifdef RCA_SCALE
-                if (scr_stretch_y > 1.0) {
-                    // RCA: Stretch characters to screen size.
-                    // Note all stretches are with Y-scale, so they don't get distorted (FIXME assumes widescreen)
-                    SDL_Surface* src = tachi_info[ no ].image_surface;
-                    SDL_PixelFormat *fmt = src->format;
-                    SDL_Surface* dst = SDL_CreateRGBSurface( SDL_SWSURFACE, 
-                                                             scr_stretch_y*src->w, 
-                                                             scr_stretch_y*src->h,
-                                                             fmt->BitsPerPixel, fmt->Rmask, fmt->Gmask, fmt->Bmask, fmt->Amask );
-                    resizeSurface( src, dst );
-                    tachi_info[ no ].image_surface = dst;
-                    tachi_info[ no ].pos.w *= scr_stretch_y;
-                    tachi_info[ no ].pos.h *= scr_stretch_y;
-                    SDL_FreeSurface( src );
-                    
-                }
-#endif
                 tachi_info[ no ].pos.x = screen_width * (no+1) / 4 - tachi_info[ no ].pos.w / 2;
                 tachi_info[ no ].pos.y = underline_value - tachi_info[ no ].image_surface->h + 1;
                 dirty_rect.add( tachi_info[ no ].pos );
@@ -1666,11 +1511,11 @@ int ONScripterLabel::jumpfCommand()
     char *buf = script_h.getNext();
     while(*buf != '\0' && *buf != '~') buf++;
     if (*buf == '~') buf++;
-
+    
     script_h.setCurrent(buf);
     current_label_info = script_h.getLabelByAddress(buf);
     current_line = script_h.getLineByAddress(buf);
-
+    
     return RET_CONTINUE;
 }
 
@@ -1691,7 +1536,7 @@ int ONScripterLabel::ispageCommand()
         script_h.setInt( &script_h.current_variable, 1 );
     else
         script_h.setInt( &script_h.current_variable, 0 );
-
+    
     return RET_CONTINUE;
 }
 
@@ -1699,7 +1544,7 @@ int ONScripterLabel::isfullCommand()
 {
     script_h.readInt();
     script_h.setInt( &script_h.current_variable, fullscreen_mode?1:0 );
-
+    
     return RET_CONTINUE;
 }
 
@@ -1711,13 +1556,9 @@ int ONScripterLabel::isskipCommand()
         script_h.setInt( &script_h.current_variable, 2 );
     else if ( skip_flag )
         script_h.setInt( &script_h.current_variable, 1 );
-#ifdef INSANI
-    else if ( ctrl_pressed_status )
-        script_h.setInt( &script_h.current_variable, 3 );
-#endif
     else
         script_h.setInt( &script_h.current_variable, 0 );
-
+    
     return RET_CONTINUE;
 }
 
@@ -1729,15 +1570,15 @@ int ONScripterLabel::isdownCommand()
         script_h.setInt( &script_h.current_variable, 1 );
     else
         script_h.setInt( &script_h.current_variable, 0 );
-
+    
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::inputCommand()
 {
     script_h.readStr();
-
-    if ( script_h.current_variable.type != ScriptHandler::VAR_STR )
+    
+    if ( script_h.current_variable.type != ScriptHandler::VAR_STR ) 
         errorAndExit( "input: no string variable." );
     int no = script_h.current_variable.var_no;
 
@@ -1762,7 +1603,7 @@ int ONScripterLabel::inputCommand()
 int ONScripterLabel::indentCommand()
 {
     indent_offset = script_h.readInt();
-
+    
     return RET_CONTINUE;
 }
 
@@ -1770,7 +1611,7 @@ int ONScripterLabel::humanorderCommand()
 {
     int ret = leaveTextDisplayMode();
     if ( ret != RET_NOMATCH ) return ret;
-
+    
     const char *buf = script_h.readStr();
     int i;
     for (i=0 ; i<3 ; i++){
@@ -1816,7 +1657,7 @@ int ONScripterLabel::getversionCommand()
 int ONScripterLabel::gettimerCommand()
 {
     bool gettimer_flag=false;
-
+    
     if      ( script_h.isName( "gettimer" ) ){
         gettimer_flag = true;
     }
@@ -1831,8 +1672,8 @@ int ONScripterLabel::gettimerCommand()
     else{
         script_h.setInt( &script_h.current_variable, btnwait_time );
     }
-
-    return RET_CONTINUE;
+        
+    return RET_CONTINUE; 
 }
 
 int ONScripterLabel::gettextCommand()
@@ -1850,7 +1691,7 @@ int ONScripterLabel::gettextCommand()
 
     setStr( &script_h.variable_data[no].str, buf );
     delete[] buf;
-
+    
     return RET_CONTINUE;
 }
 
@@ -1868,7 +1709,7 @@ int ONScripterLabel::gettagCommand()
         buf++;
     else
         end_flag = true;
-
+    
     int end_status;
     do{
         script_h.readVariable();
@@ -1918,7 +1759,7 @@ int ONScripterLabel::gettagCommand()
 int ONScripterLabel::gettabCommand()
 {
     gettab_flag = true;
-
+    
     return RET_CONTINUE;
 }
 
@@ -1927,17 +1768,9 @@ int ONScripterLabel::getspsizeCommand()
     int no = script_h.readInt();
 
     script_h.readVariable();
-#ifndef RCA_SCALE
     script_h.setInt( &script_h.current_variable, sprite_info[no].pos.w * screen_ratio2 / screen_ratio1 );
-#else
-    script_h.setInt( &script_h.current_variable, sprite_info[no].pos.w * screen_ratio2 / ( screen_ratio1 * scr_stretch_x ) );
-#endif
     script_h.readVariable();
-#ifndef RCA_SCALE
     script_h.setInt( &script_h.current_variable, sprite_info[no].pos.h * screen_ratio2 / screen_ratio1 );
-#else
-    script_h.setInt( &script_h.current_variable, sprite_info[no].pos.h * screen_ratio2 / ( screen_ratio1 * scr_stretch_y ) );
-#endif
     if ( script_h.getEndStatus() & ScriptHandler::END_COMMA ){
         script_h.readVariable();
         script_h.setInt( &script_h.current_variable, sprite_info[no].num_of_cells );
@@ -1991,7 +1824,7 @@ int ONScripterLabel::getscreenshotCommand()
 int ONScripterLabel::getpageupCommand()
 {
     getpageup_flag = true;
-
+    
     return RET_CONTINUE;
 }
 
@@ -1999,7 +1832,7 @@ int ONScripterLabel::getpageCommand()
 {
     getpageup_flag = true;
     getpagedown_flag = true;
-
+    
     return RET_CONTINUE;
 }
 
@@ -2016,15 +1849,15 @@ int ONScripterLabel::getretCommand()
         setStr( &script_h.variable_data[no].str, getret_str );
     }
     else errorAndExit( "getret: no variable." );
-
+    
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::getregCommand()
 {
     script_h.readVariable();
-
-    if ( script_h.current_variable.type != ScriptHandler::VAR_STR )
+    
+    if ( script_h.current_variable.type != ScriptHandler::VAR_STR ) 
         errorAndExit( "getreg: no string variable." );
     int no = script_h.current_variable.var_no;
 
@@ -2035,7 +1868,7 @@ int ONScripterLabel::getregCommand()
     strcpy( key, buf );
 
     printf("  reading Registry file for [%s] %s\n", path, key );
-
+        
     FILE *fp;
     if ( ( fp = fopen( registry_file, "r" ) ) == NULL ){
         fprintf( stderr, "Cannot open file [%s]\n", registry_file );
@@ -2059,7 +1892,7 @@ int ONScripterLabel::getregCommand()
                         script_h.popCurrent();
                         continue;
                     }
-
+                    
                     if ( !script_h.compareString("=") ){
                         script_h.popCurrent();
                         continue;
@@ -2094,10 +1927,10 @@ int ONScripterLabel::getmouseposCommand()
 {
     script_h.readInt();
     script_h.setInt( &script_h.current_variable, current_button_state.x * screen_ratio2 / screen_ratio1 );
-
+    
     script_h.readInt();
     script_h.setInt( &script_h.current_variable, current_button_state.y * screen_ratio2 / screen_ratio1 );
-
+    
     return RET_CONTINUE;
 }
 
@@ -2132,7 +1965,7 @@ int ONScripterLabel::getinsertCommand()
 int ONScripterLabel::getfunctionCommand()
 {
     getfunction_flag = true;
-
+    
     return RET_CONTINUE;
 }
 
@@ -2140,7 +1973,7 @@ int ONScripterLabel::getenterCommand()
 {
     if ( !force_button_shortcut_flag )
         getenter_flag = true;
-
+    
     return RET_CONTINUE;
 }
 
@@ -2148,20 +1981,12 @@ int ONScripterLabel::getcursorposCommand()
 {
     script_h.readInt();
     //script_h.setInt( &script_h.current_variable, sentence_font.x() );
-#ifndef RCA_SCALE
     script_h.setInt( &script_h.current_variable, sentence_font.x()-sentence_font.ruby_offset_xy[0] ); // workaround for possibly a bug in the original
-#else
-    script_h.setInt( &script_h.current_variable, sentence_font.x()/scr_stretch_x-sentence_font.ruby_offset_xy[0] ); // workaround for possibly a bug in the original
-#endif
-
+    
     script_h.readInt();
     //script_h.setInt( &script_h.current_variable, sentence_font.y() );
-#ifndef RCA_SCALE
     script_h.setInt( &script_h.current_variable, sentence_font.y()-sentence_font.ruby_offset_xy[1] ); // workaround for possibly a bug in the original
-#else
-    script_h.setInt( &script_h.current_variable, sentence_font.y()/scr_stretch_y-sentence_font.ruby_offset_xy[1] ); // workaround for possibly a bug in the original
-#endif
-
+    
     return RET_CONTINUE;
 }
 
@@ -2169,7 +1994,7 @@ int ONScripterLabel::getcursorCommand()
 {
     if ( !force_button_shortcut_flag )
         getcursor_flag = true;
-
+    
     return RET_CONTINUE;
 }
 
@@ -2233,7 +2058,7 @@ int ONScripterLabel::gameCommand()
         parseTaggedString( &lookback_info[3] );
         setupAnimationInfo( &lookback_info[3] );
     }
-
+    
     /* ---------------------------------------- */
     /* Load default cursor */
     loadCursor( CURSOR_WAIT_NO, DEFAULT_CURSOR_WAIT, 0, 0 );
@@ -2269,22 +2094,7 @@ int ONScripterLabel::fileexistCommand()
     script_h.pushVariable();
     const char *buf = script_h.readStr();
 
-    int found = (script_h.cBR->getFileLength(buf)>0)?1:0;
-    if (!found) {
-	char fn[4096];
-	sprintf(fn, "%s%s", script_h.save_path, buf);
-	char* si = fn;
-	do { if (*si == '\\') *si = DELIMITER; } while (*(++si));
-	FILE* fp = std::fopen(fn, "rb"); // FIXME: failing even when file exists?!
-//printf("Seek %s, fp = %s, ", fn, fp ? "yes" : "no");
-	if (fp) {
-	    found = 1;
-	    fclose(fp);
-//puts("found\n");
-	}
-//else printf(" fail (%s)\n", strerror(errno));
-    }
-    script_h.setInt( &script_h.pushed_variable, found );
+    script_h.setInt( &script_h.pushed_variable, (script_h.cBR->getFileLength(buf)>0)?1:0 );
 
     return RET_CONTINUE;
 }
@@ -2349,7 +2159,7 @@ int ONScripterLabel::exec_dllCommand()
 
     if ( !found_flag ) fprintf( stderr, "  The DLL is not found in %s.\n", dll_file );
     fclose( fp );
-
+    
     return RET_CONTINUE;
 }
 
@@ -2357,7 +2167,7 @@ int ONScripterLabel::exbtnCommand()
 {
     int sprite_no=-1, no=0;
     ButtonLink *button;
-
+    
     if ( script_h.isName( "exbtn_d" ) ){
         button = &exbtn_d_button_link;
         if ( button->exbtn_ctl ) delete[] button->exbtn_ctl;
@@ -2376,19 +2186,19 @@ int ONScripterLabel::exbtnCommand()
             script_h.readStr();
             return RET_CONTINUE;
         }
-
+        
         button = new ButtonLink();
         root_button_link.insert( button );
     }
 
     const char *buf = script_h.readStr();
-
+    
     button->button_type = ButtonLink::EX_SPRITE_BUTTON;
     button->sprite_no   = sprite_no;
     button->no          = no;
     button->exbtn_ctl   = new char[ strlen( buf ) + 1 ];
     strcpy( button->exbtn_ctl, buf );
-
+    
     if ( sprite_no >= 0 &&
          ( sprite_info[ sprite_no ].image_surface ||
            sprite_info[ sprite_no ].trans_mode == AnimationInfo::TRANS_STRING ) )
@@ -2432,7 +2242,7 @@ int ONScripterLabel::dwaveCommand()
 {
     int play_mode = WAVE_PLAY;
     bool loop_flag = false;
-
+    
     if ( script_h.isName( "dwaveloop" ) ){
         loop_flag = true;
     }
@@ -2461,17 +2271,17 @@ int ONScripterLabel::dwaveCommand()
         if (play_mode == WAVE_PRELOAD) fmt |= SOUND_PRELOAD;
         playSound(buf, fmt, loop_flag, ch);
     }
-
+        
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::dvCommand()
 {
     char buf[256];
-
-    sprintf(buf, "voice%c%s.wav", DELIMITER, script_h.getStringBuffer()+2);
+    
+    sprintf(buf, RELATIVEPATH "voice%c%s.wav", DELIMITER, script_h.getStringBuffer()+2);
     playSound(buf, SOUND_WAVE|SOUND_OGG, false, 0);
-
+    
     return RET_CONTINUE;
 }
 
@@ -2479,7 +2289,7 @@ int ONScripterLabel::drawtextCommand()
 {
     SDL_Rect clip = {0, 0, accumulation_surface->w, accumulation_surface->h};
     text_info.blendOnSurface( accumulation_surface, 0, 0, clip );
-
+    
     return RET_CONTINUE;
 }
 
@@ -2488,13 +2298,8 @@ int ONScripterLabel::drawsp3Command()
     int sprite_no = script_h.readInt();
     int cell_no = script_h.readInt();
     int alpha = script_h.readInt();
-#ifndef RCA_SCALE
     int x = script_h.readInt() * screen_ratio1 / screen_ratio2;
     int y = script_h.readInt() * screen_ratio1 / screen_ratio2;
-#else
-    int x = script_h.readInt() * screen_ratio1 * scr_stretch_x / screen_ratio2;
-    int y = script_h.readInt() * screen_ratio1 * scr_stretch_y / screen_ratio2;
-#endif
 
     // |mat[0][0] mat[0][1]|
     // |mat[1][0] mat[1][1]|
@@ -2519,13 +2324,8 @@ int ONScripterLabel::drawsp2Command()
     int sprite_no = script_h.readInt();
     int cell_no = script_h.readInt();
     int alpha = script_h.readInt();
-#ifndef RCA_SCALE
     int x = script_h.readInt() * screen_ratio1 / screen_ratio2;
     int y = script_h.readInt() * screen_ratio1 / screen_ratio2;
-#else
-    int x = script_h.readInt() * screen_ratio1 * scr_stretch_x / screen_ratio2;
-    int y = script_h.readInt() * screen_ratio1 * scr_stretch_y / screen_ratio2;
-#endif
     int scale_x = script_h.readInt();
     int scale_y = script_h.readInt();
     int rot = script_h.readInt();
@@ -2579,14 +2379,14 @@ int ONScripterLabel::drawfillCommand()
     int b = script_h.readInt();
 
     SDL_FillRect( accumulation_surface, NULL, SDL_MapRGBA( accumulation_surface->format, r, g, b, 0xff) );
-
+    
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::drawclearCommand()
 {
     SDL_FillRect( accumulation_surface, NULL, SDL_MapRGBA( accumulation_surface->format, 0, 0, 0, 0xff) );
-
+    
     return RET_CONTINUE;
 }
 
@@ -2594,7 +2394,7 @@ int ONScripterLabel::drawbgCommand()
 {
     SDL_Rect clip = {0, 0, accumulation_surface->w, accumulation_surface->h};
     bg_info.blendOnSurface( accumulation_surface, bg_info.pos.x, bg_info.pos.y, clip );
-
+    
     return RET_CONTINUE;
 }
 
@@ -2630,7 +2430,7 @@ int ONScripterLabel::drawCommand()
     SDL_Rect rect = {0, 0, screen_width, screen_height};
     flushDirect( rect, REFRESH_NONE_MODE );
     dirty_rect.clear();
-
+    
     return RET_CONTINUE;
 }
 
@@ -2670,18 +2470,13 @@ int ONScripterLabel::cspCommand()
             if ( sprite_info[i].visible )
                 dirty_rect.add( sprite_info[i].pos );
             if ( sprite_info[i].image_name ){
-#ifndef RCA_SCALE
                 sprite_info[i].pos.x = -1000 * screen_ratio1 / screen_ratio2;
                 sprite_info[i].pos.y = -1000 * screen_ratio1 / screen_ratio2;
-#else
-                sprite_info[i].pos.x = -10000 * screen_ratio1 / screen_ratio2;
-                sprite_info[i].pos.y = -10000 * screen_ratio1 / screen_ratio2;
-#endif
             }
             root_button_link.removeSprite(i);
             sprite_info[i].remove();
         }
-    else if (no >= 0 && no < MAX_SPRITE_NUM) {
+    else if (no >= 0 && no < MAX_SPRITE_NUM){
         if ( sprite_info[no].visible )
             dirty_rect.add( sprite_info[no].pos );
         root_button_link.removeSprite(no);
@@ -2704,10 +2499,10 @@ int ONScripterLabel::cselgotoCommand()
     if ( !link ) errorAndExit( "cselgoto: no select link" );
 
     setCurrentLabel( link->label );
-
+    
     deleteSelectLink();
     newPage( true );
-
+    
     return RET_CONTINUE;
 }
 
@@ -2758,12 +2553,11 @@ int ONScripterLabel::clickCommand()
 
 int ONScripterLabel::clCommand()
 {
-    // Don't remove text to animate sprites
-    //int ret = leaveTextDisplayMode();
-    //if ( ret != RET_NOMATCH ) return ret;
-
+    int ret = leaveTextDisplayMode();
+    if ( ret != RET_NOMATCH ) return ret;
+    
     char loc = script_h.readLabel()[0];
-
+    
     if ( event_mode & EFFECT_EVENT_MODE ){
         return doEffect( parseEffect(false), NULL, TACHI_EFFECT_IMAGE );
     }
@@ -2793,7 +2587,7 @@ int ONScripterLabel::chvolCommand()
     if ( wave_sample[ch] ){
         Mix_Volume( ch, vol * 128 / 100 );
     }
-
+    
     return RET_CONTINUE;
 }
 
@@ -2807,7 +2601,7 @@ int ONScripterLabel::checkpageCommand()
         errorAndExit( "checkpage: no variable." );
 
     int page_no = script_h.readInt();
-
+    
     TextBuffer *t_buf = current_text_buffer;
     while(t_buf != start_text_buffer && page_no > 0){
         page_no--;
@@ -2820,7 +2614,7 @@ int ONScripterLabel::checkpageCommand()
         script_h.setInt( &script_h.pushed_variable, 1 );
 
     return RET_CONTINUE;
-
+    
 }
 
 int ONScripterLabel::cellCommand()
@@ -2830,7 +2624,7 @@ int ONScripterLabel::cellCommand()
 
     sprite_info[sprite_no].setCell(no);
     dirty_rect.add( sprite_info[sprite_no].pos );
-
+        
     return RET_CONTINUE;
 }
 
@@ -2846,7 +2640,7 @@ int ONScripterLabel::captionCommand()
     DirectReader::convertFromSJISToUTF8(buf2, buf1, len);
     delete[] buf1;
 #elif defined(LINUX)
-#ifdef UTF8_FILESYSTEM
+#if defined(UTF8_FILESYSTEM)
     char *buf1 = new char[len+1];
     strcpy(buf1, buf);
     DirectReader::convertFromSJISToUTF8(buf2, buf1, len);
@@ -2858,11 +2652,11 @@ int ONScripterLabel::captionCommand()
 #else
     strcpy(buf2, buf);
 #endif
-
+    
     setStr( &wm_title_string, buf2 );
     setStr( &wm_icon_string,  buf2 );
     delete[] buf2;
-
+    
     SDL_WM_SetCaption( wm_title_string, wm_icon_string );
 
     return RET_CONTINUE;
@@ -2906,13 +2700,13 @@ int ONScripterLabel::btnwaitCommand()
 
         event_mode = IDLE_EVENT_MODE;
         disableGetButtonFlag();
-
+        
         ButtonLink *p_button_link = root_button_link.next;
         while( p_button_link ){
             p_button_link->show_flag = 0;
             p_button_link = p_button_link->next;
         }
-
+            
         return RET_CONTINUE;
     }
     else{
@@ -2921,13 +2715,13 @@ int ONScripterLabel::btnwaitCommand()
 
         if ( exbtn_d_button_link.exbtn_ctl ){
             SDL_Rect check_src_rect = {0, 0, screen_width, screen_height};
-            decodeExbtnControl(exbtn_d_button_link.exbtn_ctl, &check_src_rect);
+            decodeExbtnControl( exbtn_d_button_link.exbtn_ctl, &check_src_rect );
         }
 
         ButtonLink *p_button_link = root_button_link.next;
         while( p_button_link ){
             p_button_link->show_flag = 0;
-            if ( p_button_link->button_type == ButtonLink::SPRITE_BUTTON ||
+            if ( p_button_link->button_type == ButtonLink::SPRITE_BUTTON || 
                  p_button_link->button_type == ButtonLink::EX_SPRITE_BUTTON ){
             }
             else if ( p_button_link->button_type == ButtonLink::TMP_SPRITE_BUTTON ){
@@ -2964,17 +2758,17 @@ int ONScripterLabel::btnwaitCommand()
                         startTimer( automode_time );
                     //current_button_state.button = 0;
                 }
-		else if (autoclick_time > 0) {
-		    startTimer(autoclick_time);
-		}
+                else if (autoclick_time > 0){
+                    startTimer( autoclick_time );
+                }
             }
         }
-
+        
         if ((event_mode & WAIT_TIMER_MODE) == 0){
             event_mode |= WAIT_TIMER_MODE;
             advancePhase();
         }
-
+        
         return RET_WAIT | RET_REREAD;
     }
 }
@@ -2985,9 +2779,9 @@ int ONScripterLabel::btntimeCommand()
         btntime2_flag = true;
     else
         btntime2_flag = false;
-
+    
     btntime_value = script_h.readInt();
-
+    
     return RET_CONTINUE;
 }
 
@@ -3013,63 +2807,32 @@ int ONScripterLabel::btndefCommand()
             parseTaggedString( &btndef_info );
             btndef_info.trans_mode = AnimationInfo::TRANS_COPY;
             setupAnimationInfo( &btndef_info );
-#ifdef RCA_SCALE
-            if (btndef_info.image_surface
-                && (scr_stretch_x > 1.0 || scr_stretch_y > 1.0 )) {
-                // Scale and reposition buttons if screen is bigger than game
-                SDL_Surface* src = btndef_info.image_surface;
-                SDL_PixelFormat *fmt = src->format;
-                SDL_Surface* dst = SDL_CreateRGBSurface( SDL_SWSURFACE, 
-                                                         scr_stretch_x*src->w, 
-                                                         scr_stretch_y*src->h,
-                                                         fmt->BitsPerPixel, fmt->Rmask, fmt->Gmask, fmt->Bmask, fmt->Amask );
-                resizeSurface( src, dst );
-                btndef_info.image_surface = dst;
-                btndef_info.pos.w *= scr_stretch_x;
-                btndef_info.pos.h *= scr_stretch_y;
-                SDL_FreeSurface( src );
-            }
-  
-            if (btndef_info.image_surface)
-#endif
             SDL_SetAlpha( btndef_info.image_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
         }
     }
-
+    
     deleteButtonLink();
 
     disableGetButtonFlag();
-
+    
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::btnCommand()
 {
     SDL_Rect src_rect;
-
+    
     ButtonLink *button = new ButtonLink();
-
+    
     button->no           = script_h.readInt();
-#ifndef RCA_SCALE
     button->image_rect.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
     button->image_rect.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
     button->image_rect.w = script_h.readInt() * screen_ratio1 / screen_ratio2;
     button->image_rect.h = script_h.readInt() * screen_ratio1 / screen_ratio2;
-#else
-    button->image_rect.x = script_h.readInt() * screen_ratio1 * scr_stretch_x / screen_ratio2;
-    button->image_rect.y = script_h.readInt() * screen_ratio1 * scr_stretch_y / screen_ratio2;
-    button->image_rect.w = script_h.readInt() * screen_ratio1 * scr_stretch_x / screen_ratio2;
-    button->image_rect.h = script_h.readInt() * screen_ratio1 * scr_stretch_y / screen_ratio2;
-#endif
     button->select_rect = button->image_rect;
 
-#ifndef RCA_SCALE
     src_rect.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
     src_rect.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
-#else
-    src_rect.x = script_h.readInt() * screen_ratio1 * scr_stretch_x / screen_ratio2;
-    src_rect.y = script_h.readInt() * screen_ratio1 * scr_stretch_y / screen_ratio2;
-#endif
     if (btndef_info.image_surface &&
         src_rect.x + button->image_rect.w > btndef_info.image_surface->w){
         button->image_rect.w = btndef_info.image_surface->w - src_rect.x;
@@ -3088,7 +2851,7 @@ int ONScripterLabel::btnCommand()
     button->anim[0]->pos.y = button->image_rect.y;
     button->anim[0]->allocImage( button->image_rect.w, button->image_rect.h );
     button->anim[0]->copySurface( btndef_info.image_surface, &src_rect );
-
+    
     root_button_link.insert( button );
 
     return RET_CONTINUE;
@@ -3121,7 +2884,7 @@ int ONScripterLabel::bltCommand()
 
     if (btndef_info.image_surface == NULL) return RET_CONTINUE;
     if (dw == 0 || dh == 0 || sw == 0 || sh == 0) return RET_CONTINUE;
-
+    
     if ( sw == dw && sw > 0 && sh == dh && sh > 0 ){
 
         SDL_Rect src_rect = {sx,sy,sw,sh};
@@ -3136,13 +2899,13 @@ int ONScripterLabel::bltCommand()
         SDL_LockSurface(btndef_info.image_surface);
         ONSBuf *dst_buf = (ONSBuf*)accumulation_surface->pixels;
         ONSBuf *src_buf = (ONSBuf*)btndef_info.image_surface->pixels;
-#ifdef BPP16
+#if defined(BPP16)
         int dst_width = accumulation_surface->pitch / 2;
         int src_width = btndef_info.image_surface->pitch / 2;
 #else
         int dst_width = accumulation_surface->pitch / 4;
         int src_width = btndef_info.image_surface->pitch / 4;
-#endif
+#endif    
 
         int start_y = dy, end_y = dy+dh;
         if (dh < 0){
@@ -3151,7 +2914,7 @@ int ONScripterLabel::bltCommand()
         }
         if (start_y < 0) start_y = 0;
         if (end_y > screen_height) end_y = screen_height;
-
+        
         int start_x = dx, end_x = dx+dw;
         if (dw < 0){
             start_x = dx+dw;
@@ -3176,7 +2939,7 @@ int ONScripterLabel::bltCommand()
         }
         SDL_UnlockSurface(btndef_info.image_surface);
         SDL_UnlockSurface(accumulation_surface);
-
+        
         SDL_Rect dst_rect = {start_x, start_y, end_x-start_x, end_y-start_y};
         flushDirect( (SDL_Rect&)dst_rect, REFRESH_NONE_MODE );
     }
@@ -3263,7 +3026,7 @@ int ONScripterLabel::barCommand()
     bar_info[no]->param = script_h.readInt();
     bar_info[no]->pos.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
     bar_info[no]->pos.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
-
+                          
     bar_info[no]->max_width = script_h.readInt() * screen_ratio1 / screen_ratio2;
     bar_info[no]->pos.h = script_h.readInt() * screen_ratio1 / screen_ratio2;
     bar_info[no]->max_param = script_h.readInt();
@@ -3286,7 +3049,7 @@ int ONScripterLabel::aviCommand()
 {
     script_h.readStr();
     const char *save_buf = script_h.saveStringBuffer();
-
+    
     bool click_flag = (script_h.readInt()==1)?true:false;
 
     stopBGM( false );
@@ -3298,7 +3061,7 @@ int ONScripterLabel::aviCommand()
 int ONScripterLabel::automode_timeCommand()
 {
     automode_time = script_h.readInt();
-
+    
     return RET_CONTINUE;
 }
 
@@ -3313,13 +3076,8 @@ int ONScripterLabel::amspCommand()
 {
     int no = script_h.readInt();
     dirty_rect.add( sprite_info[ no ].pos );
-#ifndef RCA_SCALE
     sprite_info[ no ].pos.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
     sprite_info[ no ].pos.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
-#else
-    sprite_info[ no ].pos.x = script_h.readInt() * screen_ratio1 * scr_stretch_x / screen_ratio2;
-    sprite_info[ no ].pos.y = script_h.readInt() * screen_ratio1 * scr_stretch_y / screen_ratio2;
-#endif
 
     if ( script_h.getEndStatus() & ScriptHandler::END_COMMA )
         sprite_info[ no ].trans = script_h.readInt();
@@ -3351,25 +3109,3 @@ int ONScripterLabel::allsphideCommand()
     return RET_CONTINUE;
 }
 
-// Haeleth: Stub out some commands to suppress unwanted debug messages
-
-int ONScripterLabel::insertmenuCommand()
-{
-    script_h.skipToken();
-    return RET_CONTINUE;
-}
-int ONScripterLabel::resetmenuCommand()
-{
-    script_h.skipToken();
-    return RET_CONTINUE;
-}
-int ONScripterLabel::setlayerCommand()
-{
-    script_h.skipToken();
-    return RET_CONTINUE;
-}
-int ONScripterLabel::layermessageCommand()
-{
-    script_h.skipToken();
-    return RET_CONTINUE;
-}

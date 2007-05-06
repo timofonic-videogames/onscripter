@@ -1,5 +1,5 @@
 /* -*- C++ -*-
- *
+ * 
  *  ONScripterLabel.cpp - Execution block parser of ONScripter
  *
  *  Copyright (c) 2001-2007 Ogapee. All rights reserved.
@@ -21,28 +21,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Modified by Haeleth, autumn 2006, to remove unnecessary diagnostics and support OS X/Linux packaging better.
-
 #include "ONScripterLabel.h"
-#include <cstdio>
-
-#ifdef MACOSX
-namespace Carbon {
-#include <Carbon/Carbon.h>
-#include <CoreServices/CoreServices.h>
-}
-#include <sys/stat.h>
-#endif
-#ifdef WIN32
-#include <windows.h>
-typedef HRESULT (WINAPI *GETFOLDERPATH)(HWND, int, HANDLE, DWORD, LPTSTR);
-#endif
-#ifdef LINUX
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <pwd.h>
-#endif
 
 extern void initSJIS2UTF16();
 extern "C" void waveCallback( int channel );
@@ -94,7 +73,6 @@ static struct FuncLUT{
     {"setwindow3",   &ONScripterLabel::setwindow3Command},
     {"setwindow2",   &ONScripterLabel::setwindow2Command},
     {"setwindow",   &ONScripterLabel::setwindowCommand},
-    {"setlayer", &ONScripterLabel::setlayerCommand},
     {"setcursor",   &ONScripterLabel::setcursorCommand},
     {"selnum",   &ONScripterLabel::selectCommand},
     {"selgosub",   &ONScripterLabel::selectCommand},
@@ -111,7 +89,6 @@ static struct FuncLUT{
     {"rnd2",   &ONScripterLabel::rndCommand},
     {"rmode",   &ONScripterLabel::rmodeCommand},
     {"resettimer",   &ONScripterLabel::resettimerCommand},
-    {"resetmenu", &ONScripterLabel::resetmenuCommand},
     {"reset",   &ONScripterLabel::resetCommand},
     {"repaint",   &ONScripterLabel::repaintCommand},
     {"quakey",   &ONScripterLabel::quakeCommand},
@@ -133,9 +110,6 @@ static struct FuncLUT{
     {"mp3stop", &ONScripterLabel::playstopCommand},
     {"mp3save", &ONScripterLabel::mp3Command},
     {"mp3loop", &ONScripterLabel::mp3Command},
-#ifdef INSANI
-    {"mp3fadeout", &ONScripterLabel::mp3fadeoutCommand},
-#endif
     {"mp3", &ONScripterLabel::mp3Command},
     {"movemousecursor", &ONScripterLabel::movemousecursorCommand},
     {"monocro", &ONScripterLabel::monocroCommand},
@@ -154,14 +128,12 @@ static struct FuncLUT{
     {"locate", &ONScripterLabel::locateCommand},
     {"loadgame", &ONScripterLabel::loadgameCommand},
     {"ld", &ONScripterLabel::ldCommand},
-    {"layermessage", &ONScripterLabel::layermessageCommand},
     {"jumpf", &ONScripterLabel::jumpfCommand},
     {"jumpb", &ONScripterLabel::jumpbCommand},
     {"isfull", &ONScripterLabel::isfullCommand},
     {"isskip", &ONScripterLabel::isskipCommand},
     {"ispage", &ONScripterLabel::ispageCommand},
     {"isdown", &ONScripterLabel::isdownCommand},
-    {"insertmenu", &ONScripterLabel::insertmenuCommand},
     {"input", &ONScripterLabel::inputCommand},
     {"indent", &ONScripterLabel::indentCommand},
     {"humanorder", &ONScripterLabel::humanorderCommand},
@@ -240,8 +212,8 @@ static struct FuncLUT{
     {"blt",      &ONScripterLabel::bltCommand},
     {"bgmvol", &ONScripterLabel::mp3volCommand},
     {"bgmstop", &ONScripterLabel::playstopCommand},
-    {"bgmonce", &ONScripterLabel::mp3Command},
-    {"bgm", &ONScripterLabel::mp3Command},
+    {"bgmonce", &ONScripterLabel::mp3Command}, 
+    {"bgm", &ONScripterLabel::mp3Command}, 
     {"bgcpy",      &ONScripterLabel::bgcopyCommand},
     {"bgcopy",      &ONScripterLabel::bgcopyCommand},
     {"bg",      &ONScripterLabel::bgCommand},
@@ -278,11 +250,9 @@ void ONScripterLabel::initSDL()
         exit(-1);
     }
 
-#ifndef HAELETH
     if(SDL_InitSubSystem( SDL_INIT_JOYSTICK ) == 0 && SDL_JoystickOpen(0) != NULL)
         printf( "Initialize JOYSTICK\n");
-#endif
-
+    
 #if defined(PSP) || defined(IPODLINUX)
     SDL_ShowCursor(SDL_DISABLE);
 #endif
@@ -294,17 +264,12 @@ void ONScripterLabel::initSDL()
         exit(-1);
     }
 
-#ifdef INSANI
-	SDL_WM_SetIcon(IMG_Load("icon.png"), NULL);
-	//fprintf(stderr, "Autodetect: insanity spirit detected!\n");
-#endif
-
-#ifdef BPP16
+#if defined(BPP16)
     screen_bpp = 16;
 #else
     screen_bpp = 32;
 #endif
-
+    
 #if defined(PDA) && defined(PDA_WIDTH)
     screen_ratio1 *= PDA_WIDTH;
     screen_ratio2 *= 320;
@@ -333,56 +298,8 @@ void ONScripterLabel::initSDL()
     }
 #endif
 
-#ifdef RCA_SCALE
-    scr_stretch_x = 1.0;
-    scr_stretch_y = 1.0;
-
-    if (scaled_flag) {
-        const SDL_VideoInfo* info = SDL_GetVideoInfo();
-        int native_width = info->current_w;
-        int native_height = info->current_h;
-        
-        // Resize up to fill screen
-        scr_stretch_x = (float)native_width / (float)screen_width;
-        scr_stretch_y = (float)native_height / (float)screen_height;
-        if (!widescreen_flag) {
-            // Constrain aspect to same as game
-            if (scr_stretch_x > scr_stretch_y) {
-                scr_stretch_x = scr_stretch_y;
-                screen_height = native_height;
-                screen_width *= scr_stretch_x;
-            } else { 
-                scr_stretch_y = scr_stretch_x;
-                screen_width = native_width;
-                screen_height *= scr_stretch_y;
-            }
-        } else {
-            screen_width = native_width;
-            screen_height = native_height;
-        }
-    }
-    else if (widescreen_flag) {
-        const SDL_VideoInfo* info = SDL_GetVideoInfo();
-        int native_width = info->current_w;
-        int native_height = info->current_h;
-        
-        // Resize to screen aspect ratio
-        const float screen_asp = (float)screen_width / (float)screen_height;
-        const float native_asp = (float)native_width / (float)native_height;
-        const float aspquot = native_asp / screen_asp;
-        if (aspquot >1.01) {
-            // Widescreen; make gamearea wider
-            scr_stretch_x = (float)screen_height * native_asp / (float)screen_width;
-            screen_width = screen_height * native_asp;
-        } else if (aspquot < 0.99) {
-            scr_stretch_y = (float)screen_width / native_asp / (float)screen_height;
-            screen_height = screen_width / native_asp;
-        }
-    }
-
-#endif
     screen_surface = SDL_SetVideoMode( screen_width, screen_height, screen_bpp, DEFAULT_VIDEO_SURFACE_FLAG|(fullscreen_mode?SDL_FULLSCREEN:0) );
-
+    
     /* ---------------------------------------- */
     /* Check if VGA screen is available. */
 #if defined(PDA) && (PDA_WIDTH==640)
@@ -400,10 +317,10 @@ void ONScripterLabel::initSDL()
                  screen_width, screen_height, screen_bpp, SDL_GetError() );
         exit(-1);
     }
-    //printf("Display: %d x %d (%d bpp)\n", screen_width, screen_height, screen_bpp);
-
+    printf("Display: %d x %d (%d bpp)\n", screen_width, screen_height, screen_bpp);
+    
     initSJIS2UTF16();
-
+    
     wm_title_string = new char[ strlen(DEFAULT_WM_TITLE) + 1 ];
     memcpy( wm_title_string, DEFAULT_WM_TITLE, strlen(DEFAULT_WM_TITLE) + 1 );
     wm_icon_string = new char[ strlen(DEFAULT_WM_ICON) + 1 ];
@@ -417,9 +334,9 @@ void ONScripterLabel::openAudio()
 {
 #if defined(PDA) && !defined(PSP)
     if ( Mix_OpenAudio( 22050, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, DEFAULT_AUDIOBUF ) < 0 ){
-#else
+#else        
     if ( Mix_OpenAudio( 44100, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, DEFAULT_AUDIOBUF ) < 0 ){
-#endif
+#endif        
         fprintf(stderr, "Couldn't open audio device!\n"
                 "  reason: [%s].\n", SDL_GetError());
         audio_open_flag = false;
@@ -430,9 +347,9 @@ void ONScripterLabel::openAudio()
         int channels;
 
         Mix_QuerySpec( &freq, &format, &channels);
-        //printf("Audio: %d Hz %d bit %s\n", freq,
-        //       (format&0xFF),
-        //       (channels > 1) ? "stereo" : "mono");
+        printf("Audio: %d Hz %d bit %s\n", freq,
+               (format&0xFF),
+               (channels > 1) ? "stereo" : "mono");
         audio_format.format = format;
         audio_format.freq = freq;
         audio_format.channels = channels;
@@ -460,9 +377,6 @@ ONScripterLabel::ONScripterLabel()
     key_exe_file = NULL;
     fullscreen_mode = false;
     window_mode = false;
-#ifdef INSANI
-	skip_to_wait = 0;
-#endif
 
     for (int i=0 ; i<NUM_GLYPH_CACHE ; i++){
         if (i != NUM_GLYPH_CACHE-1) glyph_cache[i].next = &glyph_cache[i+1];
@@ -509,15 +423,8 @@ void ONScripterLabel::setDLLFile(const char *filename)
 void ONScripterLabel::setArchivePath(const char *path)
 {
     if (archive_path) delete[] archive_path;
-    archive_path = new char[ strlen(path) + 2 ];
-    sprintf( archive_path, "%s%c", path, DELIMITER );
-}
-
-void ONScripterLabel::setSavePath(const char *path)
-{
-    if (script_h.save_path) delete[] script_h.save_path;
-    script_h.save_path = new char[ strlen(path) + 2 ];
-    sprintf( script_h.save_path, "%s%c", path, DELIMITER );
+    archive_path = new char[ RELATIVEPATHLENGTH + strlen(path) + 2 ];
+    sprintf( archive_path, RELATIVEPATH "%s%c", path, DELIMITER );
 }
 
 void ONScripterLabel::setFullscreenMode()
@@ -555,152 +462,22 @@ void ONScripterLabel::setKeyEXE(const char *filename)
     setStr(&key_exe_file, filename);
 }
 
-#ifdef RCA_SCALE
-void ONScripterLabel::setWidescreen()
-{
-    widescreen_flag = true;
-}
-
-void ONScripterLabel::setScaled()
-{
-    scaled_flag = true;
-}
-#endif
-
 int ONScripterLabel::init()
 {
-    if (archive_path == NULL) {
-#ifdef MACOSX
-    // On Mac OS X, store archives etc in the application bundle by default,
-    // but fall back to the application root directory if bundle doesn't
-    // contain any script files.
-	using namespace Carbon;
-    const int maxpath=32768;
-    UInt8 path[maxpath];
-    CFBundleRef bundle = CFBundleGetMainBundle();
-    if (bundle) {
-        CFURLRef resourceurl = CFBundleCopyResourcesDirectoryURL(bundle);
-        if (resourceurl) {
-            Boolean validpath = CFURLGetFileSystemRepresentation(resourceurl,true,path,maxpath);
-            CFRelease(resourceurl);
-            if (validpath) {
-                archive_path = new char[strlen((char*)path+1)];
-                strcpy(archive_path,(char*)path);
-                strcat(archive_path,"/");
-            }
-        }
-        
-        if (archive_path) {
-            // Verify the archive path by checking for the script file
-            const char* scriptfiles[] = {"0.txt","00.txt","nscr_sec.dat","nscript.___","nscript.dat",NULL};
-            char** p = (char**)&scriptfiles;
-            for(;*p;p++) {
-                sprintf((char*)path,"%s%s",archive_path,*p);
-                FSRef ref;
-                OSErr err = FSPathMakeRef(path, &ref, NULL);
-                if(err == noErr
-                   && FSGetCatalogInfo(&ref, kFSCatInfoNone, NULL, NULL, NULL, NULL) == noErr)
-                    break;
-            }
-            
-            if (!*p) {
-                // There were no script files in the application bundle.
-                // Set archive_path to the application path and assume there are script files there
-                CFURLRef bundleurl = CFBundleCopyBundleURL(bundle);
-                if (bundleurl) {
-                    CFURLRef archiveurl = CFURLCreateCopyDeletingLastPathComponent( kCFAllocatorDefault, bundleurl );
-                    if (archiveurl) {
-                        Boolean validpath = CFURLGetFileSystemRepresentation(archiveurl,true,path,maxpath);
-                        CFRelease(archiveurl);
-                        if (validpath) {
-                            archive_path = new char[strlen((char*)path+1)];
-                            strcpy(archive_path,(char*)path);
-                            strcat(archive_path,"/");
-                        }
-                    }
-                    CFRelease(bundleurl);
-                }
-            }
-        }
-    }
-#else
-	// On Linux, the path is unpredictable and should be set by
-	// using "-r PATH" in a launcher script.  On other platforms
-	// they're stored in the same place as the executable.
-	archive_path = "";
-#endif
-    }
+    if (archive_path == NULL) archive_path = "";
     
     if (key_exe_file){
         createKeyTable( key_exe_file );
         script_h.setKeyTable( key_table );
     }
-    
+
     if ( open() ) return -1;
     
-    if ( script_h.save_path == NULL ){
-        char* gameid = script_h.game_identifier;
-        char gamename[20];
-        if (!gameid) {
-            gameid=(char*)&gamename;
-            sprintf(gameid,"ONScripter-%x",script_h.game_hash);
-        }
-#ifdef WIN32
-	// On Windows, store in [Profiles]/All Users/Application Data.
-	// TODO: optionally permit saves to be per-user rather than shared?
-	HMODULE shdll = LoadLibrary("shfolder");
-	if (shdll) {
-	    GETFOLDERPATH gfp = GETFOLDERPATH(GetProcAddress(shdll, "SHGetFolderPathA"));
-	    if (gfp) {
-		char hpath[MAX_PATH];
-		HRESULT res = gfp(0, 0x0023, 0, 0, hpath);
-		if (res != S_FALSE && res != E_FAIL && res != E_INVALIDARG) {
-		    script_h.save_path = new char[strlen(hpath) + strlen(gameid) + 3];
-		    sprintf(script_h.save_path, "%s/%s/", hpath, gameid);
-		    CreateDirectory(script_h.save_path, 0);
-		}
-	    }
-	    FreeLibrary(shdll);
-	}
-	if (script_h.save_path == NULL) {
-	    // Error; assume ancient Windows. In this case it's safe
-	    // to use the archive path!
-	    script_h.save_path = archive_path;
-	}
-#elif defined MACOSX
-    // On Mac OS X, place in ~/Library/Application Support/<gameid>/
-	using namespace Carbon;
-    FSRef appsupport;
-    FSFindFolder(kUserDomain, kApplicationSupportFolderType, kDontCreateFolder, &appsupport);
-    char path[32768];
-    FSRefMakePath(&appsupport, (UInt8*) path, 32768);
-    script_h.save_path = new char[strlen(path) + strlen(gameid) + 2];
-    sprintf(script_h.save_path, "%s/%s/", path, gameid);
-	mkdir(script_h.save_path, 0755);
-#elif defined LINUX
-	// On Linux (and similar *nixen), place in ~/.gameid
-	passwd* pwd = getpwuid(getuid());
-	if (pwd) {
-	    script_h.save_path = new char[strlen(pwd->pw_dir) + strlen(gameid) + 4];
-	    sprintf(script_h.save_path, "%s/.%s/", pwd->pw_dir, gameid);
-	    mkdir(script_h.save_path, 0755);
-	}
-	else script_h.save_path = archive_path;
-#else
-	// Fall back on default ONScripter behaviour if we don't have
-	// any better ideas.
-	script_h.save_path = archive_path;
-#endif
-    }
-    if ( script_h.game_identifier ) {
-	delete[] script_h.game_identifier; 
-	script_h.game_identifier = NULL; 
-    }
 
     initSDL();
 
     image_surface = SDL_CreateRGBSurface( SDL_SWSURFACE, 1, 1, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000 );
-
+    
     accumulation_surface = AnimationInfo::allocSurface( screen_width, screen_height );
     accumulation_comp_surface = AnimationInfo::allocSurface( screen_width, screen_height );
     effect_src_surface   = AnimationInfo::allocSurface( screen_width, screen_height );
@@ -724,7 +501,7 @@ int ONScripterLabel::init()
         font_file = new char[ strlen(archive_path) + strlen(FONT_FILE) + 1 ];
         sprintf( font_file, "%s%s", archive_path, FONT_FILE );
     }
-
+    
     // ----------------------------------------
     // Sound related variables
     this->cdaudio_flag = cdaudio_flag;
@@ -741,7 +518,7 @@ int ONScripterLabel::init()
             cdrom_info = NULL;
         }
     }
-
+    
     wave_file_name = NULL;
     midi_file_name = NULL;
     midi_info  = NULL;
@@ -759,7 +536,7 @@ int ONScripterLabel::init()
 
     // ----------------------------------------
     // Initialize misc variables
-
+    
     internal_timer = SDL_GetTicks();
 
     trap_dist = NULL;
@@ -777,7 +554,7 @@ int ONScripterLabel::init()
     }
 
     loadEnvData();
-
+    
     return 0;
 }
 
@@ -820,17 +597,17 @@ void ONScripterLabel::reset()
 
     setStr(&getret_str, NULL);
     getret_int = 0;
-
+    
     // ----------------------------------------
     // Sound related variables
-
+    
     wave_play_loop_flag = false;
     midi_play_loop_flag = false;
     music_play_loop_flag = false;
     cd_play_loop_flag = false;
     mp3save_flag = false;
     current_cd_track = -1;
-
+    
     resetSub();
 
     /* ---------------------------------------- */
@@ -924,36 +701,31 @@ void ONScripterLabel::flush( int refresh_mode, SDL_Rect *rect, bool clear_dirty_
                 flushDirect( dirty_rect.bounding_box, refresh_mode );
             }
             else{
-		for (int i = 0; i < dirty_rect.num_history; ++i)
-                    flushDirect( dirty_rect.history[i], refresh_mode, false );
-		SDL_UpdateRects( screen_surface, dirty_rect.num_history, dirty_rect.history );
-	    }
+                for ( int i=0 ; i<dirty_rect.num_history ; i++ ){
+                    //printf("%d: ", i );
+                    flushDirect( dirty_rect.history[i], refresh_mode );
+                }
+            }
         }
     }
-
+    
     if ( clear_dirty_flag ) dirty_rect.clear();
 }
 
-void ONScripterLabel::flushDirect( SDL_Rect &rect, int refresh_mode, bool updaterect )
+void ONScripterLabel::flushDirect( SDL_Rect &rect, int refresh_mode )
 {
     //printf("flush %d: %d %d %d %d\n", refresh_mode, rect.x, rect.y, rect.w, rect.h );
-
+    
     refreshSurface( accumulation_surface, &rect, refresh_mode );
-    if (refresh_mode != REFRESH_NONE_MODE &&
-	!(refresh_mode & REFRESH_CURSOR_MODE)){
+    if (refresh_mode != REFRESH_NONE_MODE && !(refresh_mode & REFRESH_CURSOR_MODE)){
         if (refresh_mode & REFRESH_SHADOW_MODE)
-            refreshSurface(accumulation_comp_surface, &rect,
-			   (refresh_mode & ~REFRESH_SHADOW_MODE
-			                 & ~REFRESH_TEXT_MODE)
-			                 | REFRESH_COMP_MODE);
+            refreshSurface( accumulation_comp_surface, &rect, (refresh_mode & ~REFRESH_SHADOW_MODE & ~REFRESH_TEXT_MODE) | REFRESH_COMP_MODE );
         else
-            refreshSurface(accumulation_comp_surface, &rect,
-			   refresh_mode | refresh_shadow_text_mode
-			                | REFRESH_COMP_MODE);
+            refreshSurface( accumulation_comp_surface, &rect, refresh_mode | refresh_shadow_text_mode | REFRESH_COMP_MODE );
     }
- 
+
     SDL_BlitSurface( accumulation_surface, &rect, screen_surface, &rect );
-    if (updaterect) SDL_UpdateRect( screen_surface, rect.x, rect.y, rect.w, rect.h );
+    SDL_UpdateRect( screen_surface, rect.x, rect.y, rect.w, rect.h );
 }
 
 void ONScripterLabel::mouseOverCheck( int x, int y )
@@ -986,7 +758,7 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
         if ( current_over_button != 0 ){
             current_button_link->show_flag = 0;
             check_src_rect = current_button_link->image_rect;
-            if ( current_button_link->button_type == ButtonLink::SPRITE_BUTTON ||
+            if ( current_button_link->button_type == ButtonLink::SPRITE_BUTTON || 
                  current_button_link->button_type == ButtonLink::EX_SPRITE_BUTTON ){
                 sprite_info[ current_button_link->sprite_no ].visible = true;
                 sprite_info[ current_button_link->sprite_no ].setCell(0);
@@ -1005,20 +777,20 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
         if ( exbtn_d_button_link.exbtn_ctl ){
             decodeExbtnControl( exbtn_d_button_link.exbtn_ctl, &check_src_rect, &check_dst_rect );
         }
-
+        
         if ( p_button_link ){
             if ( system_menu_mode != SYSTEM_NULL ){
                 if ( menuselectvoice_file_name[MENUSELECTVOICE_OVER] )
-                    playSound(menuselectvoice_file_name[MENUSELECTVOICE_OVER],
+                    playSound(menuselectvoice_file_name[MENUSELECTVOICE_OVER], 
                               SOUND_WAVE|SOUND_OGG, false, MIX_WAVE_CHANNEL);
             }
             else{
                 if ( selectvoice_file_name[SELECTVOICE_OVER] )
-                    playSound(selectvoice_file_name[SELECTVOICE_OVER],
+                    playSound(selectvoice_file_name[SELECTVOICE_OVER], 
                               SOUND_WAVE|SOUND_OGG, false, MIX_WAVE_CHANNEL);
             }
             check_dst_rect = p_button_link->image_rect;
-            if ( p_button_link->button_type == ButtonLink::SPRITE_BUTTON ||
+            if ( p_button_link->button_type == ButtonLink::SPRITE_BUTTON || 
                  p_button_link->button_type == ButtonLink::EX_SPRITE_BUTTON ){
                 sprite_info[ p_button_link->sprite_no ].setCell(1);
                 sprite_info[ p_button_link->sprite_no ].visible = true;
@@ -1039,7 +811,7 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
             current_button_link = p_button_link;
             shortcut_mouse_line = c;
         }
-
+        
         flush( refreshMode() );
         dirty_rect = dirty;
     }
@@ -1048,7 +820,7 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
 
 void ONScripterLabel::executeLabel()
 {
-  executeLabelTop:
+  executeLabelTop:    
 
     while ( current_line<current_label_info.num_of_lines ){
         if ( debug_level > 0 )
@@ -1057,7 +829,7 @@ void ONScripterLabel::executeLabel()
                    current_line,
                    current_label_info.num_of_lines,
                    string_buffer_offset, display_mode );
-
+        
         if ( script_h.getStringBuffer()[0] == '~' ){
             last_tilde.next_script = script_h.getNext();
             readToken();
@@ -1086,9 +858,9 @@ void ONScripterLabel::executeLabel()
             script_h.skipLine();
             if (++current_line >= current_label_info.num_of_lines) break;
         }
-
+        
         if ( ret & RET_REREAD ) script_h.setCurrent( current );
-
+        
         if (!(ret & RET_NOREAD)){
             if (script_h.getStringBuffer()[string_buffer_offset] == 0x0a){
                 string_buffer_offset = 0;
@@ -1096,7 +868,7 @@ void ONScripterLabel::executeLabel()
             }
             readToken();
         }
-
+        
         if ( ret & RET_WAIT ) return;
     }
 
@@ -1108,7 +880,7 @@ void ONScripterLabel::executeLabel()
         readToken();
         goto executeLabelTop;
     }
-
+    
     fprintf( stderr, " ***** End *****\n");
     endCommand();
 }
@@ -1152,179 +924,12 @@ int ONScripterLabel::parseLine( )
         if (!tmp)
             tmp = script_h.getStringBuffer() + strlen(script_h.getStringBuffer());
         int len = tmp - script_h.getStringBuffer() - string_buffer_offset - 1;
-#ifdef INSANI
-	/*
-	 * This block takes the current word being considered for
-	 * line-wrapping and checks it to see if it contains an inline
-	 * command of forms:
-	 *
-	 *   !s<int>
-	 *   !d<int>
-	 *   !w<int>
-	 *   !sd
-	 *   #rrggbb
-	 *
-	 * If it does, then we subtract the length of the command from
-	 * the length of the word, then compare it to see if it is at
-	 * the end of a line or not.
-	 *
-	 *
-	 */
-	char tocheck[255];
-	char *tocheck_it;
-        if (len > 0) {
-	    strncpy(tocheck,
-		    script_h.getStringBuffer() + string_buffer_offset + 1,
-		    len);
-	    tocheck[len] = '\0';
-	}
-	
-        // In the case of !s ...
-        if(strstr(tocheck, "!s")) {
-	    tocheck_it = strstr(tocheck, "!s");
-	    
-	    // ... we loop for every !s we find ...
-	    while(strstr(tocheck_it, "!s")) {
-		tocheck_it = strstr(tocheck_it, "!s");
-		
-		// There are two possible cases here -- either we're
-		// seeing !sd -- in which case we subtract 3 from the
-		// length -- or !s<number> -- in which case we
-		// subtract some variable number from the length.
-		
-		// case: !sd
-		if(tocheck_it[2] == 'd') {
-		    strcpy(tocheck_it, tocheck_it + 3);
-		    len = len - 3;
-		}
-		// case: !s<number>
-		else {
-		    int bang_s_num = 0;
-		    char bang_s_it;
-		    
-		    // Here, we walk through the characters that fall
-		    // after the !s -- for instance, if
-		    // tocheckiterator starts out as !s3000oogabooga,
-		    // then bang_s_iterator will be 3, then 0, then 0,
-		    // then 0, and finally o -- at which point it
-		    // detects that we're no longer in a number and
-		    // exits out.
-		    while (1) {
-			bang_s_it = tocheck_it[2 + bang_s_num];
-			if((bang_s_it >= '0') && (bang_s_it <= '9'))
-			    bang_s_num++;
-			else break;
-		    }
-		    // Then, so long as it wasn't a solitary !s with
-		    // no numbers after it (in which case it should be
-		    // printed), we subtract the requisite number from
-		    // the length -- in the case of !s1 it would be 3,
-		    // and in the case of !s20 it would be 4, etc.
-		    if(bang_s_num > 0) {
-			len = len - bang_s_num - 2;
-			strcpy(tocheck_it, tocheck_it + bang_s_num + 2);
-		    }
-		    else strcpy(tocheck_it, tocheck_it + 1);
-		}
-	    }
-	}
-
-	// In the case of !d<int> ...
-	if(strstr(tocheck, "!d")) {
-	    tocheck_it = strstr(tocheck, "!d");
-	    
-	    // ... we loop for every !d we find ...
-	    while(strstr(tocheck_it, "!d")) {
-		tocheck_it = strstr(tocheck_it, "!d");
-		
-		// Unlike in the case of !s, there's only one possible
-		// case here.
-		
-		// case: !d<number>
-		int bang_d_num = 0;
-		char bang_d_it;
-		
-		// Follows the pattern of !s<num> as above.
-		while (1) {
-		    bang_d_it = tocheck_it[2 + bang_d_num];
-		    if((bang_d_it >= '0') && (bang_d_it <= '9'))
-			bang_d_num++;
-		    else break;
-		}
-		// Follows the pattern of !s<num> as above.
-		if(bang_d_num > 0) {
-		    len = len - bang_d_num - 2;
-		    strcpy(tocheck_it, tocheck_it + bang_d_num + 2);
-		}
-		else strcpy(tocheck_it, tocheck_it + 1);
-	    }
-	}
-	
-	// In the case of !w<int> ...
-	if(strstr(tocheck, "!w")) {
-	    tocheck_it = strstr(tocheck, "!w");
-	    
-	    // ... we loop for every !w we find ...
-	    while (strstr(tocheck_it, "!w")) {
-		tocheck_it = strstr(tocheck_it, "!w");
-		
-		// Unlike in the case of !s, there's only one possible
-		// case here.
-		
-		// case: !w<number>
-		int bang_w_num = 0;
-		char bang_w_it;
-		
-		// Follows the pattern of !s<num> as above.
-		while (1) {
-		    bang_w_it = tocheck_it[2 + bang_w_num];
-		    
-		    if ((bang_w_it >= '0') && (bang_w_it <= '9'))
-			bang_w_num++;
-		    else break;
-		}
-		// Follows the pattern of !s<num> as above.
-		if (bang_w_num > 0) {
-		    len = len - bang_w_num - 2;
-		    strcpy(tocheck_it, tocheck_it + bang_w_num + 2);
-		}
-		else strcpy(tocheck_it, tocheck_it + 1);
-	    }
-	}
-	
-	// In the case of #rrggbb ...
-	if(strstr(tocheck, "#")) {
-	    tocheck_it = strstr(tocheck, "#");
-	    
-	    while(strstr(tocheck_it, "#")) {
-		tocheck_it = strstr(tocheck_it, "#");
-		
-		int hash_color_num = 0;
-		char c_it;
-
-		while (1) {
-		    c_it = tocheck_it[1 + hash_color_num];
-		    
-		    if (((c_it >= '0') && (c_it <= '9')) ||
-			((c_it >= 'a') && (c_it <= 'f')) ||
-			((c_it >= 'A') && (c_it <= 'F')))
-			hash_color_num++;
-		    else break;
-		}
-		if (hash_color_num >= 6) {
-		    len = len - 7;
-		    strcpy(tocheck_it, tocheck_it + 7);
-		}
-		else strcpy(tocheck_it, tocheck_it + 1);
-	    }
-	}
-#endif
         if (len > 0 && sentence_font.isEndOfLine(len)){
             current_text_buffer->addBuffer( 0x0a );
             sentence_font.newLine();
         }
     }
-#endif
+#endif    
     if (script_h.getStringBuffer()[string_buffer_offset] == 0x0a){
         ret = RET_CONTINUE; // suppress RET_CONTINUE | RET_NOREAD
         if (!sentence_font.isLineEmpty() && !new_line_skip_flag){
@@ -1345,32 +950,10 @@ int ONScripterLabel::parseLine( )
 
 SDL_Surface *ONScripterLabel::loadImage( char *file_name, bool *has_alpha )
 {
-    char* alt_buffer = 0;
     if ( !file_name ) return NULL;
     unsigned long length = script_h.cBR->getFileLength( file_name );
-
-    if (length == 0) {
-	alt_buffer = new char[strlen(file_name) + strlen(script_h.save_path) + 1];
-	sprintf(alt_buffer, "%s%s", script_h.save_path, file_name);
-	char* si = alt_buffer;
-	do { if (*si == '\\') *si = DELIMITER; } while (*(++si));
-	FILE* fp = std::fopen(alt_buffer, "rb");
-	if (fp) {
-	    fseek(fp, 0, SEEK_END);
-	    length = ftell(fp);
-	    fclose(fp);
-	}
-	else delete[] alt_buffer;
-    }
-
     if ( length == 0 ){
-        if (strcmp(file_name, "uoncur.bmp" ) &&
-	    strcmp(file_name, "uoffcur.bmp") &&
-	    strcmp(file_name, "doncur.bmp" ) &&
-	    strcmp(file_name, "doffcur.bmp") &&
-	    strcmp(file_name, "cursor0.bmp") &&
-	    strcmp(file_name, "cursor1.bmp"))
-            fprintf( stderr, " *** can't find file [%s] ***\n", file_name );
+        fprintf( stderr, " *** can't find file [%s] ***\n", file_name );
         return NULL;
     }
     if ( filelog_flag )
@@ -1378,15 +961,7 @@ SDL_Surface *ONScripterLabel::loadImage( char *file_name, bool *has_alpha )
     //printf(" ... loading %s length %ld\n", file_name, length );
     unsigned char *buffer = new unsigned char[length];
     int location;
-    if (!alt_buffer) {
-	script_h.cBR->getFile( file_name, buffer, &location );
-    }
-    else {
-	FILE* fp = std::fopen(alt_buffer, "rb");
-	fread(buffer, 1, length, fp);
-	fclose(fp);
-	delete[] alt_buffer;
-    }
+    script_h.cBR->getFile( file_name, buffer, &location );
     SDL_Surface *tmp = IMG_Load_RW(SDL_RWFromMem( buffer, length ), 1);
 
     char *ext = strrchr(file_name, '.');
@@ -1396,8 +971,14 @@ SDL_Surface *ONScripterLabel::loadImage( char *file_name, bool *has_alpha )
         tmp = IMG_LoadJPG_RW(src);
         SDL_RWclose(src);
     }
-    if (has_alpha) *has_alpha = tmp->format->Amask;
 
+    if (has_alpha){
+        if (tmp->format->Amask)
+            *has_alpha = true;
+        else
+            *has_alpha = false;
+    }
+    
     delete[] buffer;
     if ( !tmp ){
         fprintf( stderr, " *** can't load file [%s] ***\n", file_name );
@@ -1417,7 +998,7 @@ SDL_Surface *ONScripterLabel::loadImage( char *file_name, bool *has_alpha )
         SDL_PixelFormat *fmt = image_surface->format;
         ret = SDL_CreateRGBSurface( SDL_SWSURFACE, w, h,
                                     fmt->BitsPerPixel, fmt->Rmask, fmt->Gmask, fmt->Bmask, fmt->Amask );
-
+        
         resizeSurface( src_s, ret );
         SDL_FreeSurface( src_s );
     }
@@ -1472,10 +1053,7 @@ void ONScripterLabel::clearCurrentTextBuffer()
     int num = (sentence_font.num_xy[0]*2+1)*sentence_font.num_xy[1];
     if (sentence_font.getTateyokoMode() == FontInfo::TATE_MODE)
         num = (sentence_font.num_xy[1]*2+1)*sentence_font.num_xy[1];
-
-// TEST for ados backlog cutoff problem
-	num *= 2;
-
+    
     if ( current_text_buffer->buffer2 &&
          current_text_buffer->num != num ){
         delete[] current_text_buffer->buffer2;
@@ -1515,7 +1093,7 @@ void ONScripterLabel::shadowTextDisplay( SDL_Surface *surface, SDL_Rect &clip )
         color[0] = current_font->window_color[0] >> fmt->Rloss;
         color[1] = current_font->window_color[1] >> fmt->Gloss;
         color[2] = current_font->window_color[2] >> fmt->Bloss;
-
+        
         for ( int i=rect.y ; i<rect.y + rect.h ; i++ ){
             for ( int j=rect.x ; j<rect.x + rect.w ; j++, buf++ ){
                 *buf = (((*buf & fmt->Rmask) >> fmt->Rshift) * color[0] >> (8-fmt->Rloss)) << fmt->Rshift |
@@ -1546,7 +1124,7 @@ void ONScripterLabel::newPage( bool next_flag )
         indent_offset = 0;
         //line_enter_status = 0;
     }
-
+    
     clearCurrentTextBuffer();
 
     flush( refreshMode(), &sentence_font_info.pos );
@@ -1557,14 +1135,14 @@ struct ONScripterLabel::ButtonLink *ONScripterLabel::getSelectableSentence( char
     int current_text_xy[2];
     current_text_xy[0] = info->xy[0];
     current_text_xy[1] = info->xy[1];
-
+    
     ButtonLink *button_link = new ButtonLink();
     button_link->button_type = ButtonLink::TMP_SPRITE_BUTTON;
     button_link->show_flag = 1;
 
     AnimationInfo *anim = new AnimationInfo();
     button_link->anim[0] = anim;
-
+    
     anim->trans_mode = AnimationInfo::TRANS_STRING;
     anim->is_single_line = false;
     anim->num_of_cells = 2;
@@ -1591,7 +1169,7 @@ struct ONScripterLabel::ButtonLink *ONScripterLabel::getSelectableSentence( char
         info->xy[1] = current_text_xy[1];
 
     dirty_rect.add( button_link->image_rect );
-
+    
     return button_link;
 }
 
@@ -1687,7 +1265,7 @@ void ONScripterLabel::loadEnvData()
     cdaudio_on_flag = true;
     default_cdrom_drive = NULL;
     kidokumode_flag = true;
-
+    
     if (loadFileIOBuf( "envdata" ) == 0){
         if (readInt() == 1 && window_mode == false) menu_fullCommand();
         if (readInt() == 0) volume_on_flag = false;
@@ -1725,8 +1303,9 @@ void ONScripterLabel::saveEnvData()
         writeInt( DEFAULT_VOLUME - se_volume, output_flag );
         writeInt( DEFAULT_VOLUME - music_volume, output_flag );
         writeInt( kidokumode_flag?1:0, output_flag );
+        writeInt( 0, output_flag ); // ?
         writeChar( 0, output_flag ); // ?
-	writeInt( 1000, output_flag );
+        writeInt( 1000, output_flag ); // ?
 
         if (i==1) break;
         allocFileIOBuf();
@@ -1738,15 +1317,16 @@ void ONScripterLabel::saveEnvData()
 
 int ONScripterLabel::refreshMode()
 {
-    return display_mode == TEXT_DISPLAY_MODE
-	 ? refresh_shadow_text_mode
-	 : REFRESH_NORMAL_MODE;
+    if (display_mode == TEXT_DISPLAY_MODE)
+        return refresh_shadow_text_mode;
+
+    return REFRESH_NORMAL_MODE;
 }
 
 void ONScripterLabel::quit()
 {
     saveAll();
-
+    
     if ( cdrom_info ){
         SDL_CDStop( cdrom_info );
         SDL_CDClose( cdrom_info );

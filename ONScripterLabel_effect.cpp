@@ -1,8 +1,8 @@
 /* -*- C++ -*-
- *
+ * 
  *  ONScripterLabel_effect.cpp - Effect executer of ONScripter
  *
- *  Copyright (c) 2001-2007 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2005 Ogapee. All rights reserved.
  *
  *  ogapee@aqua.dti2.ne.jp
  *
@@ -34,64 +34,47 @@ int ONScripterLabel::setEffect( EffectLink *effect )
     effect_counter = 0;
     event_mode = EFFECT_EVENT_MODE;
     advancePhase();
-
+    
     return RET_WAIT | RET_REREAD;
 }
 
 int ONScripterLabel::doEffect( EffectLink *effect, AnimationInfo *anim, int effect_image, bool clear_dirty_region )
 {
-#ifdef INSANI
-    int prevduration = effect->duration;
-    if ( ctrl_pressed_status || skip_to_wait ) effect->duration = 1;
-#endif
     effect_start_time = SDL_GetTicks();
     if ( effect_counter == 0 ) effect_start_time_old = effect_start_time - 1;
-
+    //printf("effect_counter %d timer between %d %d\n",effect_counter,effect_start_time,effect_start_time_old);
     effect_timer_resolution = effect_start_time - effect_start_time_old;
     effect_start_time_old = effect_start_time;
-
+    
     int effect_no = effect->effect;
     if ( effect_cut_flag && skip_flag ) effect_no = 1;
-
+    
     if ( effect_counter == 0 ){
         SDL_BlitSurface( accumulation_surface, NULL, effect_src_surface, NULL );
-
+        
         switch( effect_image ){
           case DIRECT_EFFECT_IMAGE:
-	      break;
-
+            break;
+            
           case COLOR_EFFECT_IMAGE:
           case BG_EFFECT_IMAGE:
           case TACHI_EFFECT_IMAGE:
-	      int refresh_mode = refreshMode();
-	      if (effect_no == 1) {
-		  refreshSurface(effect_dst_surface, &dirty_rect.bounding_box,
-				 refresh_mode);
-		  if (refresh_mode & REFRESH_SHADOW_MODE)
-		      refreshSurface(accumulation_comp_surface,
-				     &dirty_rect.bounding_box,
-				     (refresh_mode & ~REFRESH_SHADOW_MODE
-				                   & ~REFRESH_TEXT_MODE)
-				                   | REFRESH_COMP_MODE);
+            int refresh_mode = refreshMode();
+            if (effect_no == 1){
+                refreshSurface( effect_dst_surface, &dirty_rect.bounding_box, refresh_mode );
+                if (refresh_mode & REFRESH_SHADOW_MODE)
+                    refreshSurface( accumulation_comp_surface, &dirty_rect.bounding_box, (refresh_mode & ~REFRESH_SHADOW_MODE & ~REFRESH_TEXT_MODE) | REFRESH_COMP_MODE );
                 else
-                    refreshSurface(accumulation_comp_surface,
-				   &dirty_rect.bounding_box,
-				   refresh_mode | refresh_shadow_text_mode
-				                | REFRESH_COMP_MODE);
-	      }
-	      else {
-		  refreshSurface(effect_dst_surface, NULL, refresh_mode);
-		  if (refresh_mode & REFRESH_SHADOW_MODE)
-		      refreshSurface(accumulation_comp_surface, NULL,
-				     (refresh_mode & ~REFRESH_SHADOW_MODE
-				                   & ~REFRESH_TEXT_MODE)
-				                   | REFRESH_COMP_MODE);
-		  else
-		      refreshSurface(accumulation_comp_surface, NULL,
-				     refresh_mode | refresh_shadow_text_mode
-				                  | REFRESH_COMP_MODE);
-	      }
-	      break;
+                    refreshSurface( accumulation_comp_surface, &dirty_rect.bounding_box, refresh_mode | refresh_shadow_text_mode | REFRESH_COMP_MODE );
+            }
+            else{
+                refreshSurface( effect_dst_surface, NULL, refresh_mode );
+                if (refresh_mode & REFRESH_SHADOW_MODE)
+                    refreshSurface( accumulation_comp_surface, NULL, (refresh_mode & ~REFRESH_SHADOW_MODE & ~REFRESH_TEXT_MODE) | REFRESH_COMP_MODE  );
+                else
+                    refreshSurface( accumulation_comp_surface, NULL, refresh_mode | refresh_shadow_text_mode | REFRESH_COMP_MODE );
+            }
+            break;
         }
 
         /* Load mask image */
@@ -224,13 +207,13 @@ int ONScripterLabel::doEffect( EffectLink *effect, AnimationInfo *anim, int effe
         break;
 
       default:
-        //printf("effect No. %d is not implemented. Crossfade is substituted for that.\n",effect_no);
-
+        printf("effect No. %d is not implemented. Crossfade is substituted for that.\n",effect_no);
+        
       case 10: // Cross fade
         height = 256 * effect_counter / effect->duration;
         alphaBlend( NULL, ALPHA_BLEND_CONST, height, &dirty_rect.bounding_box );
         break;
-
+        
       case 11: // Left scroll
         width = screen_width * effect_counter / effect->duration;
         src_rect.x = 0;
@@ -239,7 +222,7 @@ int ONScripterLabel::doEffect( EffectLink *effect, AnimationInfo *anim, int effe
         src_rect.w = dst_rect.w = screen_width - width;
         src_rect.h = dst_rect.h = screen_height;
         drawEffect(&dst_rect, &src_rect, effect_src_surface);
-
+        
         src_rect.x = screen_width - width - 1;
         dst_rect.x = 0;
         src_rect.y = dst_rect.y = 0;
@@ -306,11 +289,11 @@ int ONScripterLabel::doEffect( EffectLink *effect, AnimationInfo *anim, int effe
       case 16: // Mosaic out
         generateMosaic( effect_src_surface, 5 - 6 * effect_counter / effect->duration );
         break;
-
+        
       case 17: // Mosaic in
         generateMosaic( effect_dst_surface, 6 * effect_counter / effect->duration );
         break;
-
+        
       case 18: // Cross fade with mask
         alphaBlend( effect->anim.image_surface, ALPHA_BLEND_CROSSFADE_MASK, 256 * effect_counter * 2 / effect->duration, &dirty_rect.bounding_box );
         break;
@@ -324,7 +307,7 @@ int ONScripterLabel::doEffect( EffectLink *effect, AnimationInfo *anim, int effe
         SDL_FillRect( accumulation_surface, NULL, SDL_MapRGBA( accumulation_surface->format, 0, 0, 0, 0xff ) );
         drawEffect(&dst_rect, &src_rect, effect_dst_surface);
         break;
-
+        
       case (CUSTOM_EFFECT_NO + 1 ): // quakex
         if ( effect_timer_resolution > effect->duration / 4 / effect->no )
             effect_timer_resolution = effect->duration / 4 / effect->no;
@@ -333,7 +316,7 @@ int ONScripterLabel::doEffect( EffectLink *effect, AnimationInfo *anim, int effe
         dst_rect.y = 0;
         drawEffect(&dst_rect, &src_rect, effect_dst_surface);
         break;
-
+        
       case (CUSTOM_EFFECT_NO + 2 ): // quake
         dst_rect.x = effect->no*((int)(3.0*rand()/(RAND_MAX+1.0)) - 1) * 2;
         dst_rect.y = effect->no*((int)(3.0*rand()/(RAND_MAX+1.0)) - 1) * 2;
@@ -343,28 +326,20 @@ int ONScripterLabel::doEffect( EffectLink *effect, AnimationInfo *anim, int effe
     }
 
     //printf("effect conut %d / dur %d\n", effect_counter, effect->duration);
-
+    
     effect_counter += effect_timer_resolution;
     if ( effect_counter < effect->duration && effect_no != 1 ){
         if ( effect_no != 0 ) flush( REFRESH_NONE_MODE, NULL, false );
-#ifdef INSANI
-	effect->duration = prevduration;
-#endif
+        
         return RET_WAIT | RET_REREAD;
     }
-    else {
-        SDL_BlitSurface(effect_dst_surface,   &dirty_rect.bounding_box,
-			accumulation_surface, &dirty_rect.bounding_box);
-	
-        if (effect_no)
-	    flush(REFRESH_NONE_MODE, NULL, clear_dirty_region);
-        if (effect_no == 1)
-	    effect_counter = 0;
-#ifdef INSANI
-	effect->duration = prevduration;
-#endif
-        event_mode = IDLE_EVENT_MODE;
+    else{
+        SDL_BlitSurface( effect_dst_surface, &dirty_rect.bounding_box, accumulation_surface, &dirty_rect.bounding_box );
 
+        if ( effect_no != 0 ) flush(REFRESH_NONE_MODE, NULL, clear_dirty_region);
+        if ( effect_no == 1 ) effect_counter = 0;
+        event_mode = IDLE_EVENT_MODE;
+        
         return RET_CONTINUE;
     }
 }
@@ -379,7 +354,7 @@ void ONScripterLabel::drawEffect(SDL_Rect *dst_rect, SDL_Rect *src_rect, SDL_Sur
         src_rect->w = clipped_rect.w;
         src_rect->h = clipped_rect.h;
     }
-
+    
     SDL_BlitSurface(surface, src_rect, accumulation_surface, dst_rect);
 }
 
@@ -389,11 +364,11 @@ void ONScripterLabel::generateMosaic( SDL_Surface *src_surface, int level )
     int width = 160;
     for ( i=0 ; i<level ; i++ ) width >>= 1;
 
-#ifdef BPP16
+#if defined(BPP16)
     int total_width = accumulation_surface->pitch / 2;
 #else
     int total_width = accumulation_surface->pitch / 4;
-#endif
+#endif    
     SDL_LockSurface( src_surface );
     SDL_LockSurface( accumulation_surface );
     ONSBuf *src_buffer = (ONSBuf *)src_surface->pixels;
@@ -415,7 +390,7 @@ void ONScripterLabel::generateMosaic( SDL_Surface *src_surface, int level )
             }
         }
     }
-
+    
     SDL_UnlockSurface( accumulation_surface );
     SDL_UnlockSurface( src_surface );
 }

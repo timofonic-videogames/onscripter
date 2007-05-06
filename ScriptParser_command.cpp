@@ -332,12 +332,12 @@ int ScriptParser::returnCommand()
     
     current_label_info = script_h.getLabelByAddress( last_nest_info->next_script );
     current_line = script_h.getLineByAddress( last_nest_info->next_script );
-    
+
     char *buf = script_h.getNext();
     if ( buf[0] == 0x0a || buf[0] == ':' || buf[0] == ';' )
-	script_h.setCurrent( last_nest_info->next_script );
+        script_h.setCurrent( last_nest_info->next_script );
     else
-	setCurrentLabel(script_h.readStr()+1);
+        setCurrentLabel( script_h.readStr()+1 );
     
     last_nest_info = last_nest_info->previous;
     delete last_nest_info->next;
@@ -378,7 +378,7 @@ int ScriptParser::nsadirCommand()
         delete[] nsa_path;
     }
     nsa_path = new char[ strlen(buf) + 2 ];
-    sprintf( nsa_path, "%s%c", buf, DELIMITER );
+    sprintf( nsa_path, RELATIVEPATH "%s%c", buf, DELIMITER );
 
     return RET_CONTINUE;
 }
@@ -740,13 +740,13 @@ int ScriptParser::ifCommand()
     while(1){
         if (script_h.compareString("fchk")){
             script_h.readLabel();
-	    buf = script_h.readStr();
+            buf = script_h.readStr();
             f = (script_h.findAndAddLog( script_h.log_info[ScriptHandler::FILE_LOG], buf, false ) != NULL);
             //printf("fchk %s(%d,%d) ", tmp_string_buffer, (findAndAddFileLog( tmp_string_buffer, fasle )), condition_flag );
         }
         else if (script_h.compareString("lchk")){
             script_h.readLabel();
-	    buf = script_h.readStr();
+            buf = script_h.readStr();
             f = (script_h.findAndAddLog( script_h.log_info[ScriptHandler::LABEL_LOG], buf+1, false ) != NULL);
             //printf("lchk %s (%d,%d)\n", buf, f, condition_flag );
         }
@@ -946,8 +946,11 @@ int ScriptParser::forCommand()
         last_nest_info->step = 1;
     }
 
-    break_flag = last_nest_info->step > 0 && from > last_nest_info->to ||
-		 last_nest_info->step < 0 && from < last_nest_info->to;
+    if (last_nest_info->step > 0 && from > last_nest_info->to ||
+        last_nest_info->step < 0 && from < last_nest_info->to)
+        break_flag = true;
+    else
+        break_flag = false;
     
     /* ---------------------------------------- */
     /* Step forward callee's label info */

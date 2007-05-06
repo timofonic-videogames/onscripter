@@ -2,7 +2,7 @@
  *
  *  BaseReader.h - Base class of archive reader
  *
- *  Copyright (c) 2001-2006 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2007 Ogapee. All rights reserved.
  *
  *  ogapee@aqua.dti2.ne.jp
  *
@@ -30,10 +30,20 @@
 #define SEEK_END 2
 #endif
 
-#ifdef WIN32
+#if defined(LINUX) || defined(MACOSX)
+#define DELIMITER '/'
+#elif defined(WIN32)
 #define DELIMITER '\\'
+#elif defined(MACOS9)
+#define DELIMITER ':'
+#define RELATIVEPATH ":"
+#define RELATIVEPATHLENGTH 1
 #else
 #define DELIMITER '/'
+#endif
+#ifndef RELATIVEPATH
+#define RELATIVEPATH ""
+#define RELATIVEPATHLENGTH 0
 #endif
 
 struct BaseReader
@@ -64,6 +74,7 @@ struct BaseReader
     struct ArchiveInfo{
         struct ArchiveInfo *next;
         FILE *file_handle;
+        int power_resume_number; // currently only for PSP
         char *file_name;
         struct FileInfo *fi_list;
         unsigned int num_of_files;
@@ -72,6 +83,7 @@ struct BaseReader
         ArchiveInfo(){
             next = NULL;
             file_handle = NULL;
+            power_resume_number = 0;
             file_name = NULL;
             fi_list = NULL;
             num_of_files = 0;
