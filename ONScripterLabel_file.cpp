@@ -210,7 +210,7 @@ int ONScripterLabel::loadSaveFile( int no )
         num_xy[1] = readInt();
         current_text_buffer->num = (num_xy[0]*2+1)*num_xy[1];
         if (sentence_font.getTateyokoMode() == FontInfo::TATE_MODE)
-            current_text_buffer->num = (num_xy[1]*2+1)*num_xy[1];
+            current_text_buffer->num = (num_xy[1]*2+1)*num_xy[0];
         int xy[2];
         xy[0] = readInt();
         xy[1] = readInt();

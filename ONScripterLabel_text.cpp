@@ -702,9 +702,12 @@ int ONScripterLabel::processText()
             drawChar( out_text, &sentence_font, true, true, accumulation_surface, &text_info );
             num_chars_in_sentence++;
             event_mode = WAIT_SLEEP_MODE;
+#ifdef INSANI
 	    if ( skip_to_wait == 1 )
 	        advancePhase( 0 );
-            else if ( sentence_font.wait_time == -1 )
+            else
+#endif
+	    if ( sentence_font.wait_time == -1 )
                 advancePhase( default_text_speed[text_speed_no] );
             else
                 advancePhase( sentence_font.wait_time );
@@ -757,7 +760,11 @@ int ONScripterLabel::processText()
             }
             while (script_h.getStringBuffer()[ string_buffer_offset ] == ' ' ||
                    script_h.getStringBuffer()[ string_buffer_offset ] == '\t') string_buffer_offset++;
-            if ( skip_flag || draw_one_page_flag || ctrl_pressed_status || skip_to_wait ){
+            if ( skip_flag || draw_one_page_flag || ctrl_pressed_status
+#ifdef INSANI
+		 || skip_to_wait
+#endif
+		){
                 return RET_CONTINUE | RET_NOREAD;
             }
             else{
@@ -1060,9 +1067,12 @@ int ONScripterLabel::processText()
         }
         else{
             event_mode = WAIT_SLEEP_MODE;
+#ifdef INSANI
 	    if ( skip_to_wait == 1 )
 		advancePhase( 0 );
-            else if ( sentence_font.wait_time == -1 )
+            else
+#endif
+	    if ( sentence_font.wait_time == -1 )
                 advancePhase( default_text_speed[text_speed_no] );
             else
                 advancePhase( sentence_font.wait_time );

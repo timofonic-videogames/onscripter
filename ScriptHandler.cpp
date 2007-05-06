@@ -669,7 +669,7 @@ void ScriptHandler::readVariable( bool reread_flag )
     SKIP_SPACE(buf);
 
     bool ptr_flag = false;
-    if ( *buf == 'i' || *buf == 'f' ){
+    if ( *buf == 'i' || *buf == 's' ){
         ptr_flag = true;
         buf++;
     }
