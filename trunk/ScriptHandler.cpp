@@ -761,8 +761,15 @@ int ScriptHandler::getStringFromInteger( char *buffer, int no, int num_column, b
     if (is_zero_inserted)
         sprintf(format, "%%0%dd", num_column);
     else
-    sprintf(format, "%%%dd", num_column);
+	sprintf(format, "%%%dd", num_column);
+
     sprintf(buffer, format, no);
+
+    // Ensure length is multiple of full-width characters
+    if (num_column % 2) {
+	++num_column;
+	strcat(buffer, " ");
+    }
 
     return num_column;
 #else
