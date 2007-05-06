@@ -1,3 +1,9 @@
+2007-05-06
+
+  Fix some bugs: parsing of arguments, saving of vertical text,
+  and compilation without INSANI defined.
+
+
 2007-05-01
 
   Merge in some more changes from Roine designed to make life better
