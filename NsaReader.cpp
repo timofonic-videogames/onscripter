@@ -87,12 +87,12 @@ int NsaReader::open( char *nsa_path, int archive_type )
 int NsaReader::openForConvert( char *nsa_name, int archive_type )
 {
     sar_flag = false;
-    if ( ( archive_info.file_handle = ::fopen( nsa_name, "rb" ) ) == NULL ){
+    if ( ( archive_info_nsa.file_handle = ::fopen( nsa_name, "rb" ) ) == NULL ){
         fprintf( stderr, "can't open file %s\n", nsa_name );
         return -1;
     }
 
-    readArchive( &archive_info, archive_type );
+    readArchive( &archive_info_nsa, archive_type );
 
     return 0;
 }
@@ -193,8 +193,8 @@ struct NsaReader::FileInfo NsaReader::getFileByIndex( unsigned int index )
 {
     int i;
     
-    if ( index < archive_info.num_of_files ) return archive_info.fi_list[index];
-    index -= archive_info.num_of_files;
+    if ( index < archive_info_nsa.num_of_files ) return archive_info_nsa.fi_list[index];
+    index -= archive_info_nsa.num_of_files;
 
     for ( i=0 ; i<num_of_nsa_archives ; i++ ){
         if ( index < archive_info2[i].num_of_files ) return archive_info2[i].fi_list[index];
