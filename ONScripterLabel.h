@@ -111,6 +111,7 @@ public:
     void setWidescreen();
     void setScaled();
 #endif
+    void setMaskType( int mask_type ) { png_mask_type = mask_type; }
 
     int  init();
     int  eventLoop();
@@ -510,6 +511,14 @@ private:
 
     void disableGetButtonFlag();
     int getNumberFromBuffer( const char **buf );
+
+    /* ---------------------------------------- */
+    /* General image-related variables */
+    enum { PNG_MASK_AUTODETECT    = 0,
+	   PNG_MASK_USE_ALPHA     = 1,
+	   PNG_MASK_USE_NSCRIPTER = 2
+    };
+    int png_mask_type;
 
     /* ---------------------------------------- */
     /* Background related variables */
