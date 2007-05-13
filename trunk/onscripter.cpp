@@ -50,9 +50,11 @@ void optionHelp()
     printf( "      --fullscreen\tstart in fullscreen mode\n");
     printf( "      --window\t\tstart in window mode\n");
 #ifdef RCA_SCALE
-    printf( "      --widescreen\tTransform game to match widescreen monitors\n");
-    printf( "      --scale\t\tScale game to native display size. Yields small sharp text.\n");
+    printf( "      --widescreen\ttransform game to match widescreen monitors\n");
+    printf( "      --scale\t\tscale game to native display size. Yields small sharp text.\n");
 #endif
+    printf( "      --force-png-alpha\t\talways use PNG alpha channels\n");
+    printf( "      --force-png-nscmask\talways use NScripter-style masks\n");
     printf( "      --force-button-shortcut\tignore useescspc and getenter command\n");
     printf( "      --enable-wheeldown-advance\tadvance the text on mouse wheeldown event\n");
     printf( "      --disable-rescale\tdo not rescale the images in the archives when compiled with -DPDA\n");
@@ -161,6 +163,12 @@ int main( int argc, char **argv )
                 ons.setScaled();
             }
 #endif
+	    else if ( !strcmp( argv[0]+1, "-force-png-alpha" ) ){
+		ons.setMaskType( 1 );
+	    }
+	    else if ( !strcmp( argv[0]+1, "-force-png-nscmask" ) ){
+		ons.setMaskType( 2 );
+	    }
             else{
                 printf(" unknown option %s\n", argv[0] );
             }
