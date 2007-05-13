@@ -446,7 +446,13 @@ void ONScripterLabel::openAudio()
 
 ONScripterLabel::ONScripterLabel()
 {
+#ifdef PNG_FORCE_NSCRIPTER_MASKS
+    png_mask_type = PNG_MASK_USE_NSCRIPTER;
+#elif defined PNG_FORCE_ALPHA_MASKS
+    png_mask_type = PNG_MASK_USE_ALPHA;    
+#else
     png_mask_type = PNG_MASK_AUTODETECT;
+#endif
     cdrom_drive_number = 0;
     cdaudio_flag = false;
     default_font = NULL;

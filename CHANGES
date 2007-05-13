@@ -1,3 +1,13 @@
+2007-05-13
+
+  Attempt to detect when a PNG image is using an NScripter-style mask
+  area for transparency rather than a PNG alpha channel; add
+  command-line flags and compile-time options to force either
+  behaviour if auto-detection fails.  This should fix games like
+  Tsukihime which were broken by the addition of alpha channel
+  support.
+
+
 2007-05-06
 
   Fix some bugs: parsing of arguments, saving of vertical text,
