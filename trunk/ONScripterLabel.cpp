@@ -1403,7 +1403,7 @@ SDL_Surface *ONScripterLabel::loadImage( char *file_name, bool *has_alpha )
         tmp = IMG_LoadJPG_RW(src);
         SDL_RWclose(src);
     }
-    if (has_alpha) *has_alpha = tmp->format->Amask;
+    if ( tmp && has_alpha ) *has_alpha = tmp->format->Amask;
 
     delete[] buffer;
     if ( !tmp ){
@@ -1459,7 +1459,7 @@ SDL_Surface *ONScripterLabel::loadImage( char *file_name, bool *has_alpha )
 	}
     }
 #else
-#warn "BPP16 defined: PNGs with NScripter-style masks will not work as expected"
+#warning "BPP16 defined: PNGs with NScripter-style masks will not work as expected"
 #endif
     
     return ret;

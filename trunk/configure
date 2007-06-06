@@ -163,7 +163,7 @@ do
 	  --with-internal-sdl         skip check for system libSDL
 	  --with-internal-sdl-image   skip check for system libSDL_image
 	  --with-internal-sdl-mixer   skip check for system libSDL_mixer
-          --with-internal-sdl-ttf     skip check for system libSDL_ttf
+	  --with-internal-sdl-ttf     skip check for system libSDL_ttf
 	  --with-internal-bzip2       skip check for system libbz2
 	  --with-internal-smpeg       skip check for system libsmpeg
 	  --with-internal-freetype    skip check for system libfreetype
