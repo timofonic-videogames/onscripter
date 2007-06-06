@@ -423,6 +423,13 @@ extern unsigned int cacheMiss[8][8];
 #define BIG_ENDIAN_ARCHITECTURE 1
 #endif
 
+#ifdef BSD
+#define ENDIAN_IN_SYS
+#endif
+#ifdef __FreeBSD__
+#define ENDIAN_IN_SYS
+#endif
+
 #if !defined(LITTLE_ENDIAN_ARCHITECTURE) && !defined(BIG_ENDIAN_ARCHITECTURE)
 #ifdef WIN32
 #undef  BIG_ENDIAN_ARCHITECTURE
@@ -432,7 +439,11 @@ extern unsigned int cacheMiss[8][8];
 #undef  LITTLE_ENDIAN_ARCHITECTURE
 #define BIG_ENDIAN_ARCHITECTURE 1
 #else
+#ifdef ENDIAN_IN_SYS
+#include <sys/endian.h>
+#else
 #include <endian.h>
+#endif
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 #undef  BIG_ENDIAN_ARCHITECTURE
 #define LITTLE_ENDIAN_ARCHITECTURE 1
