@@ -1,4 +1,4 @@
-# -*- Makefile -*-
+# -*- makefile-gmake -*-
 #
 # Makefile.onscripter - General makefile rules for ONScripter
 #

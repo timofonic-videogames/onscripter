@@ -221,12 +221,14 @@ then
 else
     PLATFORM=$(./config.guess)
 fi
-SYS=Linux
+SYS=Posix
+POSIX=Vanilla
 case "$PLATFORM" in
-*mingw*)  echo "MinGW";    SYS=MinGW ;;
-*darwin*) echo "Mac OS X"; SYS=MacOSX ;;
-*linux*)  echo "Linux" ;;
-*)        echo "$PLATFORM (unsupported; using Linux build instructions)" ;;
+*mingw*)   echo "MinGW";    SYS=MinGW ;;
+*darwin*)  echo "Mac OS X"; SYS=MacOSX ;;
+*linux*)   echo "Linux";    POSIX=Linux ;;
+*freebsd*) echo "FreeBSD";  POSIX=FreeBSD ;;
+*)         echo "$PLATFORM (unsupported; using Posix build instructions)" ;;
 esac
 
 # Compiler (gcc, g++)
@@ -270,7 +272,7 @@ then
 fi
 
 # Make (must be GNU)
-$echo_n "Checking for system GNU make... ${nobr}"
+$echo_n "Checking for GNU make... ${nobr}"
 case "$($MAKE -v 2>/dev/null | head -1)" in
 GNU?Make*)
     echo "$MAKE" ;;
@@ -571,13 +573,13 @@ $echo_n "Writing Makefile... ${nobr}"
 case "$SYS" in
 MinGW)  EXE=.exe ; OBJ=.o ; LIB=.a ; W32=true ;;
 MacOSX) EXE=     ; OBJ=.o ; LIB=.a ; W32=     ;;
-Linux)  EXE=     ; OBJ=.o ; LIB=.a ; W32=     ;;
+Posix)  EXE=     ; OBJ=.o ; LIB=.a ; W32=     ;;
 *) echo "error: unsupported system";
    exit 1 ;;
 esac
 
 cat > Makefile <<_EOF
-# -*- Makefile -*-
+# -*- makefile-gmake -*-
 #
 # THIS IS A GENERATED FILE - changes will not be kept if configure is
 # run again.  If you wish to customise it, please be sure to give your
@@ -602,11 +604,13 @@ export PATH     :=   \$(shell pwd)/extlib/bin:\$(PATH)
 export CFLAGS   := -I\$(shell pwd)/extlib/include \$(CFLAGS)
 export CPPFLAGS := -I\$(shell pwd)/extlib/include \$(CPPFLAGS)
 export LDFLAGS  := -L\$(shell pwd)/extlib/lib \$(LDFLAGS)
+export GNUMAKE  :=   $MAKE
 
 # ONScripter variables
 INCS = -Iextlib/include \$(shell $SDL_CONFIG --cflags)      \\
                         \$(shell $SMPEG_CONFIG --cflags)    \\
-                        \$(shell $FREETYPE_CONFIG --cflags)
+                        \$(shell $FREETYPE_CONFIG --cflags) \\
+       \$(shell [ -d extlib/include/SDL ] && echo -Iextlib/include/SDL)
 _EOF
 case "$SYS" in 
 MinGW)
@@ -642,8 +646,12 @@ DEFS = -DMACOSX -DUTF8_FILESYSTEM -DUSE_OGG_VORBIS -DENABLE_1BYTE_CHAR -DFORCE_1
 NO_DEFAULT_ICON = true
 _EOF
 ;;
-Linux)
-cat >> Makefile <<-_EOF
+Posix)
+case "$POSIX" in
+Linux)   INTERNAL_LDFLAGS="-ldl -lasound" ;;
+FreeBSD) INTERNAL_LDFLAGS="-L/usr/X11R6/lib -lX11 -lXi -lXrandr" ;;
+esac	       
+cat >> Makefile <<_EOF
 
 LIBS = -Lextlib/lib \\
        -lSDL_image \$(if \$(findstring true,$INTERNAL_SDL_IMAGE),-ljpeg -lpng -lz) \\
@@ -651,11 +659,17 @@ LIBS = -Lextlib/lib \\
        \$(shell $SDL_CONFIG --libs)      \\
        \$(shell $SMPEG_CONFIG --libs)    \\
        -lSDL_ttf \$(shell $FREETYPE_CONFIG --libs) \\
-       -lbz2 \$(if \$(findstring true,$INTERNAL_SDL),-ldl -lasound)
+       -lbz2 \$(if \$(findstring true,$INTERNAL_SDL),$INTERNAL_LDFLAGS)
 
 DEFS = -DLINUX -DUSE_OGG_VORBIS -DENABLE_1BYTE_CHAR -DFORCE_1BYTE_CHAR -DINSANI -DHAELETH
 _EOF
 ;; esac
+if [ "$POSIX" = "Linux" ]
+then cat >> Makefile <<_EOF
+
+SDL_MIXER_FLAGS = --enable-music-native-midi-gpl
+_EOF
+fi
 cat >> Makefile <<_EOF
 
 .SUFFIXES:
