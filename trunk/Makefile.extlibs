@@ -1,3 +1,4 @@
+# -*- makefile-gmake -*-
 # Build rules for internal libraries.
 # Do not invoke this directly; these rules are used automatically when relevant.
 
@@ -148,7 +149,7 @@ $(SDLMSRC)/Makefile: $(if $(INTERNAL_SDL),$(EB)/sdl-config) \
                      $(if $(INTERNAL_OGGLIBS),$(OGGLIBS))
 	@echo Configuring internal SDL_mixer...
 	@cd $(SDLMSRC) && \
-	./configure --prefix="$(LPREFIX)" --enable-music-native-midi-gpl \
+	./configure --prefix="$(LPREFIX)" $(SDL_MIXER_FLAGS) \
 	    $(addprefix --disable-,shared $(addprefix music-,cmd mod timidity-midi)) \
 	    $(REDIR)
 
@@ -202,7 +203,7 @@ $(SMPGSRC)/Makefile: $(if $(INTERNAL_SDL),$(EB)/sdl-config)
 $(EB)/smpeg-config: $(SMPGSRC)/Makefile
 	@echo Building internal smpeg...
 	@$(MAKE) -C $(SMPGSRC) $(REDSO)
-	@$(MAKE) -C $(SMPGSRC) install $(REDSO)
+	@$(MAKE) -C $(SMPGSRC) prefix="$(LPREFIX)" install $(REDSO)
 
 #-- Freetype ------------------------------------------------------------------
 

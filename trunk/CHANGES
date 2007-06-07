@@ -1,3 +1,9 @@
+2007-06-07
+
+  Fix some errors when mixing internal and system libraries.
+  Improve support for FreeBSD.
+
+
 2007-05-13
 
   Attempt to detect when a PNG image is using an NScripter-style mask
