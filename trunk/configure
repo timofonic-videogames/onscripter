@@ -11,6 +11,11 @@ case "$(echo 'x\c')" in
 *)     echo_n="echo";    nobr="\c" ;;
 esac
 
+# Portable !
+not() {
+    if $1; then false; else true; fi
+}
+
 # ---------- Program begins here ----------
 
 # Default options
@@ -216,10 +221,10 @@ fi
 $echo_n "Checking platform type... ${nobr}"
 if [ -n "$PLATFORM" ]
 then 
-    PLATFORM=$($echo_n "$PLATFORM${nobr}" | tr '[:upper:]' '[:lower:]')
-    if ./config.sub $PLATFORM >/dev/null 2>&1; then PLATFORM=$(./config.sub $PLATFORM); fi
+    PLATFORM=`$echo_n "$PLATFORM${nobr}" | tr '[:upper:]' '[:lower:]'`
+    if ./config.sub $PLATFORM >/dev/null 2>&1; then PLATFORM=`./config.sub $PLATFORM`; fi
 else
-    PLATFORM=$(./config.guess)
+    PLATFORM=`./config.guess`
 fi
 SYS=Posix
 POSIX=Vanilla
@@ -228,6 +233,7 @@ case "$PLATFORM" in
 *darwin*)  echo "Mac OS X"; SYS=MacOSX ;;
 *linux*)   echo "Linux";    POSIX=Linux ;;
 *freebsd*) echo "FreeBSD";  POSIX=FreeBSD ;;
+*solaris*) echo "Solaris (unsupported; using Posix build instructions)" ;;
 *)         echo "$PLATFORM (unsupported; using Posix build instructions)" ;;
 esac
 
@@ -238,7 +244,7 @@ then
     echo "Unsupported compiler requested; please don't complain if anything doesn't work!"
 else
     $echo_n "Checking C compiler... ${nobr}"
-    case "$($CC --version 2>/dev/null | head -1)" in
+    case "`($CC --version) 2>/dev/null | head -1`" in
     gcc*) echo gcc ;;
     *apple*gcc*) echo gcc ;;
     *)  echo "error"
@@ -251,13 +257,12 @@ else
         exit 1 ;;
     esac
 fi
-
 if [ -z "$CXX" -a "$CC" != "gcc" ]; then CXX=$CC; fi
 if [ -z "$CXX" ]; then CXX=g++; fi
-if ! $UNSUPPORTED_COMPILER
+if not $UNSUPPORTED_COMPILER 
 then
     $echo_n "Checking C++ compiler... ${nobr}"
-    case "$($CXX --version 2>/dev/null | head -1)" in
+    case "`($CXX --version) 2>/dev/null | head -1`" in
     g++*) echo g++ ;;
     *apple*g++*) echo g++ ;;
     *)  echo "error"
@@ -273,11 +278,11 @@ fi
 
 # Make (must be GNU)
 $echo_n "Checking for GNU make... ${nobr}"
-case "$($MAKE -v 2>/dev/null | head -1)" in
+case "`($MAKE -v) 2>/dev/null | head -1`" in
 GNU?Make*)
     echo "$MAKE" ;;
 *)
-    case "$(gmake -v 2>/dev/null | head -1)" in
+    case "`(gmake -v) 2>/dev/null | head -1`" in
     GNU?Make*)
 	MAKE=gmake
 	echo "gmake" ;;
@@ -298,10 +303,10 @@ then
     SDL_CONFIG=./extlib/bin/sdl-config
 else
     $echo_n "Checking for system SDL... ${nobr}"
-    VER=$($SDL_CONFIG --version 2>/dev/null)
+    VER=`($SDL_CONFIG --version) 2>/dev/null`
     if [ -n "$VER" ]
     then
-	eval $(echo $VER | awk -F. '{ print "MAJ=" $1 "; MIN=" $2 "; REL=" $3; }')
+	eval `echo $VER | awk -F. '{ print "MAJ=" $1 "; MIN=" $2 "; REL=" $3; }'`
 	if [ $MAJ -gt 1 -o $MAJ -eq 1 -a $MIN -gt 2 -o $MAJ -eq 1 -a $MIN -eq 2 -a $REL -ge 8 ]
 	then echo "yes"
 	else echo "too old"
@@ -317,7 +322,7 @@ rm -rf .configtest
 mkdir .configtest
 cd .configtest
 
-if ! $INTERNAL_SDL_IMAGE
+if not $INTERNAL_SDL_IMAGE
 then
     $echo_n "Checking for system SDL_image... ${nobr}"
     cat > test.cc <<-_EOF
@@ -328,7 +333,7 @@ then
 	int main(){bool j=IMG_Load_RW(SDL_RWFromConstMem(jpeg,309),1),p=IMG_Load_RW(SDL_RWFromConstMem(png,69),1);return j&&p?0:(j?1:(p?2:3));}
 	_EOF
     INTERNAL_SDL_IMAGE=true
-    $CXX $($SDL_CONFIG --cflags) $($SDL_CONFIG --libs) -lSDL_image test.cc -o itest >/dev/null 2>&1
+    $CXX `$SDL_CONFIG --cflags` `$SDL_CONFIG --libs` -lSDL_image test.cc -o itest >/dev/null 2>&1
     ./itest 2>/dev/null
     case $? in
     0) echo "yes"; INTERNAL_SDL_IMAGE=false ;;
@@ -337,7 +342,7 @@ then
     esac
 fi
 
-if $INTERNAL_SDL_IMAGE && ! $INTERNAL_LIBPNG
+if $INTERNAL_SDL_IMAGE && not $INTERNAL_LIBPNG
 then
     $echo_n "Checking for system libpng... ${nobr}"
     cat > test.cc <<-_EOF
@@ -354,7 +359,7 @@ then
     esac
 fi
 
-if $INTERNAL_SDL_IMAGE && ! $INTERNAL_LIBJPEG
+if $INTERNAL_SDL_IMAGE && not $INTERNAL_LIBJPEG
 then
     $echo_n "Checking for system libjpeg... ${nobr}"
     cat > test.cc <<-_EOF
@@ -403,7 +408,7 @@ write_ogg() {
 	_EOF
 }
 
-if ! $INTERNAL_SDL_MIXER
+if not $INTERNAL_SDL_MIXER
 then
     $echo_n "Checking for system SDL_mixer... ${nobr}"
     write_ogg
@@ -418,7 +423,7 @@ then
 	Mix_Music*m;bool ogg=m=Mix_LoadMUS("o.ogg");if(m)Mix_FreeMusic(m);bool mp3=m=Mix_LoadMUS("o.mp3");if(m)Mix_FreeMusic(m);return ogg&&mp3?0:(ogg?1:(mp3?2:3));}
 	_EOF
     INTERNAL_SDL_MIXER=true
-    $CXX $($SDL_CONFIG --cflags) $($SDL_CONFIG --libs) -lSDL_mixer test.cc -o mtest >/dev/null 2>&1
+    $CXX `$SDL_CONFIG --cflags` `$SDL_CONFIG --libs` -lSDL_mixer test.cc -o mtest >/dev/null 2>&1
     ./mtest 2>/dev/null
     case $? in
     0) echo "yes"; INTERNAL_SDL_MIXER=false ;;
@@ -427,7 +432,7 @@ then
     esac
 fi
 
-if $INTERNAL_SDL_MIXER && ! $INTERNAL_OGGLIBS
+if $INTERNAL_SDL_MIXER && not $INTERNAL_OGGLIBS
 then
     $echo_n "Checking for system Ogg Vorbis libs... ${nobr}"
     write_ogg
@@ -449,7 +454,7 @@ then
     esac
 fi
 
-if ! $INTERNAL_BZIP2
+if not $INTERNAL_BZIP2
 then
     $echo_n "Checking for system libbzip2... ${nobr}"
     cat > test.cc <<-_EOF
@@ -470,7 +475,7 @@ then
     SMPEG_CONFIG=./extlib/bin/smpeg-config
 else
     $echo_n "Checking for system libsmpeg... ${nobr}"
-    VER=$($SMPEG_CONFIG --version 2>/dev/null)
+    VER=`($SMPEG_CONFIG --version) 2>/dev/null`
     if [ -n "$VER" ]
     then echo "yes"
     else echo "no"
@@ -479,22 +484,22 @@ else
     fi
 fi
 
-if ! $INTERNAL_FREETYPE
+if not $INTERNAL_FREETYPE
 then
     $echo_n "Checking for system Freetype... ${nobr}"
-    VER=$($FREETYPE_CONFIG --ftversion 2>/dev/null)
+    VER=`($FREETYPE_CONFIG --ftversion) 2>/dev/null`
     if [ -z "$VER" ]; then
 	FREETYPE_CONFIG=freetype2-config
-	VER=$($FREETYPE_CONFIG --ftversion 2>/dev/null)
+	VER=`($FREETYPE_CONFIG --ftversion) 2>/dev/null`
 	if [ -z "$VER" ]; then
 	    FREETYPE_CONFIG="pkg-config freetype2"
-	    VER=$($FREETYPE_CONFIG --modversion 2>/dev/null)
+	    VER=`($FREETYPE_CONFIG --modversion) 2>/dev/null`
 	    if [ -n "$VER" ]; then VER=2; fi
 	fi
     fi
     if [ -n "$VER" ]
     then
-	if [ $(echo $VER | awk -F. '{ print $1; }') -ge 2 ]
+	if [ `echo $VER | awk -F. '{ print $1; }'` -ge 2 ]
 	then echo "yes"
 	else echo "too old"
 	    INTERNAL_FREETYPE=true
@@ -509,7 +514,7 @@ if $INTERNAL_FREETYPE
 then
     INTERNAL_SDL_TTF=true
     FREETYPE_CONFIG=./extlib/bin/freetype-config
-elif ! $INTERNAL_SDL_TTF
+elif not $INTERNAL_SDL_TTF
 then
     $echo_n "Checking for system SDL_ttf... ${nobr}"
     cat > test.cc <<-_EOF
@@ -519,7 +524,7 @@ then
 	int main(void){if(TTF_Init()==-1)return 1;TTF_Quit();return 0;}
 	_EOF
     INTERNAL_SDL_TTF=true
-    $CXX $($SDL_CONFIG --cflags) $($SDL_CONFIG --libs) -lSDL_ttf test.cc -o ttest >/dev/null 2>&1
+    $CXX `$SDL_CONFIG --cflags` `$SDL_CONFIG --libs` -lSDL_ttf test.cc -o ttest >/dev/null 2>&1
     ./ttest 2>/dev/null
     case $? in
     0) echo "yes"; INTERNAL_SDL_TTF=false ;;
@@ -591,6 +596,8 @@ WIN32=$W32
 OBJSUFFIX=$OBJ
 LIBSUFFIX=$LIB
 EXESUFFIX=$EXE
+
+PREFIX=$PREFIX
 
 # Extra handling for internal libraries.
 EXTRADEPS=$DEPS
@@ -694,6 +701,8 @@ distclean: clean pdistclean \$(DISTCLEAN_TARGETS)
 	         extlib/share extlib/man
 	rm -f Makefile
 
+install:
+	echo TODO: install function not yet implemented
 _EOF
 
 if [ "$SYS" = "MinGW" ]
