@@ -611,6 +611,7 @@ export PATH     :=   \$(shell pwd)/extlib/bin:\$(PATH)
 export CFLAGS   := -I\$(shell pwd)/extlib/include \$(CFLAGS)
 export CPPFLAGS := -I\$(shell pwd)/extlib/include \$(CPPFLAGS)
 export LDFLAGS  := -L\$(shell pwd)/extlib/lib \$(LDFLAGS)
+export MAKE     :=   $MAKE
 export GNUMAKE  :=   $MAKE
 
 # ONScripter variables
