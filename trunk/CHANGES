@@ -1,3 +1,9 @@
+2007-06-10
+
+  Get the build working on Solaris (a useful benchmark for how well
+  things work on less Linux-like platforms).
+
+
 2007-06-07
 
   Fix some errors when mixing internal and system libraries.

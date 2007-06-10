@@ -2,6 +2,9 @@
 
 # Autoconf is ugly and complex. This is still ugly, but at least it's
 # simple, and should be good enough for most plausible build cases.
+# (Trying to build on Solaris crushed that belief -- it works now, but
+# this gets uglier for every platform.  I will probably be forced to
+# adopt autoconf in the end, sadly.)
 
 # ---------- Utility definitions ----------
 
@@ -11,7 +14,7 @@ case "$(echo 'x\c')" in
 *)     echo_n="echo";    nobr="\c" ;;
 esac
 
-# Portable !
+# Portable replacement for !
 not() {
     if $1; then false; else true; fi
 }
@@ -20,7 +23,9 @@ not() {
 
 # Default options
 PREFIX=/usr/local
-if [ -z "$MAKE" ]; then MAKE=make; fi
+if [ -z "$MAKE"   ]; then MAKE=make; fi
+if [ -z "$AR"     ]; then AR=ar; fi
+if [ -z "$RANLIB" ]; then RANLIB=ranlib; fi
 UNSUPPORTED_COMPILER=false
 INTERNAL_LIBS=false
 INTERNAL_SDL=false
@@ -233,7 +238,7 @@ case "$PLATFORM" in
 *darwin*)  echo "Mac OS X"; SYS=MacOSX ;;
 *linux*)   echo "Linux";    POSIX=Linux ;;
 *freebsd*) echo "FreeBSD";  POSIX=FreeBSD ;;
-*solaris*) echo "Solaris (unsupported; using Posix build instructions)" ;;
+*solaris*) echo "Solaris";  POSIX=Solaris ;;
 *)         echo "$PLATFORM (unsupported; using Posix build instructions)" ;;
 esac
 
@@ -295,6 +300,39 @@ GNU?Make*)
 	exit 1 ;;
     esac ;;
 esac
+
+# ar, ranlib (for simplicity's sake we assume that these are ar and
+# ranlib if make is make)
+if [ "$MAKE" != "make" ]
+then
+    $echo_n "Checking for ar... ${nobr}"
+    if ($AR >/dev/null) 2>/dev/null
+    then
+	echo $AR
+    else
+	AR=gar
+	if ($AR --help >/dev/null) 2>/dev/null
+	then echo $AR
+	else echo "not found"
+	     echo "Unable to locate ar. If it's installed, try setting the environment variable AR appropriately."
+	     exit 1
+	fi
+    fi
+
+    $echo_n "Checking for ranlib... ${nobr}"
+    if ($RANLIB >/dev/null) 2>/dev/null
+    then
+	echo $RANLIB
+    else
+	RANLIB=granlib
+	if ($RANLIB --help >/dev/null) 2>/dev/null
+	then echo $RANLIB
+	else echo "not found"
+	     echo "Unable to locate ranlib. If it's installed, try setting the environment variable RANLIB appropriately. (If your platform does not need ranlib, just set RANLIB=true.)"
+	     exit 1
+	fi
+    fi
+fi
 
 # Libraries
 
@@ -611,8 +649,14 @@ export PATH     :=   \$(shell pwd)/extlib/bin:\$(PATH)
 export CFLAGS   := -I\$(shell pwd)/extlib/include \$(CFLAGS)
 export CPPFLAGS := -I\$(shell pwd)/extlib/include \$(CPPFLAGS)
 export LDFLAGS  := -L\$(shell pwd)/extlib/lib \$(LDFLAGS)
-export MAKE     :=   $MAKE
-export GNUMAKE  :=   $MAKE
+
+export CC       :=  $CC
+export CXX      :=  $CXX
+export LD       := \$(CXX) -o 
+export MAKE     :=  $MAKE
+export GNUMAKE  :=  $MAKE
+export AR       :=  $AR
+export RANLIB   :=  $RANLIB
 
 # ONScripter variables
 INCS = -Iextlib/include \$(shell $SDL_CONFIG --cflags)      \\
@@ -658,6 +702,7 @@ Posix)
 case "$POSIX" in
 Linux)   INTERNAL_LDFLAGS="-ldl -lasound" ;;
 FreeBSD) INTERNAL_LDFLAGS="-L/usr/X11R6/lib -lX11 -lXi -lXrandr" ;;
+Solaris) INTERNAL_LDFLAGS="-lX11 -lXext" ;;
 esac	       
 cat >> Makefile <<_EOF
 
@@ -683,9 +728,6 @@ cat >> Makefile <<_EOF
 .SUFFIXES:
 .SUFFIXES: $OBJ .cpp .h .c
 
-CC  = $CC
-CXX = $CXX
-LD  = \$(CXX) -o 
 OSCFLAGS = -O3 -Wall -Wpointer-arith -Werror -fomit-frame-pointer -pipe \$(OSCFLAGSEXTRA)
 
 TARGET = onscripter$EXE
@@ -703,7 +745,7 @@ distclean: clean pdistclean \$(DISTCLEAN_TARGETS)
 	rm -f Makefile
 
 install:
-	echo TODO: install function not yet implemented
+	@echo TODO: install function not yet implemented
 _EOF
 
 if [ "$SYS" = "MinGW" ]
