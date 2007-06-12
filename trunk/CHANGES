@@ -1,7 +1,8 @@
-2007-06-10
+2007-06-12
 
   Get the build working on Solaris (a useful benchmark for how well
-  things work on less Linux-like platforms).
+  things work on less Linux-like platforms) and NetBSD (a useful step
+  towards my ultimate goal of a visual novel on every toaster).
 
 
 2007-06-07

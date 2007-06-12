@@ -423,10 +423,7 @@ extern unsigned int cacheMiss[8][8];
 #define BIG_ENDIAN_ARCHITECTURE 1
 #endif
 
-#ifdef BSD
-#define ENDIAN_IN_SYS
-#endif
-#ifdef __FreeBSD__
+#if defined(BSD) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 #define ENDIAN_IN_SYS
 #endif
 

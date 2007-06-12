@@ -55,108 +55,108 @@ do
   fi
   arg=`expr "x$opt" : 'x[^=]*=\(.*\)'`
   case $opt in
-    --prefix=* | -prefix=*)
-      PREFIX=$arg ;;
-    --prefix | -prefix)
-      prev=PREFIX
-      ;;
-    --platform=* | -platform=*)
-      PLATFORM=$arg ;;
-    --platform | -platform)
-      prev=PLATFORM
-      ;;
-    --make=* | -make=*)
-      MAKE=$arg ;;
-    --make | -make)
-      prev=MAKE
-      ;;
-	--unsupported-compiler | -unsupported-compiler)
-	  UNSUPPORTED_COMPILER=true ;;
-	--unsupported-compiler=* | -unsupported-compiler=*)
-	  UNSUPPORTED_COMPILER=$arg
-	  ;;
-	--enable-internal-libs | -enable-internal-libs | --with-internal-libs | -with-internal-libs)
-	  INTERNAL_LIBS=true ;;
-	--disable-internal-libs | -disable-internal-libs | --without-internal-libs | -without-internal-libs | --no-internal-libs | -no-internal-libs)
-	  INTERNAL_LIBS=false ;;
-	--internal-libs=* | -internal-libs=*)
-	  INTERNAL_LIBS=$arg ;;
-	--internal-libs | -internal-libs)
-	  prev=INTERNAL_LIBS
-	  ;;
-	--enable-internal-sdl | -enable-internal-sdl | --with-internal-sdl | -with-internal-sdl)
-	  INTERNAL_SDL=true ;;
-	--disable-internal-sdl | -disable-internal-sdl | --without-internal-sdl | -without-internal-sdl | --no-internal-sdl | -no-internal-sdl)
-	  INTERNAL_SDL=false ;;
-	--internal-sdl=* | -internal-sdl=*)
-	  INTERNAL_SDL=$arg ;;
-	--internal-sdl | -internal-sdl)
-	  prev=INTERNAL_SDL
-	  ;;
-	--enable-internal-sdl?image | -enable-internal-sdl?image | --with-internal-sdl?image | -with-internal-sdl?image | --enable-internal-sdlimage  | -enable-internal-sdlimage  | --with-internal-sdlimage  | -with-internal-sdlimage)
-	  INTERNAL_SDL_IMAGE=true ;;
-	--disable-internal-sdl?image | -disable-internal-sdl?image | --without-internal-sdl?image | -without-internal-sdl?image | --no-internal-sdl?image | -no-internal-sdl?image | --disable-internal-sdlimage  | -disable-internal-sdlimage  | --without-internal-sdlimage  | -without-internal-sdlimage  | --no-internal-sdlimage  | -no-internal-sdlimage)
-	  INTERNAL_SDL_IMAGE=false ;;
-	--internal-sdl?image=* | -internal-sdl?image=* | --internal-sdlimage=* | -internal-sdlimage=*)
-	  INTERNAL_SDL_IMAGE=$arg ;;
-	--internal-sdl?image | -internal-sdl?image | --internal-sdlimage | -internal-sdlimage)
-	  prev=INTERNAL_SDL_IMAGE
-	  ;;
-	--internal-all-images)
-	  INTERNAL_SDL_IMAGE=true
-	  INTERNAL_LIBPNG=true
-	  INTERNAL_LIBJPEG=true
-	  ;;
-	--enable-internal-sdl?mixer | -enable-internal-sdl?mixer | --with-internal-sdl?mixer | -with-internal-sdl?mixer | --enable-internal-sdlmixer  | -enable-internal-sdlmixer  | --with-internal-sdlmixer  | -with-internal-sdlmixer)
-	  INTERNAL_SDL_MIXER=true ;;
-	--disable-internal-sdl?mixer | -disable-internal-sdl?mixer | --without-internal-sdl?mixer | -without-internal-sdl?mixer | --no-internal-sdl?mixer | -no-internal-sdl?mixer | --disable-internal-sdlmixer  | -disable-internal-sdlmixer  | --without-internal-sdlmixer  | -without-internal-sdlmixer  | --no-internal-sdlmixer  | -no-internal-sdlmixer)
-	  INTERNAL_SDL_MIXER=false ;;
-	--internal-sdl?mixer=* | -internal-sdl?mixer=* | --internal-sdlmixer=* | -internal-sdlmixer=*)
-	  INTERNAL_SDL_MIXER=$arg ;;
-	--internal-sdl?mixer | -internal-sdl?mixer | --internal-sdlmixer | -internal-sdlmixer)
-	  prev=INTERNAL_SDL_MIXER
-	  ;;
-	--internal-all-mixers)
-	  INTERNAL_SDL_MIXER=true
-	  INTERNAL_OGGLIBS=true
-	  ;;
-	--enable-internal-bz* | -enable-internal-bz* | --with-internal-bz* | -with-internal-bz*)
-	  INTERNAL_BZIP2=true ;;
-	--disable-internal-bz* | -disable-internal-bz* | --without-internal-bz* | -without-internal-bz* | --no-internal-bz* | -no-internal-bz*)
-	  INTERNAL_BZIP2=false ;;
-	--internal-bz*=* | -internal-bz*=*)
-	  INTERNAL_BZIP2=$arg ;;
-	--internal-bz* | -internal-bz*)
-	  prev=INTERNAL_BZIP2
-	  ;;
-	--enable-internal-smpeg | -enable-internal-smpeg | --with-internal-smpeg | -with-internal-smpeg)
-	  INTERNAL_SMPEG=true ;;
-	--disable-internal-smpeg | -disable-internal-smpeg | --without-internal-smpeg | -without-internal-smpeg | --no-internal-smpeg | -no-internal-smpeg)
-	  INTERNAL_SMPEG=false ;;
-	--internal-smpeg=* | -internal-smpeg=*)
-	  INTERNAL_SMPEG=$arg ;;
-	--internal-smpeg | -internal-smpeg)
-	  prev=INTERNAL_SMPEG
-	  ;;
-	--enable-internal-freetype | -enable-internal-freetype | --with-internal-freetype | -with-internal-freetype)
-	  INTERNAL_FREETYPE=true ;;
-	--disable-internal-freetype | -disable-internal-freetype | --without-internal-freetype | -without-internal-freetype | --no-internal-freetype | -no-internal-freetype)
-	  INTERNAL_FREETYPE=false ;;
-	--internal-freetype=* | -internal-freetype=*)
-	  INTERNAL_FREETYPE=$arg ;;
-	--internal-freetype | -internal-freetype)
-	  prev=INTERNAL_FREETYPE
-	  ;;
-
-	--enable-internal-sdl?ttf | -enable-internal-sdl?ttf | --with-internal-sdl?ttf | -with-internal-sdl?ttf | --enable-internal-sdlttf  | -enable-internal-sdlttf  | --with-internal-sdlttf  | -with-internal-sdlttf)
-	  INTERNAL_SDL_TTF=true ;;
-	--disable-internal-sdl?ttf | -disable-internal-sdl?ttf | --without-internal-sdl?ttf | -without-internal-sdl?ttf | --no-internal-sdl?ttf | -no-internal-sdl?ttf | --disable-internal-sdlttf  | -disable-internal-sdlttf  | --without-internal-sdlttf  | -without-internal-sdlttf  | --no-internal-sdlttf  | -no-internal-sdlttf)
-	  INTERNAL_SDL_TTF=false ;;
-	--internal-sdl?ttf=* | -internal-sdl?ttf=* | --internal-sdlttf=* | -internal-sdlttf=*)
-	  INTERNAL_SDL_TTF=$arg ;;
-	--internal-sdl?ttf | -internal-sdl?ttf | --internal-sdlttf | -internal-sdlttf)
-	  prev=INTERNAL_SDL_TTF
-	  ;;
+      --prefix=* | -prefix=*)
+        PREFIX=$arg ;;
+      --prefix | -prefix)
+        prev=PREFIX
+        ;;
+      --platform=* | -platform=*)
+        PLATFORM=$arg ;;
+      --platform | -platform)
+        prev=PLATFORM
+        ;;
+      --make=* | -make=*)
+        MAKE=$arg ;;
+      --make | -make)
+        prev=MAKE
+        ;;
+      --unsupported-compiler | -unsupported-compiler)
+        UNSUPPORTED_COMPILER=true ;;
+      --unsupported-compiler=* | -unsupported-compiler=*)
+        UNSUPPORTED_COMPILER=$arg
+        ;;
+      --enable-internal-libs | -enable-internal-libs | --with-internal-libs | -with-internal-libs)
+        INTERNAL_LIBS=true ;;
+      --disable-internal-libs | -disable-internal-libs | --without-internal-libs | -without-internal-libs | --no-internal-libs | -no-internal-libs)
+        INTERNAL_LIBS=false ;;
+      --internal-libs=* | -internal-libs=*)
+        INTERNAL_LIBS=$arg ;;
+      --internal-libs | -internal-libs)
+        prev=INTERNAL_LIBS
+        ;;
+      --enable-internal-sdl | -enable-internal-sdl | --with-internal-sdl | -with-internal-sdl)
+        INTERNAL_SDL=true ;;
+      --disable-internal-sdl | -disable-internal-sdl | --without-internal-sdl | -without-internal-sdl | --no-internal-sdl | -no-internal-sdl)
+        INTERNAL_SDL=false ;;
+      --internal-sdl=* | -internal-sdl=*)
+        INTERNAL_SDL=$arg ;;
+      --internal-sdl | -internal-sdl)
+        prev=INTERNAL_SDL
+        ;;
+      --enable-internal-sdl?image | -enable-internal-sdl?image | --with-internal-sdl?image | -with-internal-sdl?image | --enable-internal-sdlimage  | -enable-internal-sdlimage  | --with-internal-sdlimage  | -with-internal-sdlimage)
+        INTERNAL_SDL_IMAGE=true ;;
+      --disable-internal-sdl?image | -disable-internal-sdl?image | --without-internal-sdl?image | -without-internal-sdl?image | --no-internal-sdl?image | -no-internal-sdl?image | --disable-internal-sdlimage  | -disable-internal-sdlimage  | --without-internal-sdlimage  | -without-internal-sdlimage  | --no-internal-sdlimage  | -no-internal-sdlimage)
+        INTERNAL_SDL_IMAGE=false ;;
+      --internal-sdl?image=* | -internal-sdl?image=* | --internal-sdlimage=* | -internal-sdlimage=*)
+        INTERNAL_SDL_IMAGE=$arg ;;
+      --internal-sdl?image | -internal-sdl?image | --internal-sdlimage | -internal-sdlimage)
+        prev=INTERNAL_SDL_IMAGE
+        ;;
+      --internal-all-images)
+        INTERNAL_SDL_IMAGE=true
+        INTERNAL_LIBPNG=true
+        INTERNAL_LIBJPEG=true
+        ;;
+      --enable-internal-sdl?mixer | -enable-internal-sdl?mixer | --with-internal-sdl?mixer | -with-internal-sdl?mixer | --enable-internal-sdlmixer  | -enable-internal-sdlmixer  | --with-internal-sdlmixer  | -with-internal-sdlmixer)
+        INTERNAL_SDL_MIXER=true ;;
+      --disable-internal-sdl?mixer | -disable-internal-sdl?mixer | --without-internal-sdl?mixer | -without-internal-sdl?mixer | --no-internal-sdl?mixer | -no-internal-sdl?mixer | --disable-internal-sdlmixer  | -disable-internal-sdlmixer  | --without-internal-sdlmixer  | -without-internal-sdlmixer  | --no-internal-sdlmixer  | -no-internal-sdlmixer)
+        INTERNAL_SDL_MIXER=false ;;
+      --internal-sdl?mixer=* | -internal-sdl?mixer=* | --internal-sdlmixer=* | -internal-sdlmixer=*)
+        INTERNAL_SDL_MIXER=$arg ;;
+      --internal-sdl?mixer | -internal-sdl?mixer | --internal-sdlmixer | -internal-sdlmixer)
+        prev=INTERNAL_SDL_MIXER
+        ;;
+      --internal-all-mixers)
+        INTERNAL_SDL_MIXER=true
+        INTERNAL_OGGLIBS=true
+        ;;
+      --enable-internal-bz* | -enable-internal-bz* | --with-internal-bz* | -with-internal-bz*)
+        INTERNAL_BZIP2=true ;;
+      --disable-internal-bz* | -disable-internal-bz* | --without-internal-bz* | -without-internal-bz* | --no-internal-bz* | -no-internal-bz*)
+        INTERNAL_BZIP2=false ;;
+      --internal-bz*=* | -internal-bz*=*)
+        INTERNAL_BZIP2=$arg ;;
+      --internal-bz* | -internal-bz*)
+        prev=INTERNAL_BZIP2
+        ;;
+      --enable-internal-smpeg | -enable-internal-smpeg | --with-internal-smpeg | -with-internal-smpeg)
+        INTERNAL_SMPEG=true ;;
+      --disable-internal-smpeg | -disable-internal-smpeg | --without-internal-smpeg | -without-internal-smpeg | --no-internal-smpeg | -no-internal-smpeg)
+        INTERNAL_SMPEG=false ;;
+      --internal-smpeg=* | -internal-smpeg=*)
+        INTERNAL_SMPEG=$arg ;;
+      --internal-smpeg | -internal-smpeg)
+        prev=INTERNAL_SMPEG
+        ;;
+      --enable-internal-freetype | -enable-internal-freetype | --with-internal-freetype | -with-internal-freetype)
+        INTERNAL_FREETYPE=true ;;
+      --disable-internal-freetype | -disable-internal-freetype | --without-internal-freetype | -without-internal-freetype | --no-internal-freetype | -no-internal-freetype)
+        INTERNAL_FREETYPE=false ;;
+      --internal-freetype=* | -internal-freetype=*)
+        INTERNAL_FREETYPE=$arg ;;
+      --internal-freetype | -internal-freetype)
+        prev=INTERNAL_FREETYPE
+        ;;
+      
+      --enable-internal-sdl?ttf | -enable-internal-sdl?ttf | --with-internal-sdl?ttf | -with-internal-sdl?ttf | --enable-internal-sdlttf  | -enable-internal-sdlttf  | --with-internal-sdlttf  | -with-internal-sdlttf)
+        INTERNAL_SDL_TTF=true ;;
+      --disable-internal-sdl?ttf | -disable-internal-sdl?ttf | --without-internal-sdl?ttf | -without-internal-sdl?ttf | --no-internal-sdl?ttf | -no-internal-sdl?ttf | --disable-internal-sdlttf  | -disable-internal-sdlttf  | --without-internal-sdlttf  | -without-internal-sdlttf  | --no-internal-sdlttf  | -no-internal-sdlttf)
+        INTERNAL_SDL_TTF=false ;;
+      --internal-sdl?ttf=* | -internal-sdl?ttf=* | --internal-sdlttf=* | -internal-sdlttf=*)
+        INTERNAL_SDL_TTF=$arg ;;
+      --internal-sdl?ttf | -internal-sdl?ttf | --internal-sdlttf | -internal-sdlttf)
+        prev=INTERNAL_SDL_TTF
+        ;;
 
     -\? | -h | -help | --help)
       cat <<-__ENDHELP
@@ -237,8 +237,9 @@ case "$PLATFORM" in
 *mingw*)   echo "MinGW";    SYS=MinGW ;;
 *darwin*)  echo "Mac OS X"; SYS=MacOSX ;;
 *linux*)   echo "Linux";    POSIX=Linux ;;
-*freebsd*) echo "FreeBSD";  POSIX=FreeBSD ;;
 *solaris*) echo "Solaris";  POSIX=Solaris ;;
+*freebsd*) echo "FreeBSD";  POSIX=FreeBSD ;;
+*netbsd*)  echo "NetBSD";   POSIX=NetBSD ;;
 *)         echo "$PLATFORM (unsupported; using Posix build instructions)" ;;
 esac
 
@@ -306,12 +307,12 @@ esac
 if [ "$MAKE" != "make" ]
 then
     $echo_n "Checking for ar... ${nobr}"
-    if ($AR >/dev/null) 2>/dev/null
+    if ($AR -V >/dev/null) 2>/dev/null
     then
 	echo $AR
     else
 	AR=gar
-	if ($AR --help >/dev/null) 2>/dev/null
+	if ($AR -V >/dev/null) 2>/dev/null
 	then echo $AR
 	else echo "not found"
 	     echo "Unable to locate ar. If it's installed, try setting the environment variable AR appropriately."
@@ -320,12 +321,12 @@ then
     fi
 
     $echo_n "Checking for ranlib... ${nobr}"
-    if ($RANLIB >/dev/null) 2>/dev/null
+    if ($RANLIB -V >/dev/null) 2>/dev/null
     then
 	echo $RANLIB
     else
 	RANLIB=granlib
-	if ($RANLIB --help >/dev/null) 2>/dev/null
+	if ($RANLIB -V >/dev/null) 2>/dev/null
 	then echo $RANLIB
 	else echo "not found"
 	     echo "Unable to locate ranlib. If it's installed, try setting the environment variable RANLIB appropriately. (If your platform does not need ranlib, just set RANLIB=true.)"
@@ -702,8 +703,9 @@ Posix)
 case "$POSIX" in
 Linux)   INTERNAL_LDFLAGS="-ldl -lasound" ;;
 FreeBSD) INTERNAL_LDFLAGS="-L/usr/X11R6/lib -lX11 -lXi -lXrandr" ;;
+NetBSD)  INTERNAL_LDFLAGS="\$(foreach x,11 i randr ext render,/usr/X11R6/lib/libX\$(x).a) -lossaudio" ;;
 Solaris) INTERNAL_LDFLAGS="-lX11 -lXext" ;;
-esac	       
+esac
 cat >> Makefile <<_EOF
 
 LIBS = -Lextlib/lib \\
