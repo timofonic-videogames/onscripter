@@ -636,7 +636,7 @@ OBJSUFFIX=$OBJ
 LIBSUFFIX=$LIB
 EXESUFFIX=$EXE
 
-PREFIX=$PREFIX
+PREFIX ?= $PREFIX
 
 # Extra handling for internal libraries.
 EXTRADEPS=$DEPS
@@ -747,7 +747,7 @@ distclean: clean pdistclean \$(DISTCLEAN_TARGETS)
 	rm -f Makefile
 
 install:
-	@echo TODO: install function not yet implemented
+	./install-sh -c -s \$(TARGET) \$(PREFIX)/bin/\$(TARGET)
 _EOF
 
 if [ "$SYS" = "MinGW" ]
