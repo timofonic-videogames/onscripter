@@ -24,33 +24,6 @@ suited to the use we make of it.
 ONScripter-En is that branch.
 
 
-  REQUIREMENTS
-
-ONScripter is based on SDL, and should run on any platform for which
-SDL is available.  It has been successfully compiled on platforms as
-diverse as the Dreamcast, the PSP, and the iPod.
-
-ONScripter-En has slightly more strict requirements, however.  Since
-ONScripter's original build system is extremely difficult to use, it
-has been replaced in this branch with a more conventional
-configure-build system; this depends on a POSIX-like environment with
-GNU make, and the code has only been tested with the GNU C++ compiler.
-
-The primary test environment is GNU/Linux, and the secondary test
-environment is MacOS X.  Assuming standard build tools are installed,
-the full-source distribution is almost guaranteed to compile
-out-of-the-box on these and any other POSIX-conformant platform (BSD,
-Solaris, etc).  The code is known to work on both 32-bit and 64-bit
-Unixen.
-
-This distribution is also tested on Windows.  Building on Windows
-requires the MinGW distribution of g++, and the MSYS environment.
-Windows users unfamiliar with Unix might prefer to stick with the
-binary distribution.  64-bit Windows has not been tested.
-
-Please see INSTALL for specific build instructions.
-
-
   PLAYING GAMES
 
 Playing an existing game with ONScripter-En requires two additional
@@ -59,11 +32,11 @@ files to be added to the game directory:
 - `default.ttf', a TrueType font.  The free font Sazanami Gothic is
   known to work.
 
-- `game.id', a text file containing simply the name of the game.  This
-  is used to identify a separate directory where saved data is stored;
-  unlike the original ONScripter, which places saved games in the game
-  directory, ONScripter-En does not require games to be kept in a
-  world-writable location.
+- Optionally, `game.id', a text file containing simply the name of the
+  game.  This is used to identify a separate directory where saved
+  data is stored; unlike the original ONScripter, which places saved
+  games in the game directory, ONScripter-En does not require games to
+  be kept in a world-writable location.
 
 This done, the game can be played either by dropping the `onscripter'
 executable into the game directory and running it, or by running it
@@ -74,7 +47,9 @@ command-line option if you wish for some reason to restore the default
 ONScripter behaviour or to place saves somewhere else.
 
 Please run `onscripter --help' for details of other command-line
-options.
+options.  (Note that on Windows systems, these details and all other
+console output will be placed in text files in the folder
+%ALLUSERSPROFILE%\Application Data\ONScripter-En.)
 
 
   PACKAGING GAMES
@@ -105,14 +80,48 @@ platforms, it is recommended that packages instead depend on the user
 supplying a separate ONScripter binary, either built from source or
 from an OS/distro-specific package.
 
-MacOS X is an exception to all this.  OS X applications are typically
-distributed as bundles, and ONScripter includes special code to make
-this possible for NScripter games.  Simply place the `onscripter'
-binary in <game>.app/Contents/MacOS, and the files that would normally
-go in the game directory (script, data archives, default.ttf, etc) in
-<game>.app/Contents/Resources, and everything should Just Work; you'll
+MacOS X is an exception to all this, as it's only Unix from the waist
+down.  OS X applications are typically distributed as bundles, and
+ONScripter includes special code to make this possible for NScripter
+games.  Simply place the `onscripter' binary in
+$GAME.app/Contents/MacOS, and the files that would normally go in the
+game directory (script, data archives, default.ttf, etc) in
+$GAME.app/Contents/Resources, and everything should Just Work; you'll
 have a native-looking OS X game that can be drag-installed and deleted
 to uninstall.
+
+
+  BUILD REQUIREMENTS
+
+ONScripter is based on SDL, and should run on any platform for which
+SDL is available.  The original version has been successfully compiled
+on platforms as diverse as the Dreamcast, the PSP, and the iPod.
+
+ONScripter-En has slightly more strict requirements, however.  Since
+ONScripter's original build system is extremely difficult to use
+(requiring the creation of a custom makefile for every minor platform
+variation), it has been replaced in this branch with a more
+conventional configure-build system; this depends on a POSIX-like
+environment with GNU make, and the code has only been tested with the
+GNU C++ compiler.
+
+The primary test environment is GNU/Linux (64-bit), and the secondary
+test environment is MacOS X (32-bit).  Assuming standard build tools
+are installed, the full-source distribution is likely to compile
+out-of-the-box or with only minimal changes on these and any other
+POSIX-conformant platform.  You may need to tweak the final link line
+if using static libraries -- see the configure script for examples of
+incantations that work on FreeBSD, NetBSD, and Solaris.
+
+This distribution is also supported on Windows (though only 32-bit
+versions have been tested).  Building on Windows requires the MinGW
+distribution of g++, and the MSYS environment.  Windows users
+unfamiliar with Unix might prefer to stick with the binary
+distribution, which should work everywhere (this is the one thing
+Microsoft got right!)
+
+Please see INSTALL in the source distribution for specific build
+instructions.
 
 
   CONTACT INFORMATION
@@ -122,14 +131,15 @@ at the address
 
   ogapee@aqua.dti2.ne.jp
 
-The maintainer of this branch (as of April 2007) is Haeleth, who can
+The maintainer of this branch (as of June 2007) is Haeleth, who can
 be reached by email at the address
 
   haeleth@haeleth.net
 
 Correspondence in English, or regarding issues related to this branch
 in particular, should be directed to this latter address in the first
-instance.
+instance: it contains a large number of customisations that are
+nothing to do with Ogapee.
 
 
   LICENSE

@@ -616,8 +616,8 @@ $echo_n "Writing Makefile... ${nobr}"
 
 case "$SYS" in
 MinGW)  EXE=.exe ; OBJ=.o ; LIB=.a ; W32=true ;;
-MacOSX) EXE=     ; OBJ=.o ; LIB=.a ; W32=     ;;
-Posix)  EXE=     ; OBJ=.o ; LIB=.a ; W32=     ;;
+MacOSX) EXE=     ; OBJ=.o ; LIB=.a ; W32= ;;
+Posix)  EXE=     ; OBJ=.o ; LIB=.a ; W32= ;;
 *) echo "error: unsupported system";
    exit 1 ;;
 esac
@@ -651,13 +651,12 @@ export CFLAGS   := -I\$(shell pwd)/extlib/include \$(CFLAGS)
 export CPPFLAGS := -I\$(shell pwd)/extlib/include \$(CPPFLAGS)
 export LDFLAGS  := -L\$(shell pwd)/extlib/lib \$(LDFLAGS)
 
-export CC       :=  $CC
-export CXX      :=  $CXX
-export LD       := \$(CXX) -o 
-export MAKE     :=  $MAKE
-export GNUMAKE  :=  $MAKE
-export AR       :=  $AR
-export RANLIB   :=  $RANLIB
+export CC      := $CC
+export CXX     := $CXX
+export MAKE    := $MAKE
+export GNUMAKE := $MAKE
+export AR      := $AR
+export RANLIB  := $RANLIB
 
 # ONScripter variables
 INCS = -Iextlib/include \$(shell $SDL_CONFIG --cflags)      \\
