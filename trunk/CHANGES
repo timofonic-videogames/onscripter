@@ -4,6 +4,8 @@
   things work on less Linux-like platforms) and NetBSD (a useful step
   towards my ultimate goal of a visual novel on every toaster).
 
+  Fix some more MinGW build errors.
+
   Add the missing `install' target.
 
 
