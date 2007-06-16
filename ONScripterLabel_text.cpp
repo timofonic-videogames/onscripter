@@ -575,7 +575,7 @@ int ONScripterLabel::textCommand()
         (line_enter_status == 0 ||
          (line_enter_status == 1 &&
           (script_h.getStringBuffer()[string_buffer_offset] == '[' ||
-           zenkakko_flag && script_h.getStringBuffer()[string_buffer_offset] == 0x81 && script_h.getStringBuffer()[string_buffer_offset+1] == 0x79))) ){
+           zenkakko_flag && (unsigned char) script_h.getStringBuffer()[string_buffer_offset] == 0x81 && (unsigned char) script_h.getStringBuffer()[string_buffer_offset+1] == 0x79))) ){
         gosubReal( pretextgosub_label, script_h.getCurrent() );
         line_enter_status = 1;
         return RET_CONTINUE;
