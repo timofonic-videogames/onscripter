@@ -166,7 +166,7 @@ do
 	  --help                   display this message
 	  --prefix=DIR             install in prefix DIR (default is /usr/local)
 	  --make=NAME              use GNU make executable with the given name
-	  --unsupported-compiler   don't insist on using GNU compilers
+	  --unsupported-compiler   don't check for known compilers
 	
 	Library options (force compilation of included dependencies):
 	  --with-internal-libs        don't check for any system libraries
@@ -243,7 +243,7 @@ case "$PLATFORM" in
 *)         echo "$PLATFORM (unsupported; using Posix build instructions)" ;;
 esac
 
-# Compiler (gcc, g++)
+# Compiler (gcc, g++, icpc)
 if [ -z "$CC" ]; then CC=gcc; fi
 if $UNSUPPORTED_COMPILER
 then
@@ -253,34 +253,46 @@ else
     case "`($CC --version) 2>/dev/null | head -1`" in
     gcc*) echo gcc ;;
     *apple*gcc*) echo gcc ;;
+    icc*) echo icc ;;
     *)  echo "error"
         cat <<-_ERR
 
-	Compiler is not gcc, or no compiler found.
-	Please install gcc. If it's installed, try setting the environment variable CC appropriately.
-	If you want to use a different compiler, set CC appropriately and run configure with the --unsupported-compiler option; you will be on your own if anything doesn't work.
+	Compiler not recognised, or no compiler found.
+	Please install a supported C compiler (e.g. gcc). If you already have one installed, try setting the environment variable CC appropriately.
+	If you want to use an unsupported compiler, set CC appropriately and run configure with the --unsupported-compiler option; you will be on your own if anything doesn't work.
 	_ERR
         exit 1 ;;
     esac
 fi
-if [ -z "$CXX" -a "$CC" != "gcc" ]; then CXX=$CC; fi
-if [ -z "$CXX" ]; then CXX=g++; fi
+
+if [ -z "$CXX" ]
+then case "x$CC" in
+xgcc | x) CXX=g++ ;;
+xicc) CXX=icpc ;;
+*) CXX=$CC ;;
+esac
+fi
+
 if not $UNSUPPORTED_COMPILER 
 then
     $echo_n "Checking C++ compiler... ${nobr}"
     case "`($CXX --version) 2>/dev/null | head -1`" in
-    g++*) echo g++ ;;
-    *apple*g++*) echo g++ ;;
+    g++* | *apple*g++*) echo g++ ;;
+    icpc*) echo icpc ;;
     *)  echo "error"
         cat <<-_ERR
 
-	Compiler is not g++, or no compiler found.
-	Please install g++. If it's installed, try setting the environment variable CXX appropriately.
-	If you want to use a different compiler, set CXX appropriately and run configure with the --unsupported-compiler option; you will be on your own if anything doesn't work.
+	Compiler not recognised, or no compiler found.
+	Please install a supported C++ compiler (e.g. g++). If you already have one installed, try setting the environment variable CXX appropriately.
+	If you want to use an unsupported compiler, set CXX appropriately and run configure with the --unsupported-compiler option; you will be on your own if anything doesn't work.
 	_ERR
         exit 1 ;;
     esac
 fi
+
+case "`($CXX --version) 2>/dev/null | head -1`" in
+g++* | *apple*g++*) CFLAGSEXTRA=-Wall ;;
+esac
 
 # Make (must be GNU)
 $echo_n "Checking for GNU make... ${nobr}"
@@ -615,9 +627,10 @@ fi
 $echo_n "Writing Makefile... ${nobr}"
 
 case "$SYS" in
-MinGW)  EXE=.exe ; OBJ=.o ; LIB=.a ; W32=true ;;
-MacOSX) EXE=     ; OBJ=.o ; LIB=.a ; W32= ;;
 Posix)  EXE=     ; OBJ=.o ; LIB=.a ; W32= ;;
+MacOSX) EXE=     ; OBJ=.o ; LIB=.a ; W32=
+        CFLAGSEXTRA="-fpascal-strings $CFLAGSEXTRA";;
+MinGW)  EXE=.exe ; OBJ=.o ; LIB=.a ; W32=true ;;
 *) echo "error: unsupported system";
    exit 1 ;;
 esac
@@ -659,6 +672,7 @@ export AR      := $AR
 export RANLIB  := $RANLIB
 
 # ONScripter variables
+OSCFLAGSEXTRA = $CFLAGSEXTRA
 INCS = -Iextlib/include \$(shell $SDL_CONFIG --cflags)      \\
                         \$(shell $SMPEG_CONFIG --cflags)    \\
                         \$(shell $FREETYPE_CONFIG --cflags) \\
@@ -683,8 +697,6 @@ _EOF
 ;;
 MacOSX)
 cat >> Makefile <<_EOF
-
-OSCFLAGSEXTRA = -fpascal-strings
 
 LIBS = -Lextlib/lib \\
        \$(shell $SDL_CONFIG --static-libs)         \\
@@ -729,7 +741,7 @@ cat >> Makefile <<_EOF
 .SUFFIXES:
 .SUFFIXES: $OBJ .cpp .h .c
 
-OSCFLAGS = -O3 -Wall -Wpointer-arith -Werror -fomit-frame-pointer -pipe \$(OSCFLAGSEXTRA)
+OSCFLAGS = -O3 -Wpointer-arith -Werror -fomit-frame-pointer -pipe \$(OSCFLAGSEXTRA)
 
 TARGET = onscripter$EXE
 

@@ -52,7 +52,11 @@ extern "C" void waveCallback( int channel );
 #define FONT_FILE "default.ttf"
 #define REGISTRY_FILE "registry.txt"
 #define DLL_FILE "dll.txt"
+#ifdef HAELETH
+#define DEFAULT_ENV_FONT "MS Gothic"
+#else
 #define DEFAULT_ENV_FONT "‚l‚r ƒSƒVƒbƒN"
+#endif
 #define DEFAULT_VOLUME 100
 
 typedef int (ONScripterLabel::*FuncList)();
@@ -1338,8 +1342,8 @@ int ONScripterLabel::parseLine( )
             current_text_buffer->addBuffer( 0x0a );
             sentence_font.newLine();
             for (int i=0 ; i<indent_offset ; i++){
-                current_text_buffer->addBuffer(((char*)"@")[0]);
-                current_text_buffer->addBuffer(((char*)"@")[1]);
+                current_text_buffer->addBuffer(0x81);
+                current_text_buffer->addBuffer(0x40);
                 sentence_font.advanceCharInHankaku(2);
             }
         }
