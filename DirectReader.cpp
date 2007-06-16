@@ -78,7 +78,7 @@ DirectReader::DirectReader( char *path, const unsigned char *key_table )
     }
     else{
         key_table_flag = false;
-        for (i=0 ; i<256 ; i++) this->key_table[i] = i;
+        for (i=0 ; i<256 ; i++) this->key_table[i] = (unsigned char) i;
     }
 
     read_buf = new unsigned char[READ_LENGTH];
@@ -284,7 +284,7 @@ int DirectReader::getRegisteredCompressionType( const char *file_name )
 struct DirectReader::FileInfo DirectReader::getFileByIndex( unsigned int index )
 {
     DirectReader::FileInfo fi;
-    
+    memset(&fi, 0, sizeof(DirectReader::FileInfo));
     return fi;
 }
 

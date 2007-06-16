@@ -102,8 +102,9 @@ ONScripter's original build system is extremely difficult to use
 (requiring the creation of a custom makefile for every minor platform
 variation), it has been replaced in this branch with a more
 conventional configure-build system; this depends on a POSIX-like
-environment with GNU make, and the code has only been tested with the
-GNU C++ compiler.
+environment with GNU make.  The code has been tested primarily with
+the GNU C++ compiler; Intel C++ 10 has also been used successfully in
+one case.
 
 The primary test environment is GNU/Linux (64-bit), and the secondary
 test environment is MacOS X (32-bit).  Assuming standard build tools
