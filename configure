@@ -240,6 +240,7 @@ case "$PLATFORM" in
 *solaris*) echo "Solaris";  POSIX=Solaris ;;
 *freebsd*) echo "FreeBSD";  POSIX=FreeBSD ;;
 *netbsd*)  echo "NetBSD";   POSIX=NetBSD ;;
+*openbsd*) echo "OpenBSD" ;;
 *)         echo "$PLATFORM (unsupported; using Posix build instructions)" ;;
 esac
 
@@ -715,6 +716,7 @@ case "$POSIX" in
 Linux)   INTERNAL_LDFLAGS="-ldl -lasound" ;;
 FreeBSD) INTERNAL_LDFLAGS="-L/usr/X11R6/lib -lX11 -lXi -lXrandr" ;;
 NetBSD)  INTERNAL_LDFLAGS="\$(foreach x,11 i randr ext render,/usr/X11R6/lib/libX\$(x).a) -lossaudio" ;;
+OpenBSD) INTERNAL_LDFLAGS="-L/usr/X11R6/lib -lX11 -lXi -lXrandr -lossaudio" ;;
 Solaris) INTERNAL_LDFLAGS="-lX11 -lXext" ;;
 esac
 cat >> Makefile <<_EOF
