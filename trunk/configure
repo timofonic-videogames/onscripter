@@ -9,7 +9,7 @@
 # ---------- Utility definitions ----------
 
 # Moderately portable echo
-case "$(echo 'x\c')" in
+case "`echo 'x\c'`" in
 'x\c') echo_n="echo -n"; nobr= ;;
 *)     echo_n="echo";    nobr="\c" ;;
 esac

@@ -222,7 +222,7 @@ int ONScripterLabel::loadSaveFile( int no )
         for ( j=0, k=0 ; j<num_xy[0] * num_xy[1] ; j++ ){
             ch1 = readChar();
             ch2 = readChar();
-            if ( ch1 == 0x80 && ch2 == 0x40 ){
+            if ( (unsigned char) ch1 == 0x80 && (unsigned char) ch2 == 0x40 ){
                 k += 2;
             }
             else{
