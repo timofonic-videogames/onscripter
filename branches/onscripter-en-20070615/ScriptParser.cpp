@@ -28,9 +28,15 @@
 #define VERSION_STR1 "ONScripter"
 #define VERSION_STR2 "Copyright (C) 2001-2006 Studio O.G.A. All Rights Reserved."
 
+#ifdef HAELETH
+#define DEFAULT_SAVE_MENU_NAME "[ Save ]"
+#define DEFAULT_LOAD_MENU_NAME "[ Load ]"
+#define DEFAULT_SAVE_ITEM_NAME "Slot "
+#else
 #define DEFAULT_SAVE_MENU_NAME "＜セーブ＞"
 #define DEFAULT_LOAD_MENU_NAME "＜ロード＞"
 #define DEFAULT_SAVE_ITEM_NAME "しおり"
+#endif
 
 #define DEFAULT_TEXT_SPEED_LOW    40
 #define DEFAULT_TEXT_SPEED_MIDDLE 20

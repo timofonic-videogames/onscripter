@@ -178,7 +178,7 @@ public:
     void addNumAlias( const char *str, int no );
     void addStrAlias( const char *str1, const char *str2 );
 
-    typedef enum { LABEL_LOG = 0,
+    enum { LABEL_LOG = 0,
                    FILE_LOG = 1
     };
     struct LogLink{

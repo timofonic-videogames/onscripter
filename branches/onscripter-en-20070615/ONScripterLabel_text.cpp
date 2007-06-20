@@ -158,8 +158,8 @@ void ONScripterLabel::drawChar( char* text, FontInfo *info, bool flush_flag, boo
 
         if ( lookback_flag ){
             for (int i=0 ; i<indent_offset ; i++){
-                current_text_buffer->addBuffer(((char*)"Å@")[0]);
-                current_text_buffer->addBuffer(((char*)"Å@")[1]);
+                current_text_buffer->addBuffer(0x81);
+                current_text_buffer->addBuffer(0x40);
             }
         }
     }
@@ -575,8 +575,7 @@ int ONScripterLabel::textCommand()
         (line_enter_status == 0 ||
          (line_enter_status == 1 &&
           (script_h.getStringBuffer()[string_buffer_offset] == '[' ||
-           zenkakko_flag && script_h.getStringBuffer()[string_buffer_offset] == "Åy"[0] &&
-           script_h.getStringBuffer()[string_buffer_offset+1] == "Åy"[1]))) ){
+           zenkakko_flag && (unsigned char) script_h.getStringBuffer()[string_buffer_offset] == 0x81 && (unsigned char) script_h.getStringBuffer()[string_buffer_offset+1] == 0x79))) ){
         gosubReal( pretextgosub_label, script_h.getCurrent() );
         line_enter_status = 1;
         return RET_CONTINUE;
@@ -667,8 +666,8 @@ int ONScripterLabel::processText()
             if (sentence_font.isEndOfLine(i)){
                 sentence_font.newLine();
                 for (int i=0 ; i<indent_offset ; i++){
-                    current_text_buffer->addBuffer(((char*)"Å@")[0]);
-                    current_text_buffer->addBuffer(((char*)"Å@")[1]);
+                    current_text_buffer->addBuffer(0x81);
+                    current_text_buffer->addBuffer(0x40);
                     sentence_font.advanceCharInHankaku(2);
                 }
             }

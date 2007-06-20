@@ -52,7 +52,11 @@ extern "C" void waveCallback( int channel );
 #define FONT_FILE "default.ttf"
 #define REGISTRY_FILE "registry.txt"
 #define DLL_FILE "dll.txt"
+#ifdef HAELETH
+#define DEFAULT_ENV_FONT "MS Gothic"
+#else
 #define DEFAULT_ENV_FONT "‚l‚r ƒSƒVƒbƒN"
+#endif
 #define DEFAULT_VOLUME 100
 
 typedef int (ONScripterLabel::*FuncList)();
@@ -581,7 +585,7 @@ int ONScripterLabel::init()
     // On Mac OS X, store archives etc in the application bundle by default,
     // but fall back to the application root directory if bundle doesn't
     // contain any script files.
-	using namespace Carbon;
+    using namespace Carbon;
     const int maxpath=32768;
     UInt8 path[maxpath];
     CFBundleRef bundle = CFBundleGetMainBundle();
@@ -591,7 +595,7 @@ int ONScripterLabel::init()
             Boolean validpath = CFURLGetFileSystemRepresentation(resourceurl,true,path,maxpath);
             CFRelease(resourceurl);
             if (validpath) {
-                archive_path = new char[strlen((char*)path+1)];
+                archive_path = new char[strlen((char*)path)+1];
                 strcpy(archive_path,(char*)path);
                 strcat(archive_path,"/");
             }
@@ -1338,8 +1342,8 @@ int ONScripterLabel::parseLine( )
             current_text_buffer->addBuffer( 0x0a );
             sentence_font.newLine();
             for (int i=0 ; i<indent_offset ; i++){
-                current_text_buffer->addBuffer(((char*)"@")[0]);
-                current_text_buffer->addBuffer(((char*)"@")[1]);
+                current_text_buffer->addBuffer(0x81);
+                current_text_buffer->addBuffer(0x40);
                 sentence_font.advanceCharInHankaku(2);
             }
         }
