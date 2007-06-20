@@ -1,3 +1,8 @@
+2007-06-20
+
+  Fix an OS X bug causing bundled games to fail.
+
+
 2007-06-12
 
   Get the build working on Solaris (a useful benchmark for how well

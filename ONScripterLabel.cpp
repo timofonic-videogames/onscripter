@@ -585,7 +585,7 @@ int ONScripterLabel::init()
     // On Mac OS X, store archives etc in the application bundle by default,
     // but fall back to the application root directory if bundle doesn't
     // contain any script files.
-	using namespace Carbon;
+    using namespace Carbon;
     const int maxpath=32768;
     UInt8 path[maxpath];
     CFBundleRef bundle = CFBundleGetMainBundle();
@@ -595,7 +595,7 @@ int ONScripterLabel::init()
             Boolean validpath = CFURLGetFileSystemRepresentation(resourceurl,true,path,maxpath);
             CFRelease(resourceurl);
             if (validpath) {
-                archive_path = new char[strlen((char*)path+1)];
+                archive_path = new char[strlen((char*)path)+1];
                 strcpy(archive_path,(char*)path);
                 strcat(archive_path,"/");
             }
