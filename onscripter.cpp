@@ -26,7 +26,7 @@
 #include "ONScripterLabel.h"
 #include "version.h"
 
-void optionHelp()
+static void optionHelp()
 {
     printf( "Usage: onscripter [option ...]\n" );
     printf( "      --cdaudio\t\tuse CD audio if available\n");
@@ -65,7 +65,7 @@ void optionHelp()
     exit(0);
 }
 
-void optionVersion()
+static void optionVersion()
 {
     printf("ONScripter version %s(%d.%02d)\n", ONS_VERSION, NSC_VERSION/100, NSC_VERSION%100 );
     printf("Written by Ogapee <ogapee@aqua.dti2.ne.jp>\n\n");

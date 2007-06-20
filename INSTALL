@@ -7,6 +7,10 @@ This is the usual
   sudo make install
 
 
+This will use gcc by default; to use icc, start with
+  CC=icc ./configure
+
+
 * TO BUILD A RELATIVELY REDISTRIBUTABLE ONSCRIPTER BINARY
 
   ./configure --with-internal-libs

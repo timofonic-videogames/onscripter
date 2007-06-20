@@ -1104,8 +1104,8 @@ int ONScripterLabel::puttextCommand()
             current_text_buffer->addBuffer( 0x0a );
             sentence_font.newLine();
             for (int i=0 ; i<indent_offset ; i++){
-                current_text_buffer->addBuffer(((char*)"@")[0]);
-                current_text_buffer->addBuffer(((char*)"@")[1]);
+                current_text_buffer->addBuffer(0x81);
+                current_text_buffer->addBuffer(0x40);
                 sentence_font.advanceCharInHankaku(2);
             }
         }
@@ -1862,7 +1862,7 @@ int ONScripterLabel::gettagCommand()
     bool end_flag = false;
     char *buf = last_nest_info->next_script;
     while(*buf == ' ' || *buf == '\t') buf++;
-    if (zenkakko_flag && buf[0] == "y"[0] && buf[1] == "y"[1])
+    if (zenkakko_flag && (unsigned char) buf[0] == 0x81 && (unsigned char) buf[1] == 0x79)
         buf += 2;
     else if (*buf == '[')
         buf++;
@@ -1889,7 +1889,7 @@ int ONScripterLabel::gettagCommand()
             else{
                 const char *buf_start = buf;
                 while(*buf != '/' &&
-                      (!zenkakko_flag || (buf[0] != "z"[0] || buf[1] != "z"[1])) &&
+                      (!zenkakko_flag || ((unsigned char) buf[0] != 0x81 || (unsigned char) buf[1] != 0x7a)) &&
                       *buf != ']'){
                     if (IS_TWO_BYTE(*buf))
                         buf += 2;
@@ -1907,7 +1907,7 @@ int ONScripterLabel::gettagCommand()
     }
     while(end_status & ScriptHandler::END_COMMA);
 
-    if (zenkakko_flag && buf[0] == "z"[0] && buf[1] == "z"[1]) buf += 2;
+    if (zenkakko_flag && (unsigned char) buf[0] == 0x81 && (unsigned char) buf[1] == 0x7a) buf += 2;
     else if (*buf == ']') buf++;
     while(*buf == ' ' || *buf == '\t') buf++;
     last_nest_info->next_script = buf;
