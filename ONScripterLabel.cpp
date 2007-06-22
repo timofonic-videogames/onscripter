@@ -624,7 +624,7 @@ int ONScripterLabel::init()
                         Boolean validpath = CFURLGetFileSystemRepresentation(archiveurl,true,path,maxpath);
                         CFRelease(archiveurl);
                         if (validpath) {
-                            archive_path = new char[strlen((char*)path+1)];
+                            archive_path = new char[strlen((char*)path)+1];
                             strcpy(archive_path,(char*)path);
                             strcat(archive_path,"/");
                         }
