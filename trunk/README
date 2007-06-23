@@ -77,18 +77,18 @@ that launches the onscripter executable with a suitable argument to
 -r.  Since there is no convenient way to distribute binaries that will
 work even on multiple Linux distributions, let alone other Unix
 platforms, it is recommended that packages instead depend on the user
-supplying a separate ONScripter binary, either built from source or
+supplying a separate ONScripter-En binary, either built from source or
 from an OS/distro-specific package.
 
 MacOS X is an exception to all this, as it's only Unix from the waist
 down.  OS X applications are typically distributed as bundles, and
-ONScripter includes special code to make this possible for NScripter
-games.  Simply place the `onscripter' binary in
-$GAME.app/Contents/MacOS, and the files that would normally go in the
+ONScripter-En includes special code to make this possible for
+NScripter games.  Simply place the files that would normally go in the
 game directory (script, data archives, default.ttf, etc) in
 $GAME.app/Contents/Resources, and everything should Just Work; you'll
 have a native-looking OS X game that can be drag-installed and deleted
-to uninstall.
+to uninstall.  (Well, you'll have to fiddle with plists and add an
+icon and so on, but that's all standard OS X development stuff.)
 
 
   BUILD REQUIREMENTS
