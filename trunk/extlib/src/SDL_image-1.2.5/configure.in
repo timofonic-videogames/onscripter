@@ -41,7 +41,7 @@ AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
 
 dnl Setup for automake
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE(foreign)
 AM_MAINTAINER_MODE
 
 dnl Check for tools
@@ -152,7 +152,7 @@ if test x$enable_jpg = xyes || test x$enable_tif = xyes; then
 fi
 
 if test x$enable_png = xyes; then
-    AC_CHECK_LIB([png], [png_create_read_struct], [have_libpng=yes])
+    AC_CHECK_LIB([png], [png_create_read_struct], [have_libpng=yes], [], [-lm -lz])
     if test x$have_libpng = xyes; then
         AC_DEFINE([LOAD_PNG])
 
