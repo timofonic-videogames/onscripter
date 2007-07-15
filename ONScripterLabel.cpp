@@ -28,10 +28,10 @@
 
 #ifdef MACOSX
 namespace Carbon {
+#include <sys/stat.h>
 #include <Carbon/Carbon.h>
 #include <CoreServices/CoreServices.h>
 }
-#include <sys/stat.h>
 #endif
 #ifdef WIN32
 #include <windows.h>
