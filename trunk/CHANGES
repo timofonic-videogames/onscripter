@@ -1,3 +1,10 @@
+2007-07-20
+
+  Adjust btnwait to match NScripter behaviour more closely.  (Further
+  tests are required to confirm that this doesn't break any edge
+  cases.)
+
+
 2007-06-20
 
   Fix an OS X bug causing bundled games to fail.
