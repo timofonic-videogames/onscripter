@@ -2889,7 +2889,8 @@ int ONScripterLabel::btnwaitCommand()
          (textbtn_flag && (skip_flag || (draw_one_page_flag && clickstr_state == CLICK_WAIT) || ctrl_pressed_status)) )
     {
         btnwait_time = SDL_GetTicks() - internal_button_timer;
-        btntime_value = 0;
+	// commenting out appears to fix btnwait bug
+//        btntime_value = 0;
         num_chars_in_sentence = 0;
 
         if ( textbtn_flag && (skip_flag || (draw_one_page_flag && clickstr_state == CLICK_WAIT) || ctrl_pressed_status))
@@ -2897,7 +2898,9 @@ int ONScripterLabel::btnwaitCommand()
         script_h.setInt( &script_h.current_variable, current_button_state.button );
 
         if ( current_button_state.button >= 1 && del_flag ){
-            deleteButtonLink();
+	    // adding next appears to fix btnwait bug
+	    btntime_value = 0;
+	    deleteButtonLink();
             if ( exbtn_d_button_link.exbtn_ctl ){
                 delete[] exbtn_d_button_link.exbtn_ctl;
                 exbtn_d_button_link.exbtn_ctl = NULL;

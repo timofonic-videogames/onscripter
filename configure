@@ -240,8 +240,8 @@ case "$PLATFORM" in
 *solaris*) echo "Solaris";  POSIX=Solaris ;;
 *freebsd*) echo "FreeBSD";  POSIX=FreeBSD ;;
 *netbsd*)  echo "NetBSD";   POSIX=NetBSD ;;
-*openbsd*) echo "OpenBSD" ;;
-*)         echo "$PLATFORM (unsupported; using Posix build instructions)" ;;
+*openbsd*) echo "OpenBSD";  POSIX=OpenBSD ;;
+*)         echo "$PLATFORM (unsupported; using vanilla Posix build instructions)" ;;
 esac
 
 # Compiler (gcc, g++, icpc)
@@ -252,8 +252,7 @@ then
 else
     $echo_n "Checking C compiler... ${nobr}"
     case "`($CC --version) 2>/dev/null | head -1`" in
-    gcc*) echo gcc ;;
-    *apple*gcc*) echo gcc ;;
+    gcc* | *apple*gcc*) echo gcc ;;
     icc*) echo icc ;;
     *)  echo "error"
         cat <<-_ERR
@@ -317,7 +316,7 @@ esac
 
 # ar, ranlib (for simplicity's sake we assume that these are ar and
 # ranlib if make is make)
-if [ "$MAKE" != "make" ]
+if [ "x$MAKE" != "xmake" ]
 then
     $echo_n "Checking for ar... ${nobr}"
     if ($AR -V >/dev/null) 2>/dev/null
@@ -645,10 +644,11 @@ fi
 
 
 $echo_n "Writing Makefile... ${nobr}"
+
 case "$SYS" in
 Posix)  EXE=     ; OBJ=.o ; LIB=.a ; W32= ;;
 MacOSX) EXE=     ; OBJ=.o ; LIB=.a ; W32=
-        CFLAGSEXTRA="-fpascal-strings $CFLAGSEXTRA";;
+        CFLAGSEXTRA="-fpascal-strings $CFLAGSEXTRA" ;;
 MinGW)  EXE=.exe ; OBJ=.o ; LIB=.a ; W32=true ;;
 *) echo "error: unsupported system";
    exit 1 ;;
@@ -728,6 +728,7 @@ LIBS = -Lextlib/lib \\
 
 DEFS = -DMACOSX -DUTF8_FILESYSTEM -DUSE_OGG_VORBIS -DENABLE_1BYTE_CHAR -DFORCE_1BYTE_CHAR -DINSANI -DHAELETH
 NO_DEFAULT_ICON = true
+
 _EOF
 ;;
 Posix)
