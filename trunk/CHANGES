@@ -1,3 +1,11 @@
+2007-11-11
+
+  Simplify handling of the click-wait enum.
+
+  Temporarily disable skip_to_wait; there's breakage somewhere that's
+  causing nasty side-effects in Higurashi.
+
+
 2007-07-20
 
   Adjust btnwait to match NScripter behaviour more closely.  (Further
