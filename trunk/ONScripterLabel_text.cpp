@@ -453,7 +453,7 @@ int ONScripterLabel::clickWait( char *out_text )
 
             textgosub_clickstr_state = CLICK_WAIT;
             if (script_h.getNext()[0] == 0x0a)
-                textgosub_clickstr_state |= CLICK_EOL;
+                textgosub_clickstr_state = CLICK_WAITEOL;
             gosubReal( textgosub_label, script_h.getNext() );
             indent_offset = 0;
             line_enter_status = 0;
