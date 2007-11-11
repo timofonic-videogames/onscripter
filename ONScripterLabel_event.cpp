@@ -425,10 +425,11 @@ void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
               ( event->type == SDL_MOUSEBUTTONUP || btndown_flag ) ){
         current_button_state.button = current_over_button;
         volatile_button_state.button = current_over_button;
-#ifdef INSANI
-		//fprintf(stderr, "event_mode = %d\n", event_mode);
-		if ( event_mode & WAIT_SLEEP_MODE) skip_to_wait=1;
-#endif
+///// Temporary fix for a Higurashi bug
+/////#ifdef INSANI
+/////		//fprintf(stderr, "event_mode = %d\n", event_mode);
+/////		if ( event_mode & WAIT_SLEEP_MODE) skip_to_wait=1;
+/////#endif
         if ( event->type == SDL_MOUSEBUTTONDOWN )
             current_button_state.down_flag = true;
     }
@@ -942,16 +943,17 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
         }
     }
 
-#ifdef INSANI
-    if ( event_mode & WAIT_SLEEP_MODE ) {
-	if (event->keysym.sym == SDLK_RETURN   ||
-	    event->keysym.sym == SDLK_KP_ENTER ||
-	    event->keysym.sym == SDLK_SPACE )
-	{
-	    skip_to_wait = 1;
-	}
-    }
-#endif
+///// Temporary fix for a Higurashi bug
+/////#ifdef INSANI
+/////    if ( event_mode & WAIT_SLEEP_MODE ) {
+/////	if (event->keysym.sym == SDLK_RETURN   ||
+/////	    event->keysym.sym == SDLK_KP_ENTER ||
+/////	    event->keysym.sym == SDLK_SPACE )
+/////	{
+/////	    skip_to_wait = 1;
+/////	}
+/////    }
+/////#endif
 }
 
 void ONScripterLabel::timerEvent( void )
