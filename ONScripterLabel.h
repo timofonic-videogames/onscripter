@@ -26,6 +26,7 @@
 #ifndef __ONSCRIPTER_LABEL_H__
 #define __ONSCRIPTER_LABEL_H__
 
+#include "DirPaths.h"
 #include "ScriptParser.h"
 #include "DirtyRect.h"
 #include <SDL.h>
@@ -310,6 +311,7 @@ protected:
 
 #ifdef INSANI
 	int skip_to_wait;
+	int skip_in_text;
 #endif
 
     void variableEditMode( SDL_KeyboardEvent *event );
@@ -332,7 +334,8 @@ private:
     enum { IDLE_EVENT_MODE      = 0,
            EFFECT_EVENT_MODE    = 1,
            WAIT_BUTTON_MODE     = 2, // For select, btnwait and rmenu.
-           WAIT_INPUT_MODE      = (4|8),  // can be skipped by a click
+           WAIT_INPUT_MODE      = 4,  // can be skipped by a click
+           WAIT_TEXTOUT_MODE    = 8,  // can be skipped by a click
            WAIT_SLEEP_MODE      = 16, // cannot be skipped by a click
            WAIT_TIMER_MODE      = 32,
            WAIT_TEXTBTN_MODE    = 64,

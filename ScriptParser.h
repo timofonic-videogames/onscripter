@@ -32,6 +32,7 @@
 #include <math.h>
 #include <time.h>
 
+#include "DirPaths.h"
 #include "ScriptHandler.h"
 #include "NsaReader.h"
 #include "DirectReader.h"
@@ -198,13 +199,13 @@ protected:
            CLICK_WAIT    = 1,
            CLICK_NEWPAGE = 2,
            CLICK_IGNORE  = 3,
-           CLICK_WAITEOL = 4
+           CLICK_EOL     = 4
     };
     enum{ NORMAL_MODE, DEFINE_MODE };
     int current_mode;
     int debug_level;
 
-    char *archive_path;
+    DirPaths *archive_path;
     char *nsa_path;
     bool globalon_flag;
     bool labellog_flag;

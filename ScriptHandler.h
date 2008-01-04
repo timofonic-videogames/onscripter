@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "BaseReader.h"
+#include "DirPaths.h"
 
 #define VARIABLE_RANGE 4096
 
@@ -105,6 +106,7 @@ public:
 
     void reset();
     FILE *fopen( const char *path, const char *mode, const bool save = false );
+    FILE *fopen( const char *root, const char *path, const char *mode);
     void setKeyTable( const unsigned char *key_table );
 
     // basic parser function
@@ -165,7 +167,7 @@ public:
     int  getStringFromInteger( char *buffer, int no, int num_column, bool is_zero_inserted=false );
 
     int  readScriptSub( FILE *fp, char **buf, int encrypt_mode );
-    int  readScript( char *path );
+    int  readScript( DirPaths *path );
     int  labelScript();
 
     LabelInfo lookupLabel( const char* label );
@@ -299,7 +301,7 @@ private:
     
     ArrayVariable *root_array_variable, *current_array_variable;
 
-    char *archive_path;
+    DirPaths *archive_path;
     int  script_buffer_length;
     char *script_buffer;
     char *tmp_script_buf;

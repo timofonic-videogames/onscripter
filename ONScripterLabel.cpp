@@ -28,10 +28,10 @@
 
 #ifdef MACOSX
 namespace Carbon {
-#include <sys/stat.h>
 #include <Carbon/Carbon.h>
 #include <CoreServices/CoreServices.h>
 }
+#include <sys/stat.h>
 #endif
 #ifdef WIN32
 #include <windows.h>
@@ -519,9 +519,12 @@ void ONScripterLabel::setDLLFile(const char *filename)
 
 void ONScripterLabel::setArchivePath(const char *path)
 {
-    if (archive_path) delete[] archive_path;
-    archive_path = new char[ strlen(path) + 2 ];
-    sprintf( archive_path, "%s%c", path, DELIMITER );
+    if (archive_path) {
+        delete archive_path;
+        archive_path = NULL;
+    }
+    archive_path = new DirPaths(path);
+    //printf("archive_path: %s\n", archive_path->get_all_paths());
 }
 
 void ONScripterLabel::setSavePath(const char *path)
@@ -595,9 +598,7 @@ int ONScripterLabel::init()
             Boolean validpath = CFURLGetFileSystemRepresentation(resourceurl,true,path,maxpath);
             CFRelease(resourceurl);
             if (validpath) {
-                archive_path = new char[strlen((char*)path)+2];
-                strcpy(archive_path,(char*)path);
-                strcat(archive_path,"/");
+                archive_path = new DirPaths(path);
             }
         }
         
@@ -606,7 +607,7 @@ int ONScripterLabel::init()
             const char* scriptfiles[] = {"0.txt","00.txt","nscr_sec.dat","nscript.___","nscript.dat",NULL};
             char** p = (char**)&scriptfiles;
             for(;*p;p++) {
-                sprintf((char*)path,"%s%s",archive_path,*p);
+                sprintf((char*)path,"%s%s",archive_path->get_path(0),*p);
                 FSRef ref;
                 OSErr err = FSPathMakeRef(path, &ref, NULL);
                 if(err == noErr
@@ -624,9 +625,7 @@ int ONScripterLabel::init()
                         Boolean validpath = CFURLGetFileSystemRepresentation(archiveurl,true,path,maxpath);
                         CFRelease(archiveurl);
                         if (validpath) {
-                            archive_path = new char[strlen((char*)path)+2];
-                            strcpy(archive_path,(char*)path);
-                            strcat(archive_path,"/");
+                            archive_path = new DirPaths(path);
                         }
                     }
                     CFRelease(bundleurl);
@@ -638,7 +637,9 @@ int ONScripterLabel::init()
 	// On Linux, the path is unpredictable and should be set by
 	// using "-r PATH" in a launcher script.  On other platforms
 	// they're stored in the same place as the executable.
-	archive_path = "";
+    archive_path = new DirPaths(".");
+    archive_path->add("..");
+    //printf("init:archive_paths: \"%s\"\n", archive_path->get_all_paths());
 #endif
     }
     
@@ -664,7 +665,9 @@ int ONScripterLabel::init()
 	    GETFOLDERPATH gfp = GETFOLDERPATH(GetProcAddress(shdll, "SHGetFolderPathA"));
 	    if (gfp) {
 		char hpath[MAX_PATH];
-		HRESULT res = gfp(0, 0x0023, 0, 0, hpath);
+#define CSIDL_COMMON_APPDATA 0x0023 // for [Profiles]/All Users/Application Data
+#define CSIDL_APPDATA 0x001A // for [Profiles]/[User]/Application Data
+		HRESULT res = gfp(0, CSIDL_COMMON_APPDATA, 0, 0, hpath);
 		if (res != S_FALSE && res != E_FAIL && res != E_INVALIDARG) {
 		    script_h.save_path = new char[strlen(hpath) + strlen(gameid) + 3];
 		    sprintf(script_h.save_path, "%s/%s/", hpath, gameid);
@@ -676,7 +679,7 @@ int ONScripterLabel::init()
 	if (script_h.save_path == NULL) {
 	    // Error; assume ancient Windows. In this case it's safe
 	    // to use the archive path!
-	    script_h.save_path = archive_path;
+	    script_h.save_path = archive_path->get_path(0);
 	}
 #elif defined MACOSX
     // On Mac OS X, place in ~/Library/Application Support/<gameid>/
@@ -696,11 +699,11 @@ int ONScripterLabel::init()
 	    sprintf(script_h.save_path, "%s/.%s/", pwd->pw_dir, gameid);
 	    mkdir(script_h.save_path, 0755);
 	}
-	else script_h.save_path = archive_path;
+	else script_h.save_path = archive_path->get_path(0);
 #else
 	// Fall back on default ONScripter behaviour if we don't have
 	// any better ideas.
-	script_h.save_path = archive_path;
+	script_h.save_path = archive_path->get_path(0);
 #endif
     }
     if ( script_h.game_identifier ) {
@@ -732,8 +735,19 @@ int ONScripterLabel::init()
         sprintf( font_file, "%s", default_font );
     }
     else{
-        font_file = new char[ strlen(archive_path) + strlen(FONT_FILE) + 1 ];
-        sprintf( font_file, "%s%s", archive_path, FONT_FILE );
+        FILE *fp;
+        font_file = new char[ archive_path->max_path_len() + strlen(FONT_FILE) + 1 ];
+        for (int i=0; i<(archive_path->get_num_paths()); i++) {
+            // look through archive_path(s) for the font file
+            sprintf( font_file, "%s%s", archive_path->get_path(i), FONT_FILE );
+            //printf("font file: %s\n", font_file);
+            fp = std::fopen(font_file, "rb");
+            if (fp != NULL) {
+                fclose(fp);
+                break;
+            }
+        }
+        //sprintf( font_file, "%s%s", archive_path->get_path(0), FONT_FILE );
     }
 
     // ----------------------------------------

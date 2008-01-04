@@ -846,11 +846,30 @@ ScriptParser::EffectLink *ScriptParser::parseEffect(bool init_flag)
 
 FILE *ScriptParser::fopen( const char *path, const char *mode, const bool save )
 {
-    char filename[256];
-    const char *root = save ? script_h.save_path : archive_path;
-    sprintf( filename, "%s%s", root, path );
+    const char* root;
+    char *file_name;
+    FILE *fp = NULL;
 
-    return ::fopen( filename, mode );
+    if (save) {
+        root = script_h.save_path;
+        file_name = new char[strlen(root)+strlen(path)+1];
+        sprintf( file_name, "%s%s", root, path );
+        //printf("parser:fopen(\"%s\")\n", file_name);
+
+        fp = ::fopen( file_name, mode );
+    } else {
+        // search within archive_path dirs
+        file_name = new char[archive_path->max_path_len()+strlen(path)+1];
+        for (int n=0; n<(archive_path->get_num_paths()); n++) {
+            root = archive_path->get_path(n);
+            //printf("root: %s\n", root);
+            sprintf( file_name, "%s%s", root, path );
+            //printf("parser:fopen(\"%s\")\n", file_name);
+            fp = ::fopen( file_name, mode );
+            if (fp != NULL) break;
+        }
+    }
+    return fp;
 }
 
 void ScriptParser::createKeyTable( const char *key_exe )

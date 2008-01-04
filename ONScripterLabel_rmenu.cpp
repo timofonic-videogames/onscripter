@@ -321,7 +321,8 @@ void ONScripterLabel::executeSystemLoad()
         ooga->no = 0;
 	
         menu_font.newLine();
-        menu_font.newLine();
+// Mion of Sonozaki Futago-tachi recommends:
+//        menu_font.newLine();
 
         flush( refreshMode() );
 
@@ -409,7 +410,7 @@ void ONScripterLabel::executeSystemSave()
         ooga->no = 0;
 
         menu_font.newLine();
-        menu_font.newLine();
+        //menu_font.newLine(); // another Mion recommendation
 
         flush( refreshMode() );
 

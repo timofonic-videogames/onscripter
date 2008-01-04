@@ -359,10 +359,10 @@ int ONScripterLabel::enterTextDisplayMode(bool text_flag)
             return RET_WAIT | RET_REREAD;
         }
         else{
-	    SDL_BlitSurface( accumulation_comp_surface, NULL, effect_dst_surface, NULL );
-            SDL_BlitSurface( accumulation_surface, NULL, accumulation_comp_surface, NULL );
             dirty_rect.clear();
             dirty_rect.add( sentence_font_info.pos );
+	    SDL_BlitSurface( accumulation_comp_surface, NULL, effect_dst_surface, NULL );
+            SDL_BlitSurface( accumulation_surface, NULL, accumulation_comp_surface, NULL );
 
             return setEffect( &window_effect );
         }
@@ -399,6 +399,7 @@ void ONScripterLabel::doClickEnd()
 {
 #ifdef INSANI
 	skip_to_wait = 0;
+	skip_in_text = 0;
 #endif
 
     if ( automode_flag ){
@@ -424,6 +425,7 @@ int ONScripterLabel::clickWait( char *out_text )
 {
 #ifdef INSANI
 	skip_to_wait = 0;
+	skip_in_text = 0;
 #endif
 
     if ( (skip_flag || draw_one_page_flag || ctrl_pressed_status) && !textgosub_label ){
@@ -453,7 +455,7 @@ int ONScripterLabel::clickWait( char *out_text )
 
             textgosub_clickstr_state = CLICK_WAIT;
             if (script_h.getNext()[0] == 0x0a)
-                textgosub_clickstr_state = CLICK_WAITEOL;
+                textgosub_clickstr_state |= CLICK_EOL;
             gosubReal( textgosub_label, script_h.getNext() );
             indent_offset = 0;
             line_enter_status = 0;
@@ -471,6 +473,7 @@ int ONScripterLabel::clickNewPage( char *out_text )
 {
 #ifdef INSANI
 	skip_to_wait = 0;
+	skip_in_text = 0;
 #endif
 
     clickstr_state = CLICK_NEWPAGE;
@@ -598,7 +601,7 @@ int ONScripterLabel::processText()
     //printf("textCommand %c %d %d %d\n", script_h.getStringBuffer()[ string_buffer_offset ], string_buffer_offset, event_mode, line_enter_status);
     char out_text[3]= {'\0', '\0', '\0'};
 
-    if ( event_mode & (WAIT_INPUT_MODE | WAIT_SLEEP_MODE) ){
+    if ( event_mode & (WAIT_INPUT_MODE | WAIT_TEXTOUT_MODE ) ){
         draw_cursor_flag = false;
         if ( clickstr_state == CLICK_WAIT ){
             if (script_h.checkClickstr(script_h.getStringBuffer() + string_buffer_offset) != 1) string_buffer_offset++;
@@ -631,15 +634,35 @@ int ONScripterLabel::processText()
                   !(script_h.getEndStatus() & ScriptHandler::END_1BYTE_CHAR) ){
             string_buffer_offset += 2;
         }
-        else
+        else 
             string_buffer_offset++;
 
         event_mode = IDLE_EVENT_MODE;
     }
 
+    if ( event_mode & WAIT_SLEEP_MODE ){
+        draw_cursor_flag = false;
+        if ( clickstr_state == CLICK_WAIT ){
+            if (script_h.checkClickstr(script_h.getStringBuffer() + string_buffer_offset) != 1) string_buffer_offset++;
+            string_buffer_offset++;
+            clickstr_state = CLICK_NONE;
+        }
+        else if ( clickstr_state == CLICK_NEWPAGE ){
+            event_mode = IDLE_EVENT_MODE;
+            if (script_h.checkClickstr(script_h.getStringBuffer() + string_buffer_offset) != 1) string_buffer_offset++;
+            string_buffer_offset++;
+            newPage( true );
+            clickstr_state = CLICK_NONE;
+            return RET_CONTINUE | RET_NOREAD;
+        }
+        else
+            event_mode = IDLE_EVENT_MODE;
+    }
+
 
     if (script_h.getStringBuffer()[string_buffer_offset] == 0x0a ||
 	script_h.getStringBuffer()[string_buffer_offset] == 0x00){
+        skip_in_text = 0;
         indent_offset = 0; // redundant
         return RET_CONTINUE;
     }
@@ -700,9 +723,9 @@ int ONScripterLabel::processText()
         else{
             drawChar( out_text, &sentence_font, true, true, accumulation_surface, &text_info );
             num_chars_in_sentence++;
-            event_mode = WAIT_SLEEP_MODE;
+            event_mode = WAIT_TEXTOUT_MODE;
 #ifdef INSANI
-	    if ( skip_to_wait == 1 )
+	    if ( skip_in_text == 1 || skip_to_wait == 1)
 	        advancePhase( 0 );
             else
 #endif
@@ -747,6 +770,8 @@ int ONScripterLabel::processText()
         }
         else if ( script_h.getStringBuffer()[ string_buffer_offset ] == 'w' ||
                   script_h.getStringBuffer()[ string_buffer_offset ] == 'd' ){
+            skip_in_text = 0;
+            event_mode = WAIT_SLEEP_MODE;
             bool flag = false;
             if ( script_h.getStringBuffer()[ string_buffer_offset ] == 'd' ) flag = true;
             string_buffer_offset++;
@@ -767,7 +792,7 @@ int ONScripterLabel::processText()
                 return RET_CONTINUE | RET_NOREAD;
             }
             else{
-                event_mode = WAIT_SLEEP_MODE;
+                event_mode |= WAIT_TEXTOUT_MODE;
                 if ( flag ) event_mode |= WAIT_INPUT_MODE;
                 key_pressed_flag = false;
                 startTimer( t );
@@ -898,8 +923,8 @@ int ONScripterLabel::processText()
             return RET_CONTINUE | RET_NOREAD;
         }
         else{
-            event_mode = WAIT_SLEEP_MODE;
-	    if ( skip_to_wait == 1 )
+            event_mode = WAIT_TEXTOUT_MODE;
+	    if ( skip_in_text == 1 || skip_to_wait == 1)
 	        advancePhase( 0 );
             else if ( sentence_font.wait_time == -1 )
                 advancePhase( default_text_speed[text_speed_no] );
@@ -947,7 +972,7 @@ int ONScripterLabel::processText()
                 return RET_CONTINUE | RET_NOREAD;
             }
             else{
-                event_mode = WAIT_SLEEP_MODE;
+                event_mode |= WAIT_TEXTOUT_MODE;
                 if ( flag ) event_mode |= WAIT_INPUT_MODE;
                 key_pressed_flag = false;
                 startTimer( t );
@@ -1012,6 +1037,7 @@ int ONScripterLabel::processText()
 
             if (matched_len > 0){
                 if (matched_len == 2) out_text[1] = script_h.getStringBuffer()[ string_buffer_offset + 1 ];
+         	    skip_in_text = 0;
                 if (sentence_font.getRemainingLine() <= clickstr_line)
                     return clickNewPage( out_text );
                 else
@@ -1065,9 +1091,9 @@ int ONScripterLabel::processText()
             return RET_CONTINUE | RET_NOREAD;
         }
         else{
-            event_mode = WAIT_SLEEP_MODE;
+            event_mode = WAIT_TEXTOUT_MODE;
 #ifdef INSANI
-	    if ( skip_to_wait == 1 )
+	    if ( skip_in_text == 1 || skip_to_wait == 1)
 		advancePhase( 0 );
             else
 #endif

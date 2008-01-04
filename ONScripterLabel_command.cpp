@@ -217,7 +217,7 @@ int ONScripterLabel::texecCommand()
         newPage( true );
         clickstr_state = CLICK_NONE;
     }
-    else if ( textgosub_clickstr_state == CLICK_WAITEOL ){
+    else if ( textgosub_clickstr_state == (CLICK_WAIT | CLICK_EOL) ){
         if ( !sentence_font.isLineEmpty() && !new_line_skip_flag ){
             indent_offset = 0;
             line_enter_status = 0;
@@ -1155,7 +1155,13 @@ int ONScripterLabel::prnumCommand()
     readColor( &prnum_info[no]->color_list[0], buf );
 
     char num_buf[7];
+#if defined(ENABLE_1BYTE_CHAR) && defined(FORCE_1BYTE_CHAR)
+    // Patch from Mion of Sonozaki Futago-tachi, 2007-11-14
+    script_h.getStringFromInteger( num_buf, prnum_info[no]->param, 6 );
+    num_buf[0] = '`';
+#else
     script_h.getStringFromInteger( num_buf, prnum_info[no]->param, 3 );
+#endif    
     setStr( &prnum_info[no]->file_name, num_buf );
 
     setupAnimationInfo( prnum_info[no] );
