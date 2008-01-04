@@ -125,13 +125,45 @@ void ScriptHandler::reset()
 
 FILE *ScriptHandler::fopen( const char *path, const char *mode, const bool save )
 {
-    const char* root = save ? save_path : archive_path;
-    char * file_name = new char[strlen(root)+strlen(path)+1];
-    sprintf( file_name, "%s%s", root, path );
+    const char* root;
+    char *file_name;
+    FILE *fp = NULL;
 
-    FILE *fp = ::fopen( file_name, mode );
+    if (save) {
+        root = save_path;
+        file_name = new char[strlen(root)+strlen(path)+1];
+        sprintf( file_name, "%s%s", root, path );
+        //printf("handler:fopen(\"%s\")\n", file_name);
+
+        fp = ::fopen( file_name, mode );
+    } else {
+        // search within archive_path(s)
+        file_name = new char[archive_path->max_path_len()+strlen(path)+1];
+        for (int n=0; n<archive_path->get_num_paths(); n++) {
+            root = archive_path->get_path(n);
+            //printf("root: %s\n", root);
+            sprintf( file_name, "%s%s", root, path );
+            //printf("handler:fopen(\"%s\")\n", file_name);
+            fp = ::fopen( file_name, mode );
+            if (fp != NULL) break;
+        }
+    }
     delete[] file_name;
+    return fp;
+}
 
+FILE *ScriptHandler::fopen( const char *root, const char *path, const char *mode )
+{
+    char *file_name;
+    FILE *fp = NULL;
+
+    file_name = new char[strlen(root)+strlen(path)+1];
+    sprintf( file_name, "%s%s", root, path );
+    //printf("handler:fopen(\"%s\")\n", file_name);
+
+    fp = ::fopen( file_name, mode );
+
+    delete[] file_name;
     return fp;
 }
 
@@ -861,10 +893,9 @@ int ScriptHandler::readScriptSub( FILE *fp, char **buf, int encrypt_mode )
     return 0;
 }
 
-int ScriptHandler::readScript( char *path )
+int ScriptHandler::readScript( DirPaths *path )
 {
-    archive_path = new char[ strlen(path) + 1 ];
-    strcpy( archive_path, path );
+    archive_path = path;
 
     // Haeleth: Search for gameid file (this overrides any builtin
     // ;gameid directive, or serves its purpose if none is available)
@@ -884,23 +915,28 @@ int ScriptHandler::readScript( char *path )
     
     fp = NULL;
     char filename[10];
-    int i, encrypt_mode = 0;
-    if ((fp = fopen("0.txt", "rb")) != NULL){
-        encrypt_mode = 0;
+    char *root = NULL;
+    int i, n=0, encrypt_mode = 0;
+    while ((fp == NULL) && (n<archive_path->get_num_paths())) {
+        root = archive_path->get_path(n);
+        
+        if ((fp = fopen(root, "0.txt", "rb")) != NULL){
+            encrypt_mode = 0;
+        }
+        else if ((fp = fopen(root, "00.txt", "rb")) != NULL){
+            encrypt_mode = 0;
+        }
+        else if ((fp = fopen(root, "nscr_sec.dat", "rb")) != NULL){
+            encrypt_mode = 2;
+        }
+        else if ((fp = fopen(root, "nscript.___", "rb")) != NULL){
+            encrypt_mode = 3;
+        }
+        else if ((fp = fopen(root, "nscript.dat", "rb")) != NULL){
+            encrypt_mode = 1;
+        }
+        n++;
     }
-    else if ((fp = fopen("00.txt", "rb")) != NULL){
-        encrypt_mode = 0;
-    }
-    else if ((fp = fopen("nscr_sec.dat", "rb")) != NULL){
-        encrypt_mode = 2;
-    }
-    else if ((fp = fopen("nscript.___", "rb")) != NULL){
-        encrypt_mode = 3;
-    }
-    else if ((fp = fopen("nscript.dat", "rb")) != NULL){
-        encrypt_mode = 1;
-    }
-
     if (fp == NULL){
 #ifdef MACOSX
         // Note: \p Pascal strings require compilation with -fpascal-strings
@@ -912,6 +948,7 @@ int ScriptHandler::readScript( char *path )
         return -1;
     }
 
+    //printf("Using root path to script: %s\n", root);
     fseek( fp, 0, SEEK_END );
     int estimated_buffer_length = ftell( fp ) + 1;
 
@@ -919,9 +956,9 @@ int ScriptHandler::readScript( char *path )
         fclose(fp);
         for (i=1 ; i<100 ; i++){
             sprintf(filename, "%d.txt", i);
-            if ((fp = fopen(filename, "rb")) == NULL){
+            if ((fp = fopen(root, filename, "rb")) == NULL){
                 sprintf(filename, "%02d.txt", i);
-                fp = fopen(filename, "rb");
+                fp = fopen(root, filename, "rb");
             }
             if (fp){
                 fseek( fp, 0, SEEK_END );
@@ -946,9 +983,9 @@ int ScriptHandler::readScript( char *path )
     else{
         for (i=0 ; i<100 ; i++){
             sprintf(filename, "%d.txt", i);
-            if ((fp = fopen(filename, "rb")) == NULL){
+            if ((fp = fopen(root, filename, "rb")) == NULL){
                 sprintf(filename, "%02d.txt", i);
-                fp = fopen(filename, "rb");
+                fp = fopen(root, filename, "rb");
             }
             if (fp){
                 readScriptSub( fp, &p_script_buffer, 0 );

@@ -388,10 +388,15 @@ void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
     if ( variable_edit_mode ) return;
 
     if ( automode_flag ){
-        remaining_time = -1;
         automode_flag = false;
+        if (event_mode & (WAIT_TEXT_MODE | WAIT_TEXTOUT_MODE)){
+            remaining_time = -1;
+        } else {
+            remaining_time = 0;
+        }
         return;
     }
+
     if ( event->button == SDL_BUTTON_RIGHT &&
          trap_mode & TRAP_RIGHT_CLICK ){
         trapHandler();
@@ -425,11 +430,13 @@ void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
               ( event->type == SDL_MOUSEBUTTONUP || btndown_flag ) ){
         current_button_state.button = current_over_button;
         volatile_button_state.button = current_over_button;
-///// Temporary fix for a Higurashi bug
-/////#ifdef INSANI
-/////		//fprintf(stderr, "event_mode = %d\n", event_mode);
-/////		if ( event_mode & WAIT_SLEEP_MODE) skip_to_wait=1;
-/////#endif
+#ifdef INSANI
+		//fprintf(stderr, "event_mode = %d\n", event_mode);
+		if ( event_mode & WAIT_TEXTOUT_MODE) {
+         skip_in_text=1;
+      }
+		if ( skip_to_wait ) skip_to_wait=0;
+#endif
         if ( event->type == SDL_MOUSEBUTTONDOWN )
             current_button_state.down_flag = true;
     }
@@ -687,8 +694,12 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
     current_button_state.button = 0;
     current_button_state.down_flag = false;
     if ( automode_flag ){
-        remaining_time = -1;
         automode_flag = false;
+        if (event_mode & (WAIT_TEXT_MODE | WAIT_TEXTOUT_MODE)){
+            remaining_time = -1;
+        } else {
+            remaining_time = 0;
+        }
         return;
     }
 
@@ -943,17 +954,23 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
         }
     }
 
-///// Temporary fix for a Higurashi bug
-/////#ifdef INSANI
-/////    if ( event_mode & WAIT_SLEEP_MODE ) {
-/////	if (event->keysym.sym == SDLK_RETURN   ||
-/////	    event->keysym.sym == SDLK_KP_ENTER ||
-/////	    event->keysym.sym == SDLK_SPACE )
-/////	{
-/////	    skip_to_wait = 1;
-/////	}
-/////    }
-/////#endif
+#ifdef INSANI
+    if ( event_mode & WAIT_SLEEP_MODE) {
+	if (event->keysym.sym == SDLK_s )
+	{
+	    skip_to_wait = 1;
+	    skip_flag = false;
+	    key_pressed_flag = true;
+	}
+    }
+    if (skip_to_wait == 1 && 
+        (event->keysym.sym == SDLK_RETURN ||
+         event->keysym.sym == SDLK_KP_ENTER ||
+         event->keysym.sym == SDLK_SPACE )) {
+       skip_to_wait = 0;
+	    key_pressed_flag = true;
+    }
+#endif
 }
 
 void ONScripterLabel::timerEvent( void )

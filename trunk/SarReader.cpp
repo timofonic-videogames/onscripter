@@ -24,7 +24,7 @@
 #include "SarReader.h"
 #define WRITE_LENGTH 4096
 
-SarReader::SarReader( char *path, const unsigned char *key_table )
+SarReader::SarReader( DirPaths *path, const unsigned char *key_table )
         :DirectReader( path, key_table )
 {
     root_archive_info = last_archive_info = &archive_info;

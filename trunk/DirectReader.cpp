@@ -50,7 +50,7 @@ static iconv_t iconv_cd = NULL;
 #define N (1 << EI)  /* buffer size */
 #define F ((1 << EJ) + P)  /* lookahead buffer size */
 
-DirectReader::DirectReader( char *path, const unsigned char *key_table )
+DirectReader::DirectReader( DirPaths *path, const unsigned char *key_table )
 {
     file_full_path = NULL;
     file_sub_path = NULL;
@@ -63,12 +63,13 @@ DirectReader::DirectReader( char *path, const unsigned char *key_table )
     iconv_ref_count++;
 #endif
 
-    if ( path ){
-        archive_path = new char[ strlen(path) + 1 ];
-        memcpy( archive_path, path, strlen(path) + 1 );
+    if ( path != NULL ){
+        archive_path = path;
+        //archive_path = new char[ strlen(path) + 1 ];
+        //memcpy( archive_path, path, strlen(path) + 1 );
     }
     else{
-        archive_path = "";
+        archive_path = new DirPaths("");
     }
 
     int i;
@@ -117,7 +118,9 @@ DirectReader::~DirectReader()
 
 FILE *DirectReader::fopen(const char *path, const char *mode)
 {
-    size_t len = strlen(archive_path) + strlen(path) + 1;
+    FILE *fp = NULL;
+
+    size_t len = archive_path->max_path_len() + strlen(path) + 1;
     if (file_path_len < len){
         file_path_len = len;
         if (file_full_path) delete[] file_full_path;
@@ -125,20 +128,26 @@ FILE *DirectReader::fopen(const char *path, const char *mode)
         if (file_sub_path) delete[] file_sub_path;
         file_sub_path = new char[file_path_len];
     }
-    sprintf( file_full_path, "%s%s", archive_path, path );
+    for (int n=0; n<archive_path->get_num_paths(); n++) {
+        sprintf( file_full_path, "%s%s", archive_path->get_path(n), path );
 
-    FILE *fp = ::fopen( file_full_path, mode );
-    if (fp) return fp;
+        fp = ::fopen( file_full_path, mode );
+        if (fp) return fp;
+    }
 
 #if !defined(WIN32) && !defined(MACOS9) && !defined(PSP) && !defined(__OS2__)
+    // If the file wasn't found, try a case-insensitive search.
+    // (For now, only search the first archive path.)
     char *cur_p = NULL;
     DIR *dp = NULL;
-    len = strlen(archive_path);
-    if (len > 0) dp = opendir(archive_path);
+    len = 0;
+    if (archive_path->get_num_paths())
+	len = strlen(archive_path->get_path(0));
+    if (len > 0) dp = opendir(archive_path->get_path(0));
     else         dp = opendir(".");
     cur_p = file_full_path+len;
 
-    while(1){
+    while (1){
         if (dp == NULL) return NULL;
 
         char *delim_p = NULL;

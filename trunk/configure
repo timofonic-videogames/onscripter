@@ -763,7 +763,7 @@ cat >> Makefile <<_EOF
 .SUFFIXES:
 .SUFFIXES: $OBJ .cpp .h .c
 
-OSCFLAGS = -O3 -Wpointer-arith -Werror -fomit-frame-pointer -pipe \$(OSCFLAGSEXTRA)
+OSCFLAGS = -O2 -Wpointer-arith -Werror -fomit-frame-pointer -pipe \$(OSCFLAGSEXTRA)
 
 TARGET = onscripter$EXE
 

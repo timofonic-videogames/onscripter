@@ -25,6 +25,7 @@
 #define __DIRECT_READER_H__
 
 #include "BaseReader.h"
+#include "DirPaths.h"
 #include <string.h>
 
 #define MAX_FILE_NAME_LENGTH 256
@@ -32,7 +33,7 @@
 class DirectReader : public BaseReader
 {
 public:
-    DirectReader( char *path=NULL, const unsigned char *key_table=NULL );
+    DirectReader( DirPaths *path=NULL, const unsigned char *key_table=NULL );
     ~DirectReader();
 
     int open( char *name=NULL, int archive_type = ARCHIVE_TYPE_NONE );
@@ -56,7 +57,7 @@ protected:
     char *capital_name;
     char *capital_name_tmp;
 
-    char *archive_path;
+    DirPaths *archive_path;
     unsigned char key_table[256];
     bool key_table_flag;
     int  getbit_mask;

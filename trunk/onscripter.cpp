@@ -90,6 +90,7 @@ int main( int argc, char **argv )
 
     // ----------------------------------------
     // Parse options
+    bool hasArchivePath = false;
     argv++;
     while( argc > 1 ){
         if ( argv[0][0] == '-' ){
@@ -123,7 +124,8 @@ int main( int argc, char **argv )
                 ons.setDLLFile(argv[0]);
             }
             else if ( !strcmp( argv[0]+1, "r" ) || !strcmp( argv[0]+1, "-root" ) ){
-                argc--;
+		hasArchivePath = true;
+		argc--;
                 argv++;
                 ons.setArchivePath(argv[0]);
             }
@@ -172,6 +174,12 @@ int main( int argc, char **argv )
             else{
                 printf(" unknown option %s\n", argv[0] );
             }
+        }
+        else if (!hasArchivePath) {
+	    hasArchivePath = true;
+            ons.setArchivePath(argv[0]);
+            argc--;
+            argv++;
         }
         else{
             optionHelp();

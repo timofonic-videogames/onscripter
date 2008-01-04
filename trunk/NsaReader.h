@@ -30,7 +30,7 @@
 class NsaReader : public SarReader
 {
 public:
-    NsaReader( char *path=NULL, const unsigned char *key_table=NULL );
+    NsaReader( DirPaths *path=NULL, const unsigned char *key_table=NULL );
     ~NsaReader();
 
     int open( char *nsa_path=NULL, int archive_type = ARCHIVE_TYPE_NSA );
