@@ -696,7 +696,7 @@ private:
     };
     void stopBGM( bool continue_flag );
     void playClickVoice();
-    void setupWaveHeader( unsigned char *buffer, int channels, int rate, unsigned long data_length );
+    void setupWaveHeader( unsigned char *buffer, int channels, int rate, int bits, unsigned long data_length );
     OVInfo *openOggVorbis(unsigned char *buf, long len, int &channels, int &rate);
     int  closeOggVorbis(OVInfo *ovi);
 
