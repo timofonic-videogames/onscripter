@@ -28,10 +28,10 @@
 
 #ifdef MACOSX
 namespace Carbon {
+#include <sys/stat.h>
 #include <Carbon/Carbon.h>
 #include <CoreServices/CoreServices.h>
 }
-#include <sys/stat.h>
 #endif
 #ifdef WIN32
 #include <windows.h>
@@ -55,7 +55,7 @@ extern "C" void waveCallback( int channel );
 #ifdef HAELETH
 #define DEFAULT_ENV_FONT "MS Gothic"
 #else
-#define DEFAULT_ENV_FONT "‚l‚r ƒSƒVƒbƒN"
+#define DEFAULT_ENV_FONT "ï¼­ï¼³ ã‚´ã‚·ãƒƒã‚¯"
 #endif
 #define DEFAULT_VOLUME 100
 
@@ -593,50 +593,74 @@ int ONScripterLabel::init()
     UInt8 path[maxpath];
     CFBundleRef bundle = CFBundleGetMainBundle();
     if (bundle) {
+	archive_path = new DirPaths();
         CFURLRef resourceurl = CFBundleCopyResourcesDirectoryURL(bundle);
         if (resourceurl) {
-            Boolean validpath = CFURLGetFileSystemRepresentation(resourceurl,true,path,maxpath);
+            Boolean validpath =
+		CFURLGetFileSystemRepresentation(resourceurl,true,path,maxpath);
             CFRelease(resourceurl);
             if (validpath) {
-                archive_path = new DirPaths(path);
-            }
-        }
-        
-        if (archive_path) {
-            // Verify the archive path by checking for the script file
-            const char* scriptfiles[] = {"0.txt","00.txt","nscr_sec.dat","nscript.___","nscript.dat",NULL};
-            char** p = (char**)&scriptfiles;
-            for(;*p;p++) {
-                sprintf((char*)path,"%s%s",archive_path->get_path(0),*p);
-                FSRef ref;
-                OSErr err = FSPathMakeRef(path, &ref, NULL);
-                if(err == noErr
-                   && FSGetCatalogInfo(&ref, kFSCatInfoNone, NULL, NULL, NULL, NULL) == noErr)
-                    break;
-            }
+//                archive_path->add((const char*) path);
+//            }
+//        }
+//        
+//        if (archive_path->get_num_paths() > 0) {
+		// Verify the archive path by checking for the script file
+		const char* scriptfiles[] =
+		    {"0.txt","00.txt","nscr_sec.dat","nscript.___","nscript.dat",0};
+		char** p = (char**) &scriptfiles;
+		UInt8 test[maxpath];
+		for(;*p;p++) {
+		    sprintf((char*)test,"%s%s",(const char*)path,*p);
+		    FSRef ref;
+		    OSErr err = FSPathMakeRef(test, &ref, NULL);
+		    if(err == noErr &&
+		       FSGetCatalogInfo(&ref, kFSCatInfoNone, 0, 0, 0, 0) == noErr)
+			break;
+		}
             
-            if (!*p) {
-                // There were no script files in the application bundle.
-                // Set archive_path to the application path and assume there are script files there
-                CFURLRef bundleurl = CFBundleCopyBundleURL(bundle);
-                if (bundleurl) {
-                    CFURLRef archiveurl = CFURLCreateCopyDeletingLastPathComponent( kCFAllocatorDefault, bundleurl );
-                    if (archiveurl) {
-                        Boolean validpath = CFURLGetFileSystemRepresentation(archiveurl,true,path,maxpath);
-                        CFRelease(archiveurl);
-                        if (validpath) {
-                            archive_path = new DirPaths(path);
-                        }
-                    }
-                    CFRelease(bundleurl);
-                }
-            }
-        }
+		if (*p == NULL) {
+		    archive_path->add((const char*) path);
+		}
+	    }
+	}
+
+	// Add the application path.  If there were script files in
+	// the bundle, this becomes our fallback position, otherwise
+	// it's our primary search path.
+	CFURLRef bundleurl = CFBundleCopyBundleURL(bundle);
+	if (bundleurl) {
+	    CFURLRef archiveurl =
+		CFURLCreateCopyDeletingLastPathComponent(kCFAllocatorDefault,
+							 bundleurl);
+	    if (archiveurl) {
+		Boolean validpath =
+		    CFURLGetFileSystemRepresentation(archiveurl, true, path,
+						     maxpath);
+		CFRelease(archiveurl);
+		if (validpath) {
+		    archive_path->add((const char*) path);
+
+		    // If that was our primary search path, add the
+		    // next directory up as our fallback position.
+		    if (archive_path->get_num_paths() == 1) {
+			strcat((char*) path, "/..");
+			archive_path->add((const char*) path);
+		    }
+		}
+	    }
+	    CFRelease(bundleurl);
+	}
+    }
+    else {
+	// Not in a bundle: just use current dir and parent as normal.
+	archive_path = new DirPaths(".");
+	archive_path->add("..");
     }
 #else
-	// On Linux, the path is unpredictable and should be set by
-	// using "-r PATH" in a launcher script.  On other platforms
-	// they're stored in the same place as the executable.
+    // On Linux, the path is unpredictable and should be set by
+    // using "-r PATH" in a launcher script.  On other platforms
+    // they're stored in the same place as the executable.
     archive_path = new DirPaths(".");
     archive_path->add("..");
     //printf("init:archive_paths: \"%s\"\n", archive_path->get_all_paths());

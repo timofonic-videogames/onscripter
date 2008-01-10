@@ -64,6 +64,8 @@ DirPaths::~DirPaths()
 
 void DirPaths::add( const char *new_paths )
 {
+    fprintf(stderr, "Adding: %s\n", new_paths);
+    
     char **old_paths;
     const char *ptr1, *ptr2;
     char *dptr;
