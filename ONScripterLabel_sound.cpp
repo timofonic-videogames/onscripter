@@ -131,6 +131,30 @@ int ONScripterLabel::playSound(const char *filename, int format, bool loop_flag,
     }
 
     if (format & SOUND_WAVE){
+        if (strncmp((char*) buffer, "RIFF", 4) != 0) {
+            // bad (encrypted?) header; need to recreate
+            // assume the first 64 bytes are bad (encrypted)
+            int channels, rate, bits;
+            unsigned char buffer2[10];
+            char *fmtname = new char[strlen(filename) + strlen(".fmt") + 1];
+            sprintf(fmtname, "%s.fmt", filename);
+            if (script_h.cBR->getFileLength( fmtname ) > 0) {
+                // a file called filename + ".fmt" exists; read fmt info
+                script_h.cBR->getFile( fmtname, buffer2 );
+                channels = buffer2[0];
+                rate = 0;
+                for (int i=5; i>1; i--) {
+                    rate = (rate << 8) + buffer2[i];
+                }
+                bits = buffer2[6];
+                for (int i=0; i<64; i++) {
+                    buffer[i] = 0;
+                }
+                setupWaveHeader(buffer, channels, rate, bits,
+                    length - sizeof(WAVE_HEADER));
+            }
+            delete[] fmtname;
+        }
         Mix_Chunk *chunk = Mix_LoadWAV_RW(SDL_RWFromMem(buffer, length), 1);
         if (playWave(chunk, format, loop_flag, channel) == 0){
             delete[] buffer;
@@ -269,7 +293,7 @@ int ONScripterLabel::playOGG(int format, unsigned char *buffer, long length, boo
     if (format & SOUND_OGG){
         unsigned char *buffer2 = new unsigned char[sizeof(WAVE_HEADER)+ovi->decoded_length];
         decodeOggVorbis(ovi, buffer2+sizeof(WAVE_HEADER), ovi->decoded_length, false);
-        setupWaveHeader(buffer2, channels, rate, ovi->decoded_length);
+        setupWaveHeader(buffer2, channels, rate, 16, ovi->decoded_length);
         Mix_Chunk *chunk = Mix_LoadWAV_RW(SDL_RWFromMem(buffer2, sizeof(WAVE_HEADER)+ovi->decoded_length), 1);
         delete[] buffer2;
         closeOggVorbis(ovi);
@@ -535,7 +559,7 @@ void ONScripterLabel::playClickVoice()
     }
 }
 
-void ONScripterLabel::setupWaveHeader( unsigned char *buffer, int channels, int rate, unsigned long data_length )
+void ONScripterLabel::setupWaveHeader( unsigned char *buffer, int channels, int rate, int bits, unsigned long data_length )
 {
     memcpy( header.chunk_riff, "RIFF", 4 );
     int riff_length = sizeof(WAVE_HEADER) + data_length - 8;
@@ -553,7 +577,7 @@ void ONScripterLabel::setupWaveHeader( unsigned char *buffer, int channels, int 
     header.frequency[2] = (rate >> 16) & 0xff;
     header.frequency[3] = (rate >> 24) & 0xff;
 
-    int sample_byte_size = 2 * channels; // 16bit * channels
+    int sample_byte_size = channels * bits / 8;
     int byte_size = sample_byte_size * rate;
     header.byte_size[0] = byte_size & 0xff;
     header.byte_size[1] = (byte_size >> 8) & 0xff;
@@ -561,7 +585,7 @@ void ONScripterLabel::setupWaveHeader( unsigned char *buffer, int channels, int 
     header.byte_size[3] = (byte_size >> 24) & 0xff;
     header.sample_byte_size[0] = sample_byte_size;
     header.sample_byte_size[1] = 0;
-    header.sample_bit_size[0] = 16; // 16bit
+    header.sample_bit_size[0] = bits;
     header.sample_bit_size[1] = 0;
 
     memcpy( header.chunk_id, "data", 4 );
