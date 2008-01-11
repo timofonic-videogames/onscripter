@@ -611,7 +611,8 @@ int ONScripterLabel::init()
 		char** p = (char**) &scriptfiles;
 		UInt8 test[maxpath];
 		for(;*p;p++) {
-		    sprintf((char*)test,"%s%s",(const char*)path,*p);
+		    sprintf((char*)test,"%s/%s",(const char*)path,*p);
+
 		    FSRef ref;
 		    OSErr err = FSPathMakeRef(test, &ref, NULL);
 		    if(err == noErr &&
@@ -619,7 +620,7 @@ int ONScripterLabel::init()
 			break;
 		}
             
-		if (*p == NULL) {
+		if (*p != NULL) {
 		    archive_path->add((const char*) path);
 		}
 	    }
