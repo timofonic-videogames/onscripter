@@ -300,7 +300,7 @@ void ONScripterLabel::executeSystemLoad()
         menu_font.num_xy[1] = num_save_file+2;
         menu_font.top_xy[0] = (screen_width * screen_ratio2 / screen_ratio1 - menu_font.num_xy[0] * menu_font.pitch_xy[0]) / 2;
         menu_font.top_xy[1] = (screen_height * screen_ratio2 / screen_ratio1  - menu_font.num_xy[1] * menu_font.pitch_xy[1]) / 2;
-        menu_font.setXY( (menu_font.num_xy[0] - strlen( load_menu_name ) / 2) / 2, 0 );
+        menu_font.setXY( (menu_font.num_xy[0] - (strlen( load_menu_name )+1) / 2) / 2, 0 );
 //        uchar3 color = {0xff, 0xff, 0xff};
         // drawString( load_menu_name, color, &menu_font, true, accumulation_surface, NULL, &text_info );
         /* The following three lines are part of a hack allowing the
@@ -327,11 +327,12 @@ void ONScripterLabel::executeSystemLoad()
         flush( refreshMode() );
 
         bool nofile_flag;
-        char *buffer = new char[ strlen( save_item_name ) + 30 + 1 ];
+        int slen = strlen(save_item_name);
+        char *buffer = new char[ slen + (slen % 2) + 30 + 1 ];
 
         for ( unsigned int i=1 ; i<=num_save_file ; i++ ){
             searchSaveFile( save_file_info, i );
-            menu_font.setXY( (menu_font.num_xy[0] - (strlen( save_item_name ) / 2 + 15) ) / 2 );
+            menu_font.setXY( (menu_font.num_xy[0] - ((strlen( save_item_name )+1) / 2 + 15) ) / 2 );
 
             if ( save_file_info.valid ){
                 sprintf( buffer, MESSAGE_SAVE_EXIST,
@@ -389,7 +390,7 @@ void ONScripterLabel::executeSystemSave()
         menu_font.num_xy[1] = num_save_file+2;
         menu_font.top_xy[0] = (screen_width * screen_ratio2 / screen_ratio1 - menu_font.num_xy[0] * menu_font.pitch_xy[0]) / 2;
         menu_font.top_xy[1] = (screen_height * screen_ratio2 / screen_ratio1  - menu_font.num_xy[1] * menu_font.pitch_xy[1]) / 2;
-        menu_font.setXY((menu_font.num_xy[0] - strlen( save_menu_name ) / 2 ) / 2, 0);
+        menu_font.setXY((menu_font.num_xy[0] - (strlen( save_menu_name )+1) / 2 ) / 2, 0);
 //        uchar3 color = {0xff, 0xff, 0xff};
         // drawString( save_menu_name, color, &menu_font, true, accumulation_surface, NULL, &text_info );
         /* The following three lines are part of a hack allowing the
@@ -415,12 +416,13 @@ void ONScripterLabel::executeSystemSave()
         flush( refreshMode() );
 
         bool nofile_flag;
-        char *buffer = new char[ strlen( save_item_name ) + 30 + 1 ];
+        int slen = strlen(save_item_name);
+        char *buffer = new char[ slen + (slen % 2) + 30 + 1 ];
 
         for ( unsigned int i=1 ; i<=num_save_file ; i++ ){
             SaveFileInfo save_file_info;
             searchSaveFile( save_file_info, i );
-            menu_font.setXY( (menu_font.num_xy[0] - (strlen( save_item_name ) / 2 + 15) ) / 2 );
+            menu_font.setXY( (menu_font.num_xy[0] - ((strlen( save_item_name )+1) / 2 + 15) ) / 2 );
 
             if ( save_file_info.valid ){
                 sprintf( buffer, MESSAGE_SAVE_EXIST,
