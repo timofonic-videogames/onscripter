@@ -11,7 +11,8 @@
 INCS = `sdl-config --cflags` `smpeg-config --cflags` `avifile-config --cflags`
 # with OggVorbis and AVI
 LIBS = `sdl-config --libs` `smpeg-config --libs` `avifile-config --libs` -lSDL_ttf -lSDL_image -lSDL_mixer -lbz2 -ljpeg -lm -lvorbis
-DEFS = -DLINUX -DUSE_AVIFILE -DUSE_OGG_VORBIS
+#DEFS = -DLINUX -DUSE_AVIFILE -DUSE_OGG_VORBIS
+DEFS = -DLINUX -DUSE_OGG_VORBIS
 
 # with Integer OggVorbis and AVI in PDA size
 #LIBS = `sdl-config --libs` `smpeg-config --libs` `avifile-config --libs` -lSDL_ttf -lSDL_image -lSDL_mixer -lbz2 -ljpeg -lm -lvorbisidec
@@ -49,7 +50,7 @@ CFLAGS = -O3 -Wall -fomit-frame-pointer -pipe -c $(INCS) $(DEFS)
 RM = rm -f
 
 #TARGET = onscripter$(EXESUFFIX) sardec$(EXESUFFIX) nsadec$(EXESUFFIX) sarconv$(EXESUFFIX) nsaconv$(EXESUFFIX)
-TARGET = onscripter$(EXESUFFIX) sardec$(EXESUFFIX) nsadec$(EXESUFFIX) sarconv$(EXESUFFIX) nsaconv$(EXESUFFIX) simple_aviplay$(EXESUFFIX)
-EXT_OBJS = AVIWrapper$(OBJSUFFIX)
+TARGET = onscripter$(EXESUFFIX) #sardec$(EXESUFFIX) nsadec$(EXESUFFIX) sarconv$(EXESUFFIX) nsaconv$(EXESUFFIX) simple_aviplay$(EXESUFFIX)
+#EXT_OBJS = AVIWrapper$(OBJSUFFIX)
 
 include Makefile.onscripter
