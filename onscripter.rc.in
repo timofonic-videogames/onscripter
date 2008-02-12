@@ -1,6 +1,6 @@
 1 VERSIONINFO
-FILEVERSION 2007, 6, 15, 0
-PRODUCTVERSION 2007, 6, 15, 0
+FILEVERSION @Y@, @M@, @D@, 0
+PRODUCTVERSION @Y@, @M@, @D@, 0
 FILEFLAGS 32
 FILEOS 4
 FILETYPE 1
@@ -10,10 +10,10 @@ FILETYPE 1
            VALUE "FileDescription", "ONScripter-En"
            VALUE "OriginalFilename", "onscripter-en.exe"
            VALUE "CompanyName", "Ogapee/Haeleth"
-           VALUE "FileVersion", "2007-6-15"
-           VALUE "LegalCopyright", "Copyright 1998-2006 Studio O.G.A. Portions copyright 2005-2006 insani, 2006-2007 Haeleth."
+           VALUE "FileVersion", "@Y@-@M@-@D@"
+           VALUE "LegalCopyright", "Copyright 1998-2007 Studio O.G.A. Portions copyright 2005-2006 insani, 2006-@Y@ Haeleth."
            VALUE "ProductName", "ONScripter-En"
-           VALUE "ProductVersion", "2007-6-15"
+           VALUE "ProductVersion", "@Y@-@M@-@D@"
        }
    }
    BLOCK "VarFileInfo" {

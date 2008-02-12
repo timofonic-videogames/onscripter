@@ -103,12 +103,11 @@ ONScripter's original build system is extremely difficult to use
 variation), it has been replaced in this branch with a more
 conventional configure-build system; this depends on a POSIX-like
 environment with GNU make.  The code has been tested primarily with
-the GNU C++ compiler; Intel C++ 10 has also been used successfully in
-one case.
+the GNU C++ compiler; Intel C++ 10 has also been tried successfully.
 
-The primary test environment is GNU/Linux (64-bit), and the secondary
-test environment is MacOS X (32-bit).  Assuming standard build tools
-are installed, the full-source distribution is likely to compile
+The primary test environment is GNU/Linux (x86_64), and the secondary
+test environment is MacOS X (i386).  Assuming standard build tools are
+installed, the full-source distribution is likely to compile
 out-of-the-box or with only minimal changes on these and any other
 POSIX-conformant platform.  You may need to tweak the final link line
 if using static libraries -- see the configure script for examples of
@@ -117,9 +116,9 @@ incantations that work on FreeBSD, NetBSD, and Solaris.
 This distribution is also supported on Windows (though only 32-bit
 versions have been tested).  Building on Windows requires the MinGW
 distribution of g++, and the MSYS environment.  Windows users
-unfamiliar with Unix might prefer to stick with the binary
-distribution, which should work everywhere (this is the one thing
-Microsoft got right!)
+unfamiliar with the GNU build environment might prefer to stick with
+the binary distribution, which should work everywhere (this is the one
+thing Microsoft has got right!)
 
 Please see INSTALL in the source distribution for specific build
 instructions.
@@ -132,8 +131,8 @@ at the address
 
   ogapee@aqua.dti2.ne.jp
 
-The maintainer of this branch (as of June 2007) is Haeleth, who can
-be reached by email at the address
+The maintainer of this branch (as of February 2008) is Haeleth, who
+can be reached by email at the address
 
   haeleth@haeleth.net
 
