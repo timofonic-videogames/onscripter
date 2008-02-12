@@ -36,7 +36,7 @@ $(TARGET_EXE)$(EXESUFFIX): $(ONSCRIPTER_OBJS)
 	$(CXX) -o $@ $(ONSCRIPTER_OBJS) $(LIBS)
 
 pclean:
-	-$(RM) *$(OBJSUFFIX) $(CLEANUP) $(RCFILE)
+	-$(RM) *$(OBJSUFFIX) $(CLEANUP)
 
 pdistclean: pclean
 	-$(RM) $(TARGET_EXE)$(EXESUFFIX)
