@@ -90,6 +90,8 @@ int SarReader::readArchive( struct ArchiveInfo *ai, int archive_type )
 
         if ( archive_type >= ARCHIVE_TYPE_NSA )
             ai->fi_list[i].compression_type = readChar( ai->file_handle );
+        else if (strstr( ai->fi_list[i].name, ".nbz" ) != NULL || strstr( ai->fi_list[i].name, ".NBZ" ) != NULL  )
+            ai->fi_list[i].compression_type = NBZ_COMPRESSION;
         else
             ai->fi_list[i].compression_type = NO_COMPRESSION;
         ai->fi_list[i].offset = readLong( ai->file_handle ) + ai->base_offset;
