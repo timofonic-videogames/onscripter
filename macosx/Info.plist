@@ -1,3 +1,4 @@
+#include "../version.h"
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -9,7 +10,7 @@
 	<key>CFBundleIconFile</key>
 	<string>ONScripter.icns</string>
 	<key>CFBundleIdentifier</key>
-	<string>net.haeleth.ONScripter</string>
+	<string>net.haeleth.ONScripter-En</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -21,9 +22,9 @@
 	<key>CFBundleVersion</key>
 	<string>1.0</string>
     <key>CFBundleGetInfoString</key>
-    <string>ONScripter-En, ©2001-2007 Ogapee</string>
+    <string>ONScripter-En, (c) 2001-2008 Ogapee, insani, haeleth</string>
     <key>CFBundleShortVersionString</key>
-    <string>20070415-en</string>
+    <string>VER_NUMBER</string>
     <key>LSMinimumSystemVersion</key>
     <string>10.3</string>
 	<key>NSMainNibFile</key>

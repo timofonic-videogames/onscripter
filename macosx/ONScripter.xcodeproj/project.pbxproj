@@ -367,6 +367,7 @@
 		365D40EB0BE466AA00D1832A /* SDLMain.m in Sources */ = {isa = PBXBuildFile; fileRef = 365D40E90BE466AA00D1832A /* SDLMain.m */; };
 		365D40EC0BE466AA00D1832A /* SDLMain.h in Headers */ = {isa = PBXBuildFile; fileRef = 365D40EA0BE466AA00D1832A /* SDLMain.h */; };
 		365D41940BE46E2D00D1832A /* ONScripter.icns in Resources */ = {isa = PBXBuildFile; fileRef = 365D418F0BE46DFB00D1832A /* ONScripter.icns */; };
+		36D4F7A60D5D0C6D00B0FA18 /* DirPaths.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 36D4F7A40D5D0C6D00B0FA18 /* DirPaths.cpp */; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
 /* End PBXBuildFile section */
 
@@ -1101,6 +1102,8 @@
 		365D40E90BE466AA00D1832A /* SDLMain.m */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.objc; name = SDLMain.m; path = "../extlib/src/SDL-1.2.11/src/main/macosx/SDLMain.m"; sourceTree = SOURCE_ROOT; };
 		365D40EA0BE466AA00D1832A /* SDLMain.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = SDLMain.h; path = "../extlib/src/SDL-1.2.11/src/main/macosx/SDLMain.h"; sourceTree = SOURCE_ROOT; };
 		365D418F0BE46DFB00D1832A /* ONScripter.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = ONScripter.icns; sourceTree = SOURCE_ROOT; };
+		36D4F7A40D5D0C6D00B0FA18 /* DirPaths.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = DirPaths.cpp; path = ../DirPaths.cpp; sourceTree = SOURCE_ROOT; };
+		36D4F7A50D5D0C6D00B0FA18 /* DirPaths.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = DirPaths.h; path = ../DirPaths.h; sourceTree = SOURCE_ROOT; };
 		8D1107310486CEB800E47090 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* ONScripter.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ONScripter.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -1332,6 +1335,8 @@
 				365A91620BE03F1700786213 /* NsaReader.cpp */,
 				365A915B0BE03F1700786213 /* DirectReader.h */,
 				365A917C0BE03F1700786213 /* DirectReader.cpp */,
+				36D4F7A40D5D0C6D00B0FA18 /* DirPaths.cpp */,
+				36D4F7A50D5D0C6D00B0FA18 /* DirPaths.h */,
 				365A91590BE03F1700786213 /* DirtyRect.h */,
 				365A915A0BE03F1700786213 /* DirtyRect.cpp */,
 				365A91680BE03F1700786213 /* AVIWrapper.h */,
@@ -3034,6 +3039,7 @@
 				365A91940BE03F1800786213 /* ScriptParser.cpp in Sources */,
 				365A91950BE03F1800786213 /* ScriptHandler.cpp in Sources */,
 				365A91960BE03F1800786213 /* DirectReader.cpp in Sources */,
+				36D4F7A60D5D0C6D00B0FA18 /* DirPaths.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3134,6 +3140,7 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
+				HEADER_SEARCH_PATHS = .;
 				INSTALL_PATH = /usr/local/lib;
 				MACH_O_TYPE = staticlib;
 				PREBINDING = NO;
@@ -3157,6 +3164,7 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_MODEL_TUNING = G5;
 				GCC_WARN_UNUSED_VARIABLE = NO;
+				HEADER_SEARCH_PATHS = .;
 				INSTALL_PATH = ../extlib/lib/;
 				MACH_O_TYPE = staticlib;
 				PREBINDING = NO;
@@ -3946,6 +3954,7 @@
 					"../extlib/src/libogg-1.1.3/include",
 				);
 				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_PREPROCESS = YES;
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				LIBRARY_SEARCH_PATHS_QUOTED_1 = "";
@@ -3991,6 +4000,7 @@
 					"../extlib/src/libogg-1.1.3/include",
 				);
 				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_PREPROCESS = YES;
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				LIBRARY_SEARCH_PATHS_QUOTED_1 = "";
