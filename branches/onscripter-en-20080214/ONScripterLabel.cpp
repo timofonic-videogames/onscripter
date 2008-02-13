@@ -27,6 +27,7 @@
 #include <cstdio>
 
 #ifdef MACOSX
+#include <libgen.h>
 namespace Carbon {
 #include <sys/stat.h>
 #include <Carbon/Carbon.h>
@@ -822,7 +823,20 @@ int ONScripterLabel::init()
     readToken();
 
     if ( sentence_font.openFont( font_file, screen_ratio1, screen_ratio2 ) == NULL ){
+#ifdef MACOSX
+	unsigned char errmsg[2048];
+	char* errstr = (char*) errmsg + 1;
+	sprintf( errstr, "Could not find the font file '%s'. "
+		 "Please ensure it is present with the game data.",
+		 basename(font_file) );
+	errmsg[0] = strlen( errstr );
+	using namespace Carbon;
+        StandardAlert( kAlertStopAlert, "\pMissing font file",
+		       errmsg, NULL, NULL );
+#else
         fprintf( stderr, "can't open font file: %s\n", font_file );
+
+#endif
         return -1;
     }
 
