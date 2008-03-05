@@ -103,10 +103,21 @@ int ONScripterLabel::waitCommand()
 
 int ONScripterLabel::vspCommand()
 {
+    //Mion - ogapee2008
+    bool vsp2_flag = false;
+    if (script_h.isName("vsp2")) vsp2_flag = true;
+
     int no = script_h.readInt();
     int v  = script_h.readInt();
-    sprite_info[ no ].visible = (v==1)?true:false;
-    dirty_rect.add( sprite_info[no].pos );
+
+    if (vsp2_flag){
+        sprite2_info[ no ].visible = (v==1)?true:false;
+        dirty_rect.add( sprite2_info[no].bounding_rect );
+    }
+    else {
+        sprite_info[ no ].visible = (v==1)?true:false;
+        dirty_rect.add( sprite_info[no].pos );
+    }
 
     return RET_CONTINUE;
 }
@@ -301,11 +312,11 @@ int ONScripterLabel::strspCommand()
     FontInfo fi;
     fi.is_newline_accepted = true;
 #ifndef RCA_SCALE
-    ai->pos.x = script_h.readInt();
-    ai->pos.y = script_h.readInt();
+    ai->pos.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
+    ai->pos.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
 #else
-    ai->pos.x = script_h.readInt() * scr_stretch_x;
-    ai->pos.y = script_h.readInt() * scr_stretch_y;
+    ai->pos.x = script_h.readInt() * scr_stretch_x * screen_ratio1 / screen_ratio2;
+    ai->pos.y = script_h.readInt() * scr_stretch_y * screen_ratio1 / screen_ratio2;
 #endif
     fi.num_xy[0] = script_h.readInt();
     fi.num_xy[1] = script_h.readInt();
@@ -1241,15 +1252,40 @@ int ONScripterLabel::negaCommand()
 
 int ONScripterLabel::mspCommand()
 {
+    //Mion - ogapee2008
+    bool msp2_flag = false;
+    if (script_h.isName("msp2")) msp2_flag = true;
+
     int no = script_h.readInt();
-    dirty_rect.add( sprite_info[ no ].pos );
-    sprite_info[ no ].pos.x += script_h.readInt() * screen_ratio1 / screen_ratio2;
-    sprite_info[ no ].pos.y += script_h.readInt() * screen_ratio1 / screen_ratio2;
-    dirty_rect.add( sprite_info[ no ].pos );
+
+    AnimationInfo *si=NULL;
+    if (msp2_flag) {
+        si = &sprite2_info[no];
+        dirty_rect.add( si->bounding_rect );
+    }
+    else{
+        si = &sprite_info[no];
+        dirty_rect.add( si->pos );
+    }
+
+    si->pos.x += script_h.readInt() * screen_ratio1 / screen_ratio2;
+    si->pos.y += script_h.readInt() * screen_ratio1 / screen_ratio2;
+
+    if (msp2_flag){
+        si->scale_x += script_h.readInt();
+        si->scale_y += script_h.readInt();
+        si->rot += script_h.readInt();
+        si->calcAffineMatrix();
+        dirty_rect.add( si->bounding_rect );
+    }
+    else{
+        dirty_rect.add( si->pos );
+    }
+    
     if ( script_h.getEndStatus() & ScriptHandler::END_COMMA )
-        sprite_info[ no ].trans += script_h.readInt();
-    if ( sprite_info[ no ].trans > 256 ) sprite_info[ no ].trans = 256;
-    else if ( sprite_info[ no ].trans < 0 ) sprite_info[ no ].trans = 0;
+        si->trans += script_h.readInt();
+    if ( si->trans > 256 ) si->trans = 256;
+    else if ( si->trans < 0 ) si->trans = 0;
 
     return RET_CONTINUE;
 }
@@ -1323,8 +1359,8 @@ int ONScripterLabel::mp3Command()
 
 int ONScripterLabel::movemousecursorCommand()
 {
-    int x = script_h.readInt();
-    int y = script_h.readInt();
+    int x = script_h.readInt() * screen_ratio1 / screen_ratio2;
+    int y = script_h.readInt() * screen_ratio1 / screen_ratio2;
 
     SDL_WarpMouse( x, y );
 
@@ -1393,6 +1429,65 @@ int ONScripterLabel::menu_automodeCommand()
     automode_flag = true;
     skip_flag = false;
     printf("menu_automode: change to automode\n");
+
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::lsp2Command()
+{
+    bool v=true;
+
+    if ( script_h.isName( "lsph2" ) )
+        v = false;
+
+    int no = script_h.readInt();
+    if ( sprite2_info[no].visible )
+        dirty_rect.add( sprite2_info[no].bounding_rect );
+    sprite2_info[ no ].visible = v;
+    
+    const char *buf = script_h.readStr();
+    sprite2_info[ no ].setImageName( buf );
+
+#ifdef RCA_SCALE
+    sprite2_info[ no ].pos.x = script_h.readInt() * screen_ratio1 * scr_stretch_x / screen_ratio2;
+    sprite2_info[ no ].pos.y = script_h.readInt() * screen_ratio1 * scr_stretch_y / screen_ratio2;
+#else
+    sprite2_info[ no ].pos.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
+    sprite2_info[ no ].pos.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
+#endif
+    sprite2_info[ no ].scale_x = script_h.readInt();
+    sprite2_info[ no ].scale_y = script_h.readInt();
+    sprite2_info[ no ].rot = script_h.readInt();
+
+    if ( script_h.getEndStatus() & ScriptHandler::END_COMMA )
+        sprite2_info[ no ].trans = script_h.readInt();
+    else
+        sprite2_info[ no ].trans = 256;
+
+    parseTaggedString( &sprite2_info[ no ] );
+    setupAnimationInfo( &sprite2_info[ no ] );
+    sprite2_info[ no ].calcAffineMatrix();
+
+#ifdef RCA_SCALE
+    if (sprite_info2[ no ].image_surface 
+        && ( scr_stretch_y > 1.0 || scr_stretch_x > 1.0 )) {
+        SDL_Surface* src = sprite_info2[ no ].image_surface;
+        SDL_PixelFormat *fmt = src->format;
+        SDL_Surface* dst = SDL_CreateRGBSurface( SDL_SWSURFACE, 
+                                                 scr_stretch_x*src->w,
+                                                 scr_stretch_y*src->h,
+                                                 fmt->BitsPerPixel, fmt->Rmask, fmt->Gmask, fmt->Bmask, fmt->Amask );
+        resizeSurface( src, dst );
+        sprite_info2[ no ].image_surface = dst;
+        sprite_info2[ no ].pos.w *= scr_stretch_x;
+        sprite_info2[ no ].pos.h *= scr_stretch_y;
+        SDL_FreeSurface( src );
+
+    }
+#endif
+
+    if ( sprite2_info[no].visible )
+        dirty_rect.add( sprite2_info[no].bounding_rect );
 
     return RET_CONTINUE;
 }
@@ -2424,6 +2519,9 @@ int ONScripterLabel::endCommand()
 int ONScripterLabel::dwavestopCommand()
 {
     int ch = script_h.readInt();
+    //Mion - ogapee2008: avoid dwavestop outside array
+    if (ch < 0) ch = 0;
+    else if (ch >= ONS_MIX_CHANNELS) ch = ONS_MIX_CHANNELS-1;
 
     if ( wave_sample[ch] ){
         Mix_Pause( ch );
@@ -2502,19 +2600,25 @@ int ONScripterLabel::drawsp3Command()
     int y = script_h.readInt() * screen_ratio1 * scr_stretch_y / screen_ratio2;
 #endif
 
-    // |mat[0][0] mat[0][1]|
-    // |mat[1][0] mat[1][1]|
-    int mat[2][2];
-    mat[0][0] = script_h.readInt();
-    mat[0][1] = script_h.readInt();
-    mat[1][0] = script_h.readInt();
-    mat[1][1] = script_h.readInt();
-
     AnimationInfo &si = sprite_info[sprite_no];
     int old_cell_no = si.current_cell;
     si.setCell(cell_no);
 
-    si.blendOnSurface2( accumulation_surface, x, y, alpha, mat );
+    si.mat[0][0] = script_h.readInt();
+    si.mat[0][1] = script_h.readInt();
+    si.mat[1][0] = script_h.readInt();
+    si.mat[1][1] = script_h.readInt();
+
+    int denom = (si.mat[0][0]*si.mat[1][1]-si.mat[0][1]*si.mat[1][0])/1000;
+    if (denom != 0){
+        si.inv_mat[0][0] =  si.mat[1][1] * 1000 / denom;
+        si.inv_mat[0][1] = -si.mat[0][1] * 1000 / denom;
+        si.inv_mat[1][0] = -si.mat[1][0] * 1000 / denom;
+        si.inv_mat[1][1] =  si.mat[0][0] * 1000 / denom;
+    }
+
+    SDL_Rect clip = {0, 0, screen_surface->w, screen_surface->h};
+    si.blendOnSurface2( accumulation_surface, x, y, clip, alpha );
     si.setCell(old_cell_no);
 
     return RET_CONTINUE;
@@ -2525,36 +2629,25 @@ int ONScripterLabel::drawsp2Command()
     int sprite_no = script_h.readInt();
     int cell_no = script_h.readInt();
     int alpha = script_h.readInt();
-#ifndef RCA_SCALE
-    int x = script_h.readInt() * screen_ratio1 / screen_ratio2;
-    int y = script_h.readInt() * screen_ratio1 / screen_ratio2;
-#else
-    int x = script_h.readInt() * screen_ratio1 * scr_stretch_x / screen_ratio2;
-    int y = script_h.readInt() * screen_ratio1 * scr_stretch_y / screen_ratio2;
-#endif
-    int scale_x = script_h.readInt();
-    int scale_y = script_h.readInt();
-    int rot = script_h.readInt();
 
     AnimationInfo &si = sprite_info[sprite_no];
+#ifndef RCA_SCALE
+    si.pos.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
+    si.pos.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
+#else
+    si.pos.x = script_h.readInt() * screen_ratio1 * scr_stretch_x / screen_ratio2;
+    si.pos.y = script_h.readInt() * screen_ratio1 * scr_stretch_y / screen_ratio2;
+#endif
+    si.scale_x = script_h.readInt();
+    si.scale_y = script_h.readInt();
+    si.rot = script_h.readInt();
+    si.calcAffineMatrix();
+
     int old_cell_no = si.current_cell;
     si.setCell(cell_no);
 
-    if ( scale_x == 0 || scale_y == 0 ) return RET_CONTINUE;
-
-    // |mat[0][0] mat[0][1]|
-    // |mat[1][0] mat[1][1]|
-    int mat[2][2];
-    int cos_i = 1000, sin_i = 0;
-    if (rot != 0){
-        cos_i = (int)(1000.0 * cos(-M_PI*rot/180));
-        sin_i = (int)(1000.0 * sin(-M_PI*rot/180));
-    }
-    mat[0][0] =  cos_i*scale_x/100;
-    mat[0][1] = -sin_i*scale_y/100;
-    mat[1][0] =  sin_i*scale_x/100;
-    mat[1][1] =  cos_i*scale_y/100;
-    si.blendOnSurface2( accumulation_surface, x, y, alpha, mat );
+    SDL_Rect clip = {0, 0, screen_surface->w, screen_surface->h};
+    si.blendOnSurface2( accumulation_surface, si.pos.x, si.pos.y, clip, alpha );
     si.setCell(old_cell_no);
 
     return RET_CONTINUE;
@@ -2606,27 +2699,17 @@ int ONScripterLabel::drawbgCommand()
 
 int ONScripterLabel::drawbg2Command()
 {
+    //Mion - ogapee2008
     int x = script_h.readInt() * screen_ratio1 / screen_ratio2;
     int y = script_h.readInt() * screen_ratio1 / screen_ratio2;
-    int scale_x = script_h.readInt();
-    int scale_y = script_h.readInt();
-    int rot = script_h.readInt();
+    bg_info.scale_x = script_h.readInt();
+    bg_info.scale_y = script_h.readInt();
+    bg_info.rot = script_h.readInt();
+    bg_info.calcAffineMatrix();
 
-    // |mat[0][0] mat[0][1]|
-    // |mat[1][0] mat[1][1]|
-    int mat[2][2];
-    int cos_i = 1000, sin_i = 0;
-    if (rot != 0){
-        cos_i = (int)(1000.0 * cos(-M_PI*rot/180));
-        sin_i = (int)(1000.0 * sin(-M_PI*rot/180));
-    }
-    mat[0][0] =  cos_i*scale_x/100;
-    mat[0][1] = -sin_i*scale_y/100;
-    mat[1][0] =  sin_i*scale_x/100;
-    mat[1][1] =  cos_i*scale_y/100;
-
+    SDL_Rect clip = {0, 0, screen_surface->w, screen_surface->h};
     bg_info.blendOnSurface2( accumulation_surface, x, y,
-                             256, mat );
+                             clip, 256 );
 
     return RET_CONTINUE;
 }
@@ -2669,29 +2752,49 @@ int ONScripterLabel::defineresetCommand()
 
 int ONScripterLabel::cspCommand()
 {
+    bool csp2_flag = false;
+    if (script_h.isName("csp2")) csp2_flag = true;
+
     int no = script_h.readInt();
+    AnimationInfo *si = NULL;
+    int num = 0;
+    if (csp2_flag) {
+        num = MAX_SPRITE2_NUM;
+        si = sprite2_info;
+    }
+    else{
+        num = MAX_SPRITE_NUM;
+        si = sprite_info;
+    }
 
     if ( no == -1 )
-        for ( int i=0 ; i<MAX_SPRITE_NUM ; i++ ){
-            if ( sprite_info[i].visible )
-                dirty_rect.add( sprite_info[i].pos );
-            if ( sprite_info[i].image_name ){
+        for ( int i=0 ; i<num ; i++ ){
+            if ( si[i].visible ){
+                if (csp2_flag)
+                    dirty_rect.add( si[i].bounding_rect );
+                else
+                    dirty_rect.add( si[i].pos );
+            }
+            if ( si[i].image_name ){
 #ifndef RCA_SCALE
-                sprite_info[i].pos.x = -1000 * screen_ratio1 / screen_ratio2;
-                sprite_info[i].pos.y = -1000 * screen_ratio1 / screen_ratio2;
+                si[i].pos.x = -1000 * screen_ratio1 / screen_ratio2;
+                si[i].pos.y = -1000 * screen_ratio1 / screen_ratio2;
 #else
-                sprite_info[i].pos.x = -10000 * screen_ratio1 / screen_ratio2;
-                sprite_info[i].pos.y = -10000 * screen_ratio1 / screen_ratio2;
+                si[i].pos.x = -10000 * screen_ratio1 / screen_ratio2;
+                si[i].pos.y = -10000 * screen_ratio1 / screen_ratio2;
 #endif
             }
-            root_button_link.removeSprite(i);
-            sprite_info[i].remove();
+            if (!csp2_flag) root_button_link.removeSprite(i);
+            si[i].remove();
         }
-    else if (no >= 0 && no < MAX_SPRITE_NUM) {
-        if ( sprite_info[no].visible )
-            dirty_rect.add( sprite_info[no].pos );
-        root_button_link.removeSprite(no);
-        sprite_info[no].remove();
+    else if (no >= 0 && no < MAX_SPRITE_NUM){
+        if ( si[no].visible )
+            if (csp2_flag)
+                dirty_rect.add( si[no].bounding_rect );
+            else
+                dirty_rect.add( si[no].pos );
+        if (!csp2_flag) root_button_link.removeSprite(no);
+        si[no].remove();
     }
 
     return RET_CONTINUE;
@@ -2794,6 +2897,9 @@ int ONScripterLabel::clCommand()
 int ONScripterLabel::chvolCommand()
 {
     int ch  = script_h.readInt();
+    //Mion - ogapee2008: avoid access outside array bounds
+    if (ch < 0) ch = 0;
+    else if (ch >= ONS_MIX_CHANNELS) ch = ONS_MIX_CHANNELS-1;
     int vol = script_h.readInt();
 
     if ( wave_sample[ch] ){
@@ -2994,7 +3100,6 @@ int ONScripterLabel::btntimeCommand()
         btntime2_flag = true;
     else
         btntime2_flag = false;
-
     btntime_value = script_h.readInt();
 
     return RET_CONTINUE;
@@ -3042,7 +3147,7 @@ int ONScripterLabel::btndefCommand()
             if (btndef_info.image_surface)
 #endif
             SDL_SetAlpha( btndef_info.image_surface, DEFAULT_BLIT_FLAG, SDL_ALPHA_OPAQUE );
-        }
+        } else btntime_value = 0; //Mion - clear the btn wait time
     }
 
     deleteButtonLink();
@@ -3320,23 +3425,55 @@ int ONScripterLabel::autoclickCommand()
 
 int ONScripterLabel::amspCommand()
 {
+    //Mion - ogapee2008
+    bool amsp2_flag = false;
+    if (script_h.isName("amsp2")) amsp2_flag = true;
+
     int no = script_h.readInt();
-    dirty_rect.add( sprite_info[ no ].pos );
+    AnimationInfo *si=NULL;
+    if (amsp2_flag){
+        si = &sprite2_info[no];
+        dirty_rect.add( si->bounding_rect );
+    }
+    else{
+        si = &sprite_info[no];
+        dirty_rect.add( si->pos );
+    }
+
 #ifndef RCA_SCALE
-    sprite_info[ no ].pos.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
-    sprite_info[ no ].pos.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
+    si->pos.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
+    si->pos.y = script_h.readInt() * screen_ratio1 / screen_ratio2;
 #else
-    sprite_info[ no ].pos.x = script_h.readInt() * screen_ratio1 * scr_stretch_x / screen_ratio2;
-    sprite_info[ no ].pos.y = script_h.readInt() * screen_ratio1 * scr_stretch_y / screen_ratio2;
+    si->pos.x = script_h.readInt() * screen_ratio1 * scr_stretch_x / screen_ratio2;
+    si->pos.y = script_h.readInt() * screen_ratio1 * scr_stretch_y / screen_ratio2;
 #endif
+    if (amsp2_flag){
+        si->scale_x = script_h.readInt();
+        si->scale_y = script_h.readInt();
+        si->rot = script_h.readInt();
+        si->calcAffineMatrix();
+        dirty_rect.add( si->bounding_rect );
+    }
+    else{
+        dirty_rect.add( si->pos );
+    }
 
     if ( script_h.getEndStatus() & ScriptHandler::END_COMMA )
-        sprite_info[ no ].trans = script_h.readInt();
+        si->trans = script_h.readInt();
 
-    if ( sprite_info[ no ].trans > 256 ) sprite_info[ no ].trans = 256;
-    else if ( sprite_info[ no ].trans < 0 ) sprite_info[ no ].trans = 0;
-    dirty_rect.add( sprite_info[ no ].pos );
+    if ( si->trans > 256 ) si->trans = 256;
+    else if ( si->trans < 0 ) si->trans = 0;
 
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::allsp2resumeCommand()
+{
+    all_sprite2_hide_flag = false;
+    for ( int i=0 ; i<MAX_SPRITE2_NUM ; i++ ){
+        if ( sprite2_info[i].visible )
+            dirty_rect.add( sprite2_info[i].bounding_rect );
+    }
     return RET_CONTINUE;
 }
 
@@ -3346,6 +3483,16 @@ int ONScripterLabel::allspresumeCommand()
     for ( int i=0 ; i<MAX_SPRITE_NUM ; i++ ){
         if ( sprite_info[i].visible )
             dirty_rect.add( sprite_info[i].pos );
+    }
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::allsp2hideCommand()
+{
+    all_sprite2_hide_flag = true;
+    for ( int i=0 ; i<MAX_SPRITE2_NUM ; i++ ){
+        if ( sprite2_info[i].visible )
+            dirty_rect.add( sprite2_info[i].bounding_rect );
     }
     return RET_CONTINUE;
 }

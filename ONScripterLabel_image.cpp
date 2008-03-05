@@ -2,7 +2,7 @@
  * 
  *  ONScripterLabel_image.cpp - Image processing in ONScripter
  *
- *  Copyright (c) 2001-2006 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2008 Ogapee. All rights reserved.
  *
  *  ogapee@aqua.dti2.ne.jp
  *
@@ -296,8 +296,16 @@ void ONScripterLabel::refreshSurface( SDL_Surface *surface, SDL_Rect *clip_src, 
 	    if ( nega_mode == 1 ) makeNegaSurface( surface, clip );
 	    if ( monocro_flag )   makeMonochromeSurface( surface, clip );
 	    if ( nega_mode == 2 ) makeNegaSurface( surface, clip );
-	    SDL_BlitSurface(surface, &clip, accumulation_comp_surface, &clip);
-	}
+            //Mion - ogapee2008
+            if (!all_sprite2_hide_flag){
+                for ( i=MAX_SPRITE2_NUM-1 ; i>=0 ; i-- ){
+                    if ( sprite2_info[i].image_surface && sprite2_info[i].visible ){
+                        drawTaggedSurface( surface, &sprite2_info[i], clip );
+                    }
+                }
+            }
+            SDL_BlitSurface( surface, &clip, accumulation_comp_surface, &clip );
+        }
 
         if (refresh_mode & REFRESH_SHADOW_MODE)
             shadowTextDisplay( surface, clip );
@@ -321,6 +329,14 @@ void ONScripterLabel::refreshSurface( SDL_Surface *surface, SDL_Rect *clip_src, 
 	}
 
 	if ( !windowback_flag ){
+	    //Mion - ogapee2008
+            if (!all_sprite2_hide_flag){
+                for ( i=MAX_SPRITE2_NUM-1 ; i>=0 ; i-- ){
+                    if ( sprite2_info[i].image_surface && sprite2_info[i].visible ){
+                        drawTaggedSurface( surface, &sprite2_info[i], clip );
+                    }
+                }
+            }
 	    if ( nega_mode == 1 ) makeNegaSurface( surface, clip );
 	    if ( monocro_flag )   makeMonochromeSurface( surface, clip );
 	    if ( nega_mode == 2 ) makeNegaSurface( surface, clip );

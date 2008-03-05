@@ -2,7 +2,7 @@
  *
  *  ONScripterLabel.h - Execution block parser of ONScripter
  *
- *  Copyright (c) 2001-2007 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2008 Ogapee. All rights reserved.
  *
  *  ogapee@aqua.dti2.ne.jp
  *
@@ -195,6 +195,7 @@ public:
     int menu_windowCommand();
     int menu_fullCommand();
     int menu_automodeCommand();
+    int lsp2Command();  //Mion - ogapee2008
     int lspCommand();
     int loopbgmstopCommand();
     int loopbgmCommand();
@@ -283,7 +284,9 @@ public:
     int aviCommand();
     int automode_timeCommand();
     int autoclickCommand();
+    int allsp2resumeCommand(); //Mion - ogapee2008
     int allspresumeCommand();
+    int allsp2hideCommand(); //Mion - ogapee2008
     int allsphideCommand();
     int amspCommand();
 
@@ -440,6 +443,10 @@ private:
     struct ButtonState{
         int x, y, button;
         bool down_flag;
+        ButtonState(){ //Mion - initialize these values
+            button = -1;
+            down_flag = false;
+        };
     } current_button_state, volatile_button_state, last_mouse_state, shelter_mouse_state;
 
     struct ButtonLink{
@@ -536,9 +543,10 @@ private:
 
     /* ---------------------------------------- */
     /* Sprite related variables */
-    AnimationInfo sprite_info[MAX_SPRITE_NUM];
-    AnimationInfo sprite2_info[MAX_SPRITE2_NUM];
+    AnimationInfo *sprite_info;
+    AnimationInfo *sprite2_info;
     bool all_sprite_hide_flag;
+    bool all_sprite2_hide_flag;
 
     /* ---------------------------------------- */
     /* Parameter related variables */
@@ -695,6 +703,7 @@ private:
            WAVE_PLAY_LOADED = 2
     };
     void stopBGM( bool continue_flag );
+    void stopAllDWAVE();
     void playClickVoice();
     void setupWaveHeader( unsigned char *buffer, int channels, int rate, int bits, unsigned long data_length );
     OVInfo *openOggVorbis(unsigned char *buf, long len, int &channels, int &rate);
