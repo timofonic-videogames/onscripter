@@ -257,6 +257,7 @@ public:
     int drawbg2Command();
     int drawbgCommand();
     int drawCommand();
+    int deletescreenshotCommand();
     int delayCommand();
     int defineresetCommand();
     int cspCommand();

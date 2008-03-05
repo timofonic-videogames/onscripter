@@ -2073,8 +2073,8 @@ int ONScripterLabel::getscreenshotCommand()
     if ( h == 0 ) h = 1;
 
     if ( screenshot_surface &&
-         screenshot_surface->w != w &&
-         screenshot_surface->h != h ){
+         (screenshot_surface->w != w ||
+         screenshot_surface->h != h )){
         SDL_FreeSurface( screenshot_surface );
         screenshot_surface = NULL;
     }
@@ -2720,6 +2720,15 @@ int ONScripterLabel::drawCommand()
     flushDirect( rect, REFRESH_NONE_MODE );
     dirty_rect.clear();
 
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::deletescreenshotCommand()
+{
+    if ( screenshot_surface ) {
+        SDL_FreeSurface( screenshot_surface );
+        screenshot_surface = NULL;
+    }
     return RET_CONTINUE;
 }
 

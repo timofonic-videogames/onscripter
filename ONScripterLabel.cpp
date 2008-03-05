@@ -224,6 +224,7 @@ static struct FuncLUT{
     {"drawbg2", &ONScripterLabel::drawbg2Command},
     {"drawbg", &ONScripterLabel::drawbgCommand},
     {"draw", &ONScripterLabel::drawCommand},
+    {"deletescreenshot", &ONScripterLabel::deletescreenshotCommand},
     {"delay", &ONScripterLabel::delayCommand},
     {"definereset", &ONScripterLabel::defineresetCommand},
     {"csp2", &ONScripterLabel::cspCommand}, //Mion - ogapee2008
