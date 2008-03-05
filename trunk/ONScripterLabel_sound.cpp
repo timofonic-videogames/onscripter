@@ -2,7 +2,7 @@
  *
  *  ONScripterLabel_sound.cpp - Methods for playing sound
  *
- *  Copyright (c) 2001-2007 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2008 Ogapee. All rights reserved.
  *
  *  ogapee@aqua.dti2.ne.jp
  *
@@ -543,6 +543,17 @@ void ONScripterLabel::stopBGM( bool continue_flag )
     }
 
     if ( !continue_flag ) current_cd_track = -1;
+}
+
+//Mion - ogapee2008
+void ONScripterLabel::stopAllDWAVE()
+{
+    for (int ch=0; ch<ONS_MIX_CHANNELS ; ch++)
+        if ( wave_sample[ch] ){
+            Mix_Pause( ch );
+            Mix_FreeChunk( wave_sample[ch] );
+            wave_sample[ch] = NULL;
+        }
 }
 
 void ONScripterLabel::playClickVoice()

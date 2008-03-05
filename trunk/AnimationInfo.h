@@ -2,7 +2,7 @@
  * 
  *  AnimationInfo.h - General image storage class of ONScripter
  *
- *  Copyright (c) 2001-2007 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2008 Ogapee. All rights reserved.
  *
  *  ogapee@aqua.dti2.ne.jp
  *
@@ -69,11 +69,16 @@ public:
     /* Variables from AnimationInfo */
     bool visible;
     bool abs_flag;
+    bool affine_flag;
     int trans;
     char *image_name;
     SDL_Surface *image_surface;
     unsigned char *alpha_buf;
-    int scale_x, scale_y, rot; // for lsp2
+    /* Variables for extended sprite (lsp2, drawsp2, etc.) - Mion: ogapee2008 */
+    int scale_x, scale_y, rot;
+    int mat[2][2], inv_mat[2][2];
+    int corner_xy[4][2];
+    SDL_Rect bounding_rect;
     int blending_mode; // 0...normal, 1...additive
     int cos_i, sin_i;
     
@@ -101,10 +106,12 @@ public:
     static int doClipping( SDL_Rect *dst, SDL_Rect *clip, SDL_Rect *clipped=NULL );
     void blendOnSurface( SDL_Surface *dst_surface, int dst_x, int dst_y,
                          SDL_Rect &clip, int alpha=256 );
+    //Mion - ogapee2008
     void blendOnSurface2( SDL_Surface *dst_surface, int dst_x, int dst_y,
-                          int alpha, int mat[2][2] );
+                          SDL_Rect &clip, int alpha=256 );
     void blendBySurface( SDL_Surface *surface, int dst_x, int dst_y, SDL_Color &color,
                          SDL_Rect *clip, bool rotate_flag );
+    void calcAffineMatrix();
     
     static SDL_Surface *allocSurface( int w, int h );
     void allocImage( int w, int h );

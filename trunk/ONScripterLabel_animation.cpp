@@ -2,7 +2,7 @@
  * 
  *  ONScripter_animation.cpp - Methods to manipulate AnimationInfo
  *
- *  Copyright (c) 2001-2007 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2008 Ogapee. All rights reserved.
  *
  *  ogapee@aqua.dti2.ne.jp
  *
@@ -37,6 +37,13 @@ int ONScripterLabel::proceedAnimation()
 
     for ( i=MAX_SPRITE_NUM-1 ; i>=0 ; i-- ){
         anim = &sprite_info[i];
+        if ( anim->visible && anim->is_animatable ){
+            minimum_duration = estimateNextDuration( anim, anim->pos, minimum_duration );
+        }
+    }
+    //Mion - ogapee2008
+    for ( i=MAX_SPRITE2_NUM-1 ; i>=0 ; i-- ){
+        anim = &sprite2_info[i];
         if ( anim->visible && anim->is_animatable ){
             minimum_duration = estimateNextDuration( anim, anim->pos, minimum_duration );
         }
@@ -100,6 +107,13 @@ void ONScripterLabel::resetRemainingTime( int t )
         
     for ( i=MAX_SPRITE_NUM-1 ; i>=0 ; i-- ){
         anim = &sprite_info[i];
+        if ( anim->visible && anim->is_animatable ){
+            anim->remaining_time -= t;
+        }
+    }
+    //Mion - ogapee2008
+    for ( i=MAX_SPRITE2_NUM-1 ; i>=0 ; i-- ){
+        anim = &sprite2_info[i];
         if ( anim->visible && anim->is_animatable ){
             anim->remaining_time -= t;
         }
@@ -331,9 +345,13 @@ void ONScripterLabel::drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo
         poly_rect.x += sentence_font.x() * screen_ratio1 / screen_ratio2;
         poly_rect.y += sentence_font.y() * screen_ratio1 / screen_ratio2;
     }
-
-    anim->blendOnSurface( dst_surface, poly_rect.x, poly_rect.y,
-                          clip, anim->trans );
+//Mion - ogapee2008
+    if (!anim->affine_flag)
+        anim->blendOnSurface( dst_surface, poly_rect.x, poly_rect.y,
+                              clip, anim->trans );
+    else
+        anim->blendOnSurface2( dst_surface, poly_rect.x, poly_rect.y,
+                               clip, anim->trans );
 }
 
 void ONScripterLabel::stopAnimation( int click )

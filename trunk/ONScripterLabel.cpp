@@ -2,7 +2,7 @@
  *
  *  ONScripterLabel.cpp - Execution block parser of ONScripter
  *
- *  Copyright (c) 2001-2007 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2008 Ogapee. All rights reserved.
  *
  *  ogapee@aqua.dti2.ne.jp
  *
@@ -70,6 +70,7 @@ static struct FuncLUT{
     {"wave",   &ONScripterLabel::waveCommand},
     {"waittimer",   &ONScripterLabel::waittimerCommand},
     {"wait",   &ONScripterLabel::waitCommand},
+    {"vsp2",   &ONScripterLabel::vspCommand}, //Mion - ogapee2008
     {"vsp",   &ONScripterLabel::vspCommand},
     {"voicevol",   &ONScripterLabel::voicevolCommand},
     {"trap",   &ONScripterLabel::trapCommand},
@@ -132,6 +133,7 @@ static struct FuncLUT{
     {"ofscpy", &ONScripterLabel::ofscopyCommand},
     {"ofscopy", &ONScripterLabel::ofscopyCommand},
     {"nega", &ONScripterLabel::negaCommand},
+    {"msp2", &ONScripterLabel::mspCommand}, //Mion - ogapee2008
     {"msp", &ONScripterLabel::mspCommand},
     {"mpegplay", &ONScripterLabel::mpegplayCommand},
     {"mp3vol", &ONScripterLabel::mp3volCommand},
@@ -147,7 +149,9 @@ static struct FuncLUT{
     {"menu_window", &ONScripterLabel::menu_windowCommand},
     {"menu_full", &ONScripterLabel::menu_fullCommand},
     {"menu_automode", &ONScripterLabel::menu_automodeCommand},
+    {"lsph2", &ONScripterLabel::lsp2Command}, //Mion - ogapee2008
     {"lsph", &ONScripterLabel::lspCommand},
+    {"lsp2", &ONScripterLabel::lsp2Command}, //Mion - ogapee2008
     {"lsp", &ONScripterLabel::lspCommand},
     {"lr_trap",   &ONScripterLabel::trapCommand},
     {"loopbgmstop", &ONScripterLabel::loopbgmstopCommand},
@@ -222,6 +226,7 @@ static struct FuncLUT{
     {"draw", &ONScripterLabel::drawCommand},
     {"delay", &ONScripterLabel::delayCommand},
     {"definereset", &ONScripterLabel::defineresetCommand},
+    {"csp2", &ONScripterLabel::cspCommand}, //Mion - ogapee2008
     {"csp", &ONScripterLabel::cspCommand},
     {"cselgoto", &ONScripterLabel::cselgotoCommand},
     {"cselbtn", &ONScripterLabel::cselbtnCommand},
@@ -255,8 +260,11 @@ static struct FuncLUT{
     {"avi",      &ONScripterLabel::aviCommand},
     {"automode_time",      &ONScripterLabel::automode_timeCommand},
     {"autoclick",      &ONScripterLabel::autoclickCommand},
+    {"amsp2",      &ONScripterLabel::amspCommand}, //Mion - ogapee2008
     {"amsp",      &ONScripterLabel::amspCommand},
+    {"allsp2resume",      &ONScripterLabel::allsp2resumeCommand}, //Mion - ogapee2008
     {"allspresume",      &ONScripterLabel::allspresumeCommand},
+    {"allsp2hide",      &ONScripterLabel::allsp2hideCommand}, //Mion - ogapee2008
     {"allsphide",      &ONScripterLabel::allsphideCommand},
     {"abssetcursor", &ONScripterLabel::setcursorCommand},
     {"", NULL}
@@ -475,8 +483,13 @@ ONScripterLabel::ONScripterLabel()
 #ifdef INSANI
 	skip_to_wait = 0;
 #endif
+    sprite_info  = new AnimationInfo[MAX_SPRITE_NUM];
+    sprite2_info = new AnimationInfo[MAX_SPRITE2_NUM];
 
-    for (int i=0 ; i<NUM_GLYPH_CACHE ; i++){
+    int i;
+    for (i=0 ; i<MAX_SPRITE2_NUM ; i++)
+        sprite2_info[i].affine_flag = true;
+    for (i=0 ; i<NUM_GLYPH_CACHE ; i++){
         if (i != NUM_GLYPH_CACHE-1) glyph_cache[i].next = &glyph_cache[i+1];
         glyph_cache[i].font = NULL;
         glyph_cache[i].surface = NULL;
@@ -492,6 +505,9 @@ ONScripterLabel::ONScripterLabel()
 ONScripterLabel::~ONScripterLabel()
 {
     reset();
+
+    delete[] sprite_info;
+    delete[] sprite2_info;
 }
 
 void ONScripterLabel::enableCDAudio(){
@@ -865,6 +881,7 @@ void ONScripterLabel::reset()
     display_mode = NORMAL_DISPLAY_MODE;
     event_mode = IDLE_EVENT_MODE;
     all_sprite_hide_flag = false;
+    all_sprite2_hide_flag = false;
 
     if (resize_buffer_size != 16){
         delete[] resize_buffer;
@@ -936,6 +953,7 @@ void ONScripterLabel::resetSub()
 
     stopCommand();
     loopbgmstopCommand();
+    stopAllDWAVE(); //Mion - ogapee2008
     setStr(&loop_bgm_name[1], NULL);
 
     // ----------------------------------------
@@ -946,6 +964,7 @@ void ONScripterLabel::resetSub()
     createBackground();
     for (i=0 ; i<3 ; i++) tachi_info[i].reset();
     for (i=0 ; i<MAX_SPRITE_NUM ; i++) sprite_info[i].reset();
+    for (i=0 ; i<MAX_SPRITE2_NUM ; i++) sprite2_info[i].reset();
     barclearCommand();
     prnumclearCommand();
     for (i=0 ; i<2 ; i++) cursor_info[i].reset();
