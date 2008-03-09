@@ -23,6 +23,9 @@
 
 // Modified by Haeleth, autumn 2006, to remove unnecessary diagnostics and support OS X/Linux packaging better.
 
+// Modified by Mion of Sonozaki Futago-tachi, March 2008, to update from
+// Ogapee's 20080121 release source code.
+
 #include "ONScripterLabel.h"
 #include <cstdio>
 
@@ -58,7 +61,6 @@ extern "C" void waveCallback( int channel );
 #else
 #define DEFAULT_ENV_FONT "ＭＳ ゴシック"
 #endif
-#define DEFAULT_VOLUME 100
 
 typedef int (ONScripterLabel::*FuncList)();
 static struct FuncLUT{
@@ -111,6 +113,7 @@ static struct FuncLUT{
     {"savescreenshot",   &ONScripterLabel::savescreenshotCommand},
     {"saveon",   &ONScripterLabel::saveonCommand},
     {"saveoff",   &ONScripterLabel::saveoffCommand},
+    {"savegame2",   &ONScripterLabel::savegameCommand},
     {"savegame",   &ONScripterLabel::savegameCommand},
     {"savefileexist",   &ONScripterLabel::savefileexistCommand},
     {"rnd",   &ONScripterLabel::rndCommand},
@@ -183,6 +186,7 @@ static struct FuncLUT{
     {"getsevol", &ONScripterLabel::getsevolCommand},
     {"getscreenshot", &ONScripterLabel::getscreenshotCommand},
     {"gettext", &ONScripterLabel::gettextCommand},
+    {"gettaglog", &ONScripterLabel::gettaglogCommand},
     {"gettag", &ONScripterLabel::gettagCommand},
     {"gettab", &ONScripterLabel::gettabCommand},
     {"getret", &ONScripterLabel::getretCommand},
@@ -811,9 +815,9 @@ int ONScripterLabel::init()
     midi_info  = NULL;
     mp3_sample = NULL;
     music_file_name = NULL;
-    mp3_buffer = NULL;
+    music_buffer = NULL;
     music_info = NULL;
-    music_ovi = NULL;
+    music_struct.ovi = NULL;
 
     loop_bgm_name[0] = NULL;
     loop_bgm_name[1] = NULL;
@@ -941,6 +945,7 @@ void ONScripterLabel::resetSub()
     textgosub_clickstr_state = CLICK_NONE;
     indent_offset = 0;
     line_enter_status = 0;
+    page_enter_status = 0;
 
     resetSentenceFont();
 
@@ -1400,7 +1405,7 @@ int ONScripterLabel::parseLine( )
 	}
 #endif
         if (len > 0 && sentence_font.isEndOfLine(len)){
-            current_text_buffer->addBuffer( 0x0a );
+            current_page->add( 0x0a );
             sentence_font.newLine();
         }
     }
@@ -1408,11 +1413,11 @@ int ONScripterLabel::parseLine( )
     if (script_h.getStringBuffer()[string_buffer_offset] == 0x0a){
         ret = RET_CONTINUE; // suppress RET_CONTINUE | RET_NOREAD
         if (!sentence_font.isLineEmpty() && !new_line_skip_flag){
-            current_text_buffer->addBuffer( 0x0a );
+            current_page->add( 0x0a );
             sentence_font.newLine();
             for (int i=0 ; i<indent_offset ; i++){
-                current_text_buffer->addBuffer(0x81);
-                current_text_buffer->addBuffer(0x40);
+                current_page->add(0x81);
+                current_page->add(0x40);
                 sentence_font.advanceCharInHankaku(2);
             }
         }
@@ -1577,7 +1582,7 @@ void ONScripterLabel::deleteSelectLink()
     root_select_link.next = NULL;
 }
 
-void ONScripterLabel::clearCurrentTextBuffer()
+void ONScripterLabel::clearCurrentPage()
 {
     sentence_font.clear();
 
@@ -1588,22 +1593,27 @@ void ONScripterLabel::clearCurrentTextBuffer()
 // TEST for ados backlog cutoff problem
 	num *= 2;
 
-    if ( current_text_buffer->buffer2 &&
-         current_text_buffer->num != num ){
-        delete[] current_text_buffer->buffer2;
-        current_text_buffer->buffer2 = NULL;
+    if ( current_page->text &&
+         current_page->max_text != num ){
+        delete[] current_page->text;
+        current_page->text = NULL;
     }
-    if ( !current_text_buffer->buffer2 ){
-        current_text_buffer->buffer2 = new char[num];
-        current_text_buffer->num = num;
+    if ( !current_page->text ){
+        current_page->text = new char[num];
+        current_page->max_text = num;
+    }
+    current_page->text_count = 0;
+
+    if (current_page->tag){
+        delete[] current_page->tag;
+        current_page->tag = NULL;
     }
 
-    current_text_buffer->buffer2_count = 0;
     num_chars_in_sentence = 0;
     internal_saveon_flag = true;
 
     text_info.fill( 0, 0, 0, 0 );
-    cached_text_buffer = current_text_buffer;
+    cached_page = current_page;
 }
 
 void ONScripterLabel::shadowTextDisplay( SDL_Surface *surface, SDL_Rect &clip )
@@ -1648,18 +1658,19 @@ void ONScripterLabel::newPage( bool next_flag )
 {
     /* ---------------------------------------- */
     /* Set forward the text buffer */
-    if ( current_text_buffer->buffer2_count != 0 ){
-        current_text_buffer = current_text_buffer->next;
-        if ( start_text_buffer == current_text_buffer )
-            start_text_buffer = start_text_buffer->next;
+    if ( current_page->text_count != 0 ){
+        current_page = current_page->next;
+        if ( start_page == current_page )
+            start_page = start_page->next;
     }
 
     if ( next_flag ){
         indent_offset = 0;
         //line_enter_status = 0;
+        page_enter_status = 0;
     }
 
-    clearCurrentTextBuffer();
+    clearCurrentPage();
 
     flush( refreshMode(), &sentence_font_info.pos );
 }
@@ -1812,12 +1823,12 @@ void ONScripterLabel::loadEnvData()
         readStr( &default_cdrom_drive );
         voice_volume = DEFAULT_VOLUME - readInt();
         se_volume = DEFAULT_VOLUME - readInt();
-        music_volume = DEFAULT_VOLUME - readInt();
+        music_struct.volume = DEFAULT_VOLUME - readInt();
         if (readInt() == 0) kidokumode_flag = false;
     }
     else{
         setStr( &default_env_font, DEFAULT_ENV_FONT );
-        voice_volume = se_volume = music_volume = DEFAULT_VOLUME;
+        voice_volume = se_volume = music_struct.volume = DEFAULT_VOLUME;
     }
 }
 
@@ -1835,8 +1846,9 @@ void ONScripterLabel::saveEnvData()
         writeStr( default_cdrom_drive, output_flag );
         writeInt( DEFAULT_VOLUME - voice_volume, output_flag );
         writeInt( DEFAULT_VOLUME - se_volume, output_flag );
-        writeInt( DEFAULT_VOLUME - music_volume, output_flag );
+        writeInt( DEFAULT_VOLUME - music_struct.volume, output_flag );
         writeInt( kidokumode_flag?1:0, output_flag );
+        writeInt( 0, output_flag ); // ?
         writeChar( 0, output_flag ); // ?
 	writeInt( 1000, output_flag );
 

@@ -57,7 +57,7 @@ SDL_TimerID timer_midi_id = NULL;
 #endif
 bool ext_music_play_once_flag = false;
 
-extern long decodeOggVorbis(OVInfo *ovi, unsigned char *buf_dst, long len, bool do_rate_conversion);
+extern long decodeOggVorbis(ONScripterLabel::MusicStruct *music_strct, unsigned char *buf_dst, long len, bool do_rate_conversion);
 
 /* **************************************** *
  * Callback functions
@@ -73,7 +73,7 @@ extern "C" void mp3callback( void *userdata, Uint8 *stream, int len )
 
 extern "C" void oggcallback( void *userdata, Uint8 *stream, int len )
 {
-    if (decodeOggVorbis((OVInfo*)userdata, stream, len, true) == 0){
+    if (decodeOggVorbis((ONScripterLabel::MusicStruct*)userdata, stream, len, true) == 0){
         SDL_Event event;
         event.type = ONS_SOUND_EVENT;
         SDL_PushEvent(&event);
@@ -219,7 +219,7 @@ void ONScripterLabel::flushEventSub( SDL_Event &event )
         Uint32 tmp = SDL_GetTicks() - mp3fadeout_start;
         if ( tmp < mp3fadeout_duration ) {
 			tmp = mp3fadeout_duration - tmp;
-            tmp *= music_volume;
+            tmp *= music_struct.volume;
 			tmp /= mp3fadeout_duration;
 
             if ( mp3_sample ) SMPEG_setvolume( mp3_sample, tmp );
@@ -481,7 +481,7 @@ void ONScripterLabel::variableEditMode( SDL_KeyboardEvent *event )
       case SDLK_m:
         if ( variable_edit_mode != EDIT_SELECT_MODE ) return;
         variable_edit_mode = EDIT_MP3_VOLUME_MODE;
-        variable_edit_num = music_volume;
+        variable_edit_num = music_struct.volume;
         break;
 
       case SDLK_s:
@@ -542,8 +542,8 @@ void ONScripterLabel::variableEditMode( SDL_KeyboardEvent *event )
             break;
 
           case EDIT_MP3_VOLUME_MODE:
-            music_volume = variable_edit_num;
-            if ( mp3_sample ) SMPEG_setvolume( mp3_sample, music_volume );
+            music_struct.volume = variable_edit_num;
+            if ( mp3_sample ) SMPEG_setvolume( mp3_sample, music_struct.volume );
             break;
 
           case EDIT_SE_VOLUME_MODE:
@@ -597,7 +597,7 @@ void ONScripterLabel::variableEditMode( SDL_KeyboardEvent *event )
             var_name = var_index; p = script_h.variable_data[ variable_edit_index ].num; break;
 
           case EDIT_MP3_VOLUME_MODE:
-            var_name = "MP3 Volume"; p = music_volume; break;
+            var_name = "MP3 Volume"; p = music_struct.volume; break;
 
           case EDIT_VOICE_VOLUME_MODE:
             var_name = "Voice Volume"; p = voice_volume; break;

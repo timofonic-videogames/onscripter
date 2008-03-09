@@ -2,7 +2,7 @@
  *
  *  ONScripterLabel_file.cpp - FILE I/O of ONScripter
  *
- *  Copyright (c) 2001-2006 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2008 Ogapee. All rights reserved.
  *
  *  ogapee@aqua.dti2.ne.jp
  *
@@ -23,6 +23,9 @@
 
 // Modified by Haeleth, Autumn 2006, to better support OS X/Linux packaging.
 
+// Modified by Mion of Sonozaki Futago-tachi, March 2008, to update from
+// Ogapee's 20080121 release source code.
+
 #include "ONScripterLabel.h"
 
 #if defined(LINUX) || defined(MACOSX)
@@ -42,7 +45,7 @@ extern "C" void c2pstrcpy(Str255 dst, const char *src);	//#include <TextUtils.h>
 
 #define SAVEFILE_MAGIC_NUMBER "ONS"
 #define SAVEFILE_VERSION_MAJOR 2
-#define SAVEFILE_VERSION_MINOR 4
+#define SAVEFILE_VERSION_MINOR 5
 
 #define READ_LENGTH 4096
 
@@ -203,20 +206,20 @@ int ONScripterLabel::loadSaveFile( int no )
     else
         i = 0;
     sentence_font.setTateyokoMode( i );
-    int text_history_num = readInt();
-    for ( i=0 ; i<text_history_num ; i++ ){
+    int num_page = readInt();
+    for ( i=0 ; i<num_page ; i++ ){
         int num_xy[2];
         num_xy[0] = readInt();
         num_xy[1] = readInt();
-        current_text_buffer->num = (num_xy[0]*2+1)*num_xy[1];
+        current_page->max_text = (num_xy[0]*2+1)*num_xy[1];
         if (sentence_font.getTateyokoMode() == FontInfo::TATE_MODE)
-            current_text_buffer->num = (num_xy[1]*2+1)*num_xy[0];
+            current_page->max_text = (num_xy[1]*2+1)*num_xy[0];
         int xy[2];
         xy[0] = readInt();
         xy[1] = readInt();
-        if ( current_text_buffer->buffer2 ) delete[] current_text_buffer->buffer2;
-        current_text_buffer->buffer2 = new char[ current_text_buffer->num ];
-        current_text_buffer->buffer2_count = 0;
+        if ( current_page->text ) delete[] current_page->text;
+        current_page->text = new char[ current_page->max_text ];
+        current_page->text_count = 0;
 
         char ch1, ch2;
         for ( j=0, k=0 ; j<num_xy[0] * num_xy[1] ; j++ ){
@@ -227,24 +230,24 @@ int ONScripterLabel::loadSaveFile( int no )
             }
             else{
                 if ( ch1 ){
-                    current_text_buffer->addBuffer( ch1 );
+                    current_page->add( ch1 );
                     k++;
                 }
                 if ( ch1 & 0x80 || ch2 ){
-                    current_text_buffer->addBuffer( ch2 );
+                    current_page->add( ch2 );
                     k++;
                 }
             }
             if ( k >= num_xy[0] * 2 ){
-                current_text_buffer->addBuffer( 0x0a );
+                current_page->add( 0x0a );
                 k = 0;
             }
         }
-        current_text_buffer = current_text_buffer->next;
+        current_page = current_page->next;
         if ( i==0 ){
-            for ( j=0 ; j<max_text_buffer - text_history_num ; j++ )
-                current_text_buffer = current_text_buffer->next;
-            start_text_buffer = current_text_buffer;
+            for ( j=0 ; j<max_page_list - num_page ; j++ )
+                current_page = current_page->next;
+            start_page = current_page;
         }
     }
 
@@ -272,19 +275,19 @@ int ONScripterLabel::loadSaveFile( int no )
     sentence_font.is_shadow = (readInt()==1)?true:false;
     sentence_font.is_transparent = (readInt()==1)?true:false;
 
-    for (j=0, k=0, i=0 ; i<current_text_buffer->buffer2_count ; i++){
+    for (j=0, k=0, i=0 ; i<current_page->text_count ; i++){
         if (j == sentence_font.xy[1] &&
             (k > sentence_font.xy[0] ||
-             current_text_buffer->buffer2[i] == 0x0a)) break;
+             current_page->text[i] == 0x0a)) break;
 
-        if (current_text_buffer->buffer2[i] == 0x0a){
+        if (current_page->text[i] == 0x0a){
             j+=2;
             k=0;
         }
         else
             k++;
     }
-    current_text_buffer->buffer2_count = i;
+    current_page->text_count = i;
 
     /* Dummy, must be removed later !! */
     for ( i=0 ; i<8 ; i++ ){
@@ -438,6 +441,7 @@ int ONScripterLabel::loadSaveFile( int no )
     /* Load current playing CD track */
     stopCommand();
     loopbgmstopCommand();
+    stopAllDWAVE();
 
     current_cd_track = (Sint8)readChar();
     bool play_once_flag = (readChar()==1)?true:false;
@@ -484,7 +488,7 @@ int ONScripterLabel::loadSaveFile( int no )
 
     restoreTextBuffer();
     num_chars_in_sentence = 0;
-    cached_text_buffer = current_text_buffer;
+    cached_page = current_page;
 
     display_mode = shelter_display_mode = TEXT_DISPLAY_MODE;
 
@@ -510,7 +514,7 @@ void ONScripterLabel::saveMagicNumber( bool output_flag )
     writeChar( SAVEFILE_VERSION_MINOR, output_flag );
 }
 
-int ONScripterLabel::saveSaveFile( int no )
+int ONScripterLabel::saveSaveFile( int no, const char *savestr )
 {
     // make save data structure on memory
     if (no < 0 || saveon_flag && internal_saveon_flag){
@@ -532,9 +536,14 @@ int ONScripterLabel::saveSaveFile( int no )
 
         memcpy(file_io_buf, save_data_buf, save_data_len);
         file_io_buf_ptr = save_data_len;
-        if (saveFileIOBuf( filename )){
+        if (saveFileIOBuf( filename, 0, savestr )){
             return -1;
         }
+
+        size_t magic_len = strlen(SAVEFILE_MAGIC_NUMBER)+2;
+        sprintf( filename, "sav%csave%d.dat", DELIMITER, no );
+        if (saveFileIOBuf( filename, magic_len, savestr ))
+            fprintf( stderr, "can't open save file %s for writing (not an error)\n", filename );
     }
 
     return 0;

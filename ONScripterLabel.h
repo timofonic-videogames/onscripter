@@ -23,6 +23,9 @@
 
 // Modified by Haeleth, autumn 2006, to remove unnecessary diagnostics.
 
+// Modified by Mion of Sonozaki Futago-tachi, March 2008, to update from
+// Ogapee's 20080121 release source code.
+
 #ifndef __ONSCRIPTER_LABEL_H__
 #define __ONSCRIPTER_LABEL_H__
 
@@ -40,14 +43,6 @@
 #include <smpeg.h>
 #endif
 
-#ifdef USE_OGG_VORBIS
-#ifdef INTEGER_OGG_VORBIS
-#include <tremor/ivorbisfile.h>
-#else
-#include <vorbis/vorbisfile.h>
-#endif
-#endif
-
 #define DEFAULT_VIDEO_SURFACE_FLAG (SDL_SWSURFACE)
 
 #define DEFAULT_BLIT_FLAG (0)
@@ -58,6 +53,7 @@
 #define MAX_PARAM_NUM 100
 #define CUSTOM_EFFECT_NO 100
 
+#define DEFAULT_VOLUME 100
 #define ONS_MIX_CHANNELS 50
 #define ONS_MIX_EXTRA_CHANNELS 4
 #define MIX_WAVE_CHANNEL (ONS_MIX_CHANNELS+0)
@@ -69,20 +65,6 @@
 #define DEFAULT_WM_ICON  "ONScripter"
 
 #define NUM_GLYPH_CACHE 30
-
-struct OVInfo{
-    SDL_AudioCVT cvt;
-    int cvt_len;
-    int mult1;
-    int mult2;
-    unsigned char *buf;
-    long decoded_length;
-#ifdef USE_OGG_VORBIS
-    ogg_int64_t length;
-    ogg_int64_t pos;
-    OggVorbis_File ovf;
-#endif
-};
 
 class ONScripterLabel : public ScriptParser
 {
@@ -219,6 +201,7 @@ public:
     int getversionCommand();
     int gettimerCommand();
     int gettextCommand();
+    int gettaglogCommand();
     int gettagCommand();
     int gettabCommand();
     int getspsizeCommand();
@@ -584,6 +567,7 @@ private:
     int  textgosub_clickstr_state;
     int  indent_offset;
     int  line_enter_status; // 0 ... no enter, 1 ... pretext, 2 ... body
+    int  page_enter_status; // 0 ... no enter, 1 ... body
     struct GlyphCache{
         GlyphCache *next;
         Uint16 text;
@@ -678,13 +662,13 @@ private:
     bool music_play_loop_flag;
     bool mp3save_flag;
     char *music_file_name;
-    unsigned char *mp3_buffer;
+    unsigned char *music_buffer; // for looped music
+    long music_buffer_length;
     SMPEG *mp3_sample;
 #ifdef INSANI
     Uint32 mp3fadeout_start;
     Uint32 mp3fadeout_duration;
 #endif
-    OVInfo *music_ovi;
     Mix_Music *music_info;
     char *loop_bgm_name[2];
 
@@ -721,7 +705,7 @@ private:
     int text_speed_no;
 
     void shadowTextDisplay( SDL_Surface *surface, SDL_Rect &clip );
-    void clearCurrentTextBuffer();
+    void clearCurrentPage();
     void newPage( bool next_flag );
 
     void flush( int refresh_mode, SDL_Rect *rect=NULL, bool clear_dirty_flag=true, bool direct_flag=false );
@@ -747,7 +731,7 @@ private:
     void searchSaveFile( SaveFileInfo &info, int no );
     int  loadSaveFile( int no );
     void saveMagicNumber( bool output_flag );
-    int  saveSaveFile( int no );
+    int  saveSaveFile( int no, const char *savestr=NULL );
 
     int  loadSaveFile2( int file_version );
     void saveSaveFile2( bool output_flag );
@@ -774,9 +758,9 @@ private:
     int  system_menu_mode;
 
     int  shelter_event_mode;
-    int  shelter_display_mode;    
+    int  shelter_display_mode;
     bool shelter_draw_cursor_flag;
-    struct TextBuffer *cached_text_buffer;
+    struct Page *cached_page;
 
     void enterSystemCall();
     void leaveSystemCall( bool restore_flag = true );

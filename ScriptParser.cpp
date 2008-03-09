@@ -2,7 +2,7 @@
  *
  *  ScriptParser.cpp - Define block parser of ONScripter
  *
- *  Copyright (c) 2001-2007 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2008 Ogapee. All rights reserved.
  *
  *  ogapee@aqua.dti2.ne.jp
  *
@@ -23,10 +23,13 @@
 
 // Modified by Haeleth, Autumn 2006, to better support OS X/Linux packaging.
 
+// Modified by Mion of Sonozaki Futago-tachi, March 2008, to update from
+// Ogapee's 20080121 release source code.
+
 #include "ScriptParser.h"
 
 #define VERSION_STR1 "ONScripter"
-#define VERSION_STR2 "Copyright (C) 2001-2006 Studio O.G.A. All Rights Reserved."
+#define VERSION_STR2 "Copyright (C) 2001-2008 Studio O.G.A. All Rights Reserved."
 
 #ifdef HAELETH
 #define DEFAULT_SAVE_MENU_NAME "[ Save ]"
@@ -42,7 +45,7 @@
 #define DEFAULT_TEXT_SPEED_MIDDLE 20
 #define DEFAULT_TEXT_SPEED_HIGHT  10
 
-#define MAX_TEXT_BUFFER 17
+#define MAX_PAGE_LIST 16
 
 typedef int (ScriptParser::*FuncList)();
 static struct FuncLUT{
@@ -51,6 +54,7 @@ static struct FuncLUT{
 } func_lut[] = {
     {"zenkakko", &ScriptParser::zenkakkoCommand},
     {"windoweffect", &ScriptParser::effectCommand},
+    {"windowchip", &ScriptParser::windowchipCommand},
     {"windowback", &ScriptParser::windowbackCommand},
     {"versionstr", &ScriptParser::versionstrCommand},
     {"usewheel", &ScriptParser::usewheelCommand},
@@ -78,6 +82,7 @@ static struct FuncLUT{
     {"rmenu",    &ScriptParser::rmenuCommand},
     {"return",   &ScriptParser::returnCommand},
     {"pretextgosub", &ScriptParser::pretextgosubCommand},
+    {"pagetag", &ScriptParser::pagetagCommand},
     {"numalias", &ScriptParser::numaliasCommand},
     {"nsadir",    &ScriptParser::nsadirCommand},
     {"nsa",    &ScriptParser::nsaCommand},
@@ -174,7 +179,7 @@ ScriptParser::ScriptParser()
     file_io_buf_len = 0;
     save_data_len = 0;
 
-    text_buffer = NULL;
+    page_list = NULL;
     
     /* ---------------------------------------- */
     /* Sound related variables */
@@ -230,6 +235,8 @@ void ScriptParser::reset()
     mode_ext_flag = false;
     rubyon_flag = false;
     zenkakko_flag = false;
+    pagetag_flag = false;
+    windowchip_sprite_no = -1;
     string_buffer_offset = 0;
 
     break_flag = false;
@@ -275,13 +282,13 @@ void ScriptParser::reset()
     default_text_speed[0] = DEFAULT_TEXT_SPEED_LOW;
     default_text_speed[1] = DEFAULT_TEXT_SPEED_MIDDLE;
     default_text_speed[2] = DEFAULT_TEXT_SPEED_HIGHT;
-    max_text_buffer = MAX_TEXT_BUFFER;
+    max_page_list = MAX_PAGE_LIST+1;
     num_chars_in_sentence = 0;
-    if (text_buffer){
-        delete[] text_buffer;
-        text_buffer = NULL;
+    if (page_list){
+        delete[] page_list;
+        page_list = NULL;
     }
-    current_text_buffer = start_text_buffer = NULL;
+    current_page = start_page = NULL;
     
     clickstr_line = 0;
     clickstr_state = CLICK_NONE;
@@ -504,12 +511,20 @@ void ScriptParser::allocFileIOBuf()
     file_io_buf_ptr = 0;
 }
 
-int ScriptParser::saveFileIOBuf( const char *filename, int offset )
+int ScriptParser::saveFileIOBuf( const char *filename, int offset, const char *savestr )
 {
     FILE *fp;
     if ( (fp = fopen( filename, "wb", true )) == NULL ) return -1;
     
     size_t ret = fwrite(file_io_buf+offset, 1, file_io_buf_ptr-offset, fp);
+
+    if (savestr){
+        fputc('"', fp);
+        fwrite(savestr, 1, strlen(savestr), fp);
+        fputc('"', fp);
+        fputc('*', fp);
+    }
+
     fclose(fp);
 
     if (ret != file_io_buf_ptr-offset) return -2;

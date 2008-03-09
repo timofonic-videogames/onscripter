@@ -2,7 +2,7 @@
  *
  *  ONScripterLabel_file2.cpp - FILE I/O of ONScripter
  *
- *  Copyright (c) 2001-2006 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2008 Ogapee. All rights reserved.
  *
  *  ogapee@aqua.dti2.ne.jp
  *
@@ -20,6 +20,9 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
+// Modified by Mion of Sonozaki Futago-tachi, March 2008, to update from
+// Ogapee's 20080121 release source code.
 
 #include "ONScripterLabel.h"
 
@@ -235,6 +238,7 @@ int ONScripterLabel::loadSaveFile2( int file_version )
     // Sound
     stopCommand();
     loopbgmstopCommand();
+    stopAllDWAVE();
 
     readStr( &midi_file_name ); // MIDI file
     readStr( &wave_file_name ); // wave, waveloop
@@ -409,29 +413,41 @@ int ONScripterLabel::loadSaveFile2( int file_version )
         
         readInt();
         readInt();
+        if (file_version >= 205) readInt(); // 1
         readInt();
         readInt();
         readInt();
         readInt();
+        if (file_version >= 205) readChar(); // 0
     }
     
    
     int text_num = readInt();
-    start_text_buffer = current_text_buffer;
+    start_page = current_page;
     for ( i=0 ; i<text_num ; i++ ){
-        clearCurrentTextBuffer();
+        clearCurrentPage();
         do{
-            current_text_buffer->buffer2[current_text_buffer->buffer2_count] = readChar();
+            current_page->text[current_page->text_count] = readChar();
         }
-        while( current_text_buffer->buffer2[current_text_buffer->buffer2_count++] );
-	if (file_version == 203) readChar(); 
-        current_text_buffer->buffer2_count--;
-        current_text_buffer = current_text_buffer->next;
+        while( current_page->text[current_page->text_count++] );
+	if (file_version == 203) readChar(); // 0
+        current_page->text_count--;
+        current_page = current_page->next;
     }
-    clearCurrentTextBuffer();
+    clearCurrentPage();
 
-    if (file_version >= 204) readInt();
-    if (file_version >= 204) readInt();
+    if (file_version >= 205){
+        Page *page = start_page;
+        j = readInt();
+        for (i=0 ; i<j ; i++){
+            readStr(&page->tag);
+            page = page->next;
+        }
+    }
+    else if (file_version >= 204){
+        readInt();
+        readInt();
+    }
     
     i = readInt();
     current_label_info = script_h.getLabelByLine( i );
@@ -643,7 +659,7 @@ void ONScripterLabel::saveSaveFile2( bool output_flag )
         }
     }
     
-    writeInt( 1, output_flag );
+    writeInt( 1, output_flag ); // unidentified (not 1) data in version 205
     writeInt( 0, output_flag );
     writeInt( 1, output_flag );
     writeStr( btndef_info.image_name, output_flag );
@@ -684,28 +700,37 @@ void ONScripterLabel::saveSaveFile2( bool output_flag )
 
     writeInt( 0, output_flag );
     writeInt( 0, output_flag );
+    writeInt( 1, output_flag ); // added in version 205
     writeInt( 0, output_flag );
     writeInt( 0, output_flag );
     writeInt( 0, output_flag );
     writeInt( 0, output_flag );
+    writeChar( 0, output_flag ); // added in version 205
 
-    TextBuffer* tb = current_text_buffer;
-    int text_num = 0;
-    while( tb != start_text_buffer ){
-        tb = tb->previous;
-        text_num++;
+    Page *page = current_page;
+    int num_page = 0;
+    while( page != start_page ){
+        page = page->previous;
+        num_page++;
     }
-    writeInt( text_num, output_flag );
 
-    for ( i=0 ; i<text_num ; i++ ){
-        for ( j=0 ; j<tb->buffer2_count ; j++ )
-            writeChar( tb->buffer2[j], output_flag );
+    writeInt( num_page, output_flag );
+    for ( i=0 ; i<num_page ; i++ ){
+        for ( j=0 ; j<page->text_count ; j++ )
+            writeChar( page->text[j], output_flag );
         writeChar( 0, output_flag );
-        tb = tb->next;
+        page = page->next;
     }
 
-    writeInt(0, output_flag);
-    writeInt(0, output_flag);
+    page = start_page;
+    writeInt(num_page, output_flag);
+    for (i=0 ; i<num_page ; i++){
+        if (page->tag)
+            for ( j=0 ; j<(int)strlen(page->tag) ; j++ )
+                writeChar( page->tag[j], output_flag );
+        writeChar( 0, output_flag );
+        page = page->next;
+    }
     
     writeInt( current_label_info.start_line + current_line, output_flag );
     char *buf = script_h.getAddressByLine( current_label_info.start_line + current_line );
