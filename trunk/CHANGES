@@ -3,6 +3,14 @@
   Fix MPEG playback for movies with audio sampled at other than
   44100Hz. [Mion]
 
+  Updated music playing code to be more in line with Ogapee's latest
+  release. [Mion]
+
+  Added save file version 2.05. [Mion]
+
+
+2008-03-05
+
   Support added for extended sprite commands (lsp2, msp2, etc), and
   improved screenshot support (screenshot, deletescreenshot). [Mion]
 
