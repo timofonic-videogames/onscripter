@@ -382,6 +382,7 @@ int ONScripterLabel::playMPEG( const char *filename, bool click_flag )
 {
     int ret = 0;
 #ifndef MP3_MAD
+    bool different_spec = false;
     unsigned long length = script_h.cBR->getFileLength( filename );
     unsigned char *mpeg_buffer = new unsigned char[length];
     script_h.cBR->getFile( filename, mpeg_buffer );
@@ -391,6 +392,24 @@ int ONScripterLabel::playMPEG( const char *filename, bool click_flag )
         SMPEG_enableaudio( mpeg_sample, 0 );
 
         if ( audio_open_flag ){
+            //Mion - SMPEG doesn't handle different audio spec well, so
+            // let's redo the SDL mixer just for this video playback
+            SDL_AudioSpec wanted;
+            SMPEG_wantedSpec( mpeg_sample, &wanted );
+            //printf("SMPEG wants audio: %d Hz %d bit %s\n", wanted.freq,
+            //       (wanted.format&0xFF),
+            //       (wanted.channels > 1) ? "stereo" : "mono");
+            if ((wanted.format != audio_format.format) ||
+                (wanted.freq != audio_format.freq)) {
+                different_spec = true;
+                Mix_CloseAudio();
+                openAudio(wanted.freq, wanted.format, wanted.channels);
+                if (!audio_open_flag) {
+                    // didn't work, use the old settings
+                    openAudio();
+                    different_spec = false;
+                }
+            }
             SMPEG_actualSpec( mpeg_sample, &audio_format );
             SMPEG_enableaudio( mpeg_sample, 1 );
         }
@@ -429,6 +448,11 @@ int ONScripterLabel::playMPEG( const char *filename, bool click_flag )
         Mix_HookMusic( NULL, NULL );
         SMPEG_delete( mpeg_sample );
 
+        if (different_spec) {
+            //restart mixer with the old audio spec
+            Mix_CloseAudio();
+            openAudio();
+        }
     }
     delete[] mpeg_buffer;
 #else
