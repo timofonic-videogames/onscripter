@@ -69,11 +69,12 @@ extern SDL_TimerID timer_midi_id;
 #define TMP_MIDI_FILE "tmp.mid"
 #define TMP_MUSIC_FILE "tmp.mus"
 
-extern long decodeOggVorbis(OVInfo *ovi, unsigned char *buf_dst, long len, bool do_rate_conversion)
+extern long decodeOggVorbis(ONScripterLabel::MusicStruct *music_strct, unsigned char *buf_dst, long len, bool do_rate_conversion)
 {
     int current_section;
     long total_len = 0;
 
+    OVInfo *ovi = music_strct->ovi;
     char *buf = (char*)buf_dst;
     if (do_rate_conversion && ovi->cvt.needed){
         len = len * ovi->mult1 / ovi->mult2;
@@ -100,10 +101,30 @@ extern long decodeOggVorbis(OVInfo *ovi, unsigned char *buf_dst, long len, bool 
             SDL_ConvertAudio(&ovi->cvt);
             memcpy(buf_dst, ovi->cvt.buf, ovi->cvt.len_cvt);
             dst_len = ovi->cvt.len_cvt;
+
+            if (music_strct->volume != DEFAULT_VOLUME){
+                // volume change under SOUND_OGG_STREAMING
+                for (int i=0 ; i<dst_len ; i+=2){
+                    short a = buf_dst[i+1]<<8|buf_dst[i];
+                    a = a*music_strct->volume/100;
+                    buf_dst[i  ] = a & 0xff;
+                    buf_dst[i+1] = a>>8;
+                }
+            }
             buf_dst += ovi->cvt.len_cvt;
         }
         else{
+            if (do_rate_conversion && music_strct->volume != DEFAULT_VOLUME){ 
+                // volume change under SOUND_OGG_STREAMING
+                for (int i=0 ; i<dst_len ; i+=2){
+                    short a = buf_dst[i+1]<<8|buf_dst[i];
+                    a = a*music_strct->volume/100;
+                    buf_dst[i  ] = a & 0xff;
+                    buf_dst[i+1] = a>>8;
+                }
+            }
             buf += dst_len;
+            buf_dst += dst_len;
         }
 
         total_len += dst_len;
@@ -122,8 +143,17 @@ int ONScripterLabel::playSound(const char *filename, int format, bool loop_flag,
     long length = script_h.cBR->getFileLength( filename );
     if (length == 0) return SOUND_NONE;
 
-    unsigned char *buffer = new unsigned char[length];
-    script_h.cBR->getFile( filename, buffer );
+    unsigned char *buffer;
+
+    if (format & (SOUND_MP3 | SOUND_OGG_STREAMING) && 
+        length == music_buffer_length &&
+        music_buffer ){
+        buffer = music_buffer;
+    }
+    else{
+        buffer = new unsigned char[length];
+        script_h.cBR->getFile( filename, buffer );
+    }
 
     if (format & (SOUND_OGG | SOUND_OGG_STREAMING)){
         int ret = playOGG(format, buffer, length, loop_flag, channel);
@@ -173,7 +203,8 @@ int ONScripterLabel::playSound(const char *filename, int format, bool loop_flag,
                 fclose( fp );
                 ext_music_play_once_flag = !loop_flag;
                 if (playExternalMusic(loop_flag) == 0){
-                    delete[] buffer;
+                    music_buffer = buffer;
+                    music_buffer_length = length;
                     return SOUND_MP3;
                 }
             }
@@ -181,10 +212,11 @@ int ONScripterLabel::playSound(const char *filename, int format, bool loop_flag,
 
         mp3_sample = SMPEG_new_rwops( SDL_RWFromMem( buffer, length ), NULL, 0 );
  #if defined(INSANI)
-        /* music_volume = 100; */
+        /* music_struct.volume = 100; */
  #endif
         if (playMP3() == 0){
-            mp3_buffer = buffer;
+            music_buffer = buffer;
+            music_buffer_length = length;
             return SOUND_MP3;
         }
     }
@@ -230,7 +262,7 @@ void ONScripterLabel::playCDAudio()
         char filename[256];
         sprintf( filename, "cd\\track%2.2d.mp3", current_cd_track );
  #if defined(INSANI)
-        /* music_volume = 100; */
+        /* music_struct.volume = 100; */
  #endif
         int ret = playSound( filename, SOUND_MP3, cd_play_loop_flag );
         if (ret == SOUND_MP3) return;
@@ -253,7 +285,7 @@ int ONScripterLabel::playWave(Mix_Chunk *chunk, int format, bool loop_flag, int 
     wave_sample[channel] = chunk;
 
     if      (channel == 0)               Mix_Volume( channel, voice_volume * 128 / 100 );
-    else if (channel == MIX_BGM_CHANNEL) Mix_Volume( channel, music_volume * 128 / 100 );
+    else if (channel == MIX_BGM_CHANNEL) Mix_Volume( channel, music_struct.volume * 128 / 100 );
     else                                 Mix_Volume( channel, se_volume * 128 / 100 );
 
     if ( !(format & SOUND_PRELOAD) )
@@ -277,7 +309,7 @@ int ONScripterLabel::playMP3()
     SMPEG_actualSpec( mp3_sample, &audio_format );
     SMPEG_enableaudio( mp3_sample, 1 );
 #endif
-    SMPEG_setvolume( mp3_sample, music_volume );
+    SMPEG_setvolume( mp3_sample, music_struct.volume );
     Mix_HookMusic( mp3callback, mp3_sample );
     SMPEG_play( mp3_sample );
 
@@ -292,20 +324,28 @@ int ONScripterLabel::playOGG(int format, unsigned char *buffer, long length, boo
 
     if (format & SOUND_OGG){
         unsigned char *buffer2 = new unsigned char[sizeof(WAVE_HEADER)+ovi->decoded_length];
-        decodeOggVorbis(ovi, buffer2+sizeof(WAVE_HEADER), ovi->decoded_length, false);
+        
+        MusicStruct ms;
+        ms.ovi = ovi;
+        ms.volume = DEFAULT_VOLUME;
+        decodeOggVorbis(&ms, buffer2+sizeof(WAVE_HEADER), ovi->decoded_length, false);
         setupWaveHeader(buffer2, channels, rate, 16, ovi->decoded_length);
         Mix_Chunk *chunk = Mix_LoadWAV_RW(SDL_RWFromMem(buffer2, sizeof(WAVE_HEADER)+ovi->decoded_length), 1);
         delete[] buffer2;
         closeOggVorbis(ovi);
+        delete[] buffer;
 
         playWave(chunk, format, loop_flag, channel);
 
         return SOUND_OGG;
     }
 
-    music_ovi = ovi;
-    Mix_VolumeMusic(music_volume * 128 / 100);
-    Mix_HookMusic(oggcallback, music_ovi);
+    music_struct.ovi = ovi;
+    Mix_VolumeMusic(music_struct.volume * 128 / 100);
+    Mix_HookMusic(oggcallback, &music_struct);
+
+    music_buffer = buffer;
+    music_buffer_length = length;
 
     return SOUND_OGG_STREAMING;
 }
@@ -327,7 +367,7 @@ int ONScripterLabel::playExternalMusic(bool loop_flag)
         return -1;
     }
 
-    // Mix_VolumeMusic( music_volume );
+    // Mix_VolumeMusic( music_struct.volume );
     Mix_PlayMusic(music_info, music_looping);
 
     return 0;
@@ -364,7 +404,7 @@ int ONScripterLabel::playMIDI(bool loop_flag)
     if (midi_cmd) midi_looping = 0;
 #endif
 
-    Mix_VolumeMusic(music_volume);
+    Mix_VolumeMusic(music_struct.volume);
 #if defined(MACOSX) && defined(INSANI)
     // Emulate looping on MacOS ourselves to work around bug in SDL_Mixer
     midi_looping = 0;
@@ -415,7 +455,7 @@ int ONScripterLabel::playMPEG( const char *filename, bool click_flag )
         }
         SMPEG_enablevideo( mpeg_sample, 1 );
         SMPEG_setdisplay( mpeg_sample, screen_surface, NULL, NULL );
-        SMPEG_setvolume( mpeg_sample, music_volume );
+        SMPEG_setvolume( mpeg_sample, music_struct.volume );
 
         Mix_HookMusic( mp3callback, mpeg_sample );
         SMPEG_play( mpeg_sample );
@@ -515,18 +555,13 @@ void ONScripterLabel::stopBGM( bool continue_flag )
         Mix_HookMusic( NULL, NULL );
         SMPEG_delete( mp3_sample );
         mp3_sample = NULL;
-
-        if ( mp3_buffer ){
-            delete[] mp3_buffer;
-            mp3_buffer = NULL;
-        }
     }
 
-    if (music_ovi){
+    if (music_struct.ovi){
         Mix_HaltMusic();
         Mix_HookMusic( NULL, NULL );
-        closeOggVorbis(music_ovi);
-        music_ovi = NULL;
+        closeOggVorbis(music_struct.ovi);
+        music_struct.ovi = NULL;
     }
 
     if ( wave_sample[MIX_BGM_CHANNEL] ){
@@ -538,6 +573,10 @@ void ONScripterLabel::stopBGM( bool continue_flag )
     if ( !continue_flag ){
         setStr( &music_file_name, NULL );
         music_play_loop_flag = false;
+        if ( music_buffer ){
+            delete[] music_buffer;
+            music_buffer = NULL;
+        }
     }
 
     if ( midi_info ){
@@ -725,7 +764,6 @@ OVInfo *ONScripterLabel::openOggVorbis( unsigned char *buf, long len, int &chann
 int ONScripterLabel::closeOggVorbis(OVInfo *ovi)
 {
     if (ovi->buf){
-        delete[] ovi->buf;
         ovi->buf = NULL;
 #ifdef USE_OGG_VORBIS
         ovi->length = 0;

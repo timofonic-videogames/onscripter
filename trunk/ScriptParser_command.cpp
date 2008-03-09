@@ -2,7 +2,7 @@
  *
  *  ScriptParser_command.cpp - Define command executer of ONScripter
  *
- *  Copyright (c) 2001-2007 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2008 Ogapee. All rights reserved.
  *
  *  ogapee@aqua.dti2.ne.jp
  *
@@ -33,6 +33,14 @@ int ScriptParser::zenkakkoCommand()
     if ( current_mode != DEFINE_MODE ) errorAndExit( script_h.getStringBuffer(), "not in the define section" );
     zenkakko_flag = true;
     
+    return RET_CONTINUE;
+}
+
+int ScriptParser::windowchipCommand()
+{
+    if ( current_mode != DEFINE_MODE ) errorAndExit( script_h.getStringBuffer(), "not in the define section" );
+    windowchip_sprite_no = script_h.readInt();
+
     return RET_CONTINUE;
 }
 
@@ -355,6 +363,15 @@ int ScriptParser::pretextgosubCommand()
     return RET_CONTINUE;
 }
 
+int ScriptParser::pagetagCommand()
+{
+    if ( current_mode != DEFINE_MODE ) errorAndExit( "pagetag: not in the define section" );
+
+    pagetag_flag = true;
+    
+    return RET_CONTINUE;
+}
+
 int ScriptParser::numaliasCommand()
 {
     if ( current_mode != DEFINE_MODE ) errorAndExit( "numalias: numalias: not in the define section" );
@@ -585,7 +602,7 @@ int ScriptParser::menuselectcolorCommand()
 int ScriptParser::maxkaisoupageCommand()
 {
     if ( current_mode != DEFINE_MODE ) errorAndExit( "maxkaisoupage: not in the define section" );
-    max_text_buffer = script_h.readInt();
+    max_page_list = script_h.readInt()+1;
 
     return RET_CONTINUE;
 }
@@ -1052,7 +1069,7 @@ int ScriptParser::defsevolCommand()
 
 int ScriptParser::defmp3volCommand()
 {
-    music_volume = script_h.readInt();
+    music_struct.volume = script_h.readInt();
 
     return RET_CONTINUE;
 }
