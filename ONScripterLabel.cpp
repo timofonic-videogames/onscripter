@@ -427,13 +427,9 @@ void ONScripterLabel::initSDL()
     openAudio();
 }
 
-void ONScripterLabel::openAudio()
+void ONScripterLabel::openAudio(int freq, Uint16 format, int channels)
 {
-#if defined(PDA) && !defined(PSP)
-    if ( Mix_OpenAudio( 22050, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, DEFAULT_AUDIOBUF ) < 0 ){
-#else
-    if ( Mix_OpenAudio( 44100, MIX_DEFAULT_FORMAT, MIX_DEFAULT_CHANNELS, DEFAULT_AUDIOBUF ) < 0 ){
-#endif
+    if ( Mix_OpenAudio( freq, format, channels, DEFAULT_AUDIOBUF ) < 0 ){
         fprintf(stderr, "Couldn't open audio device!\n"
                 "  reason: [%s].\n", SDL_GetError());
         audio_open_flag = false;
