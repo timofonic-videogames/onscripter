@@ -98,6 +98,7 @@ static struct FuncLUT{
     {"spclclk",   &ONScripterLabel::spclclkCommand},
     {"spbtn",   &ONScripterLabel::spbtnCommand},
     {"skipoff",   &ONScripterLabel::skipoffCommand},
+    {"shell",   &ONScripterLabel::shellCommand},
     {"sevol",   &ONScripterLabel::sevolCommand},
     {"setwindow3",   &ONScripterLabel::setwindow3Command},
     {"setwindow2",   &ONScripterLabel::setwindow2Command},

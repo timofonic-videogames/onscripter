@@ -138,6 +138,7 @@ public:
     int spclclkCommand();
     int spbtnCommand();
     int skipoffCommand();
+    int shellCommand();
     int sevolCommand();
     int setwindow3Command();
     int setwindow2Command();
