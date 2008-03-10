@@ -2,7 +2,7 @@
  * 
  *  ScriptParser.h - Define block parser of ONScripter
  *
- *  Copyright (c) 2001-2007 Ogapee. All rights reserved.
+ *  Copyright (c) 2001-2008 Ogapee. All rights reserved.
  *
  *  ogapee@aqua.dti2.ne.jp
  *
@@ -23,6 +23,9 @@
 
 // Modified by Haeleth, Autumn 2006, to better support OS X/Linux packaging.
 
+// Modified by Mion of Sonozaki Futago-tachi, March 2008, to update from
+// Ogapee's 20080121 release source code.
+
 #ifndef __SCRIPT_PARSER_H__
 #define __SCRIPT_PARSER_H__
 
@@ -39,6 +42,14 @@
 #include "AnimationInfo.h"
 #include "FontInfo.h"
 
+#if defined(USE_OGG_VORBIS)
+#if defined(INTEGER_OGG_VORBIS)
+#include <tremor/ivorbisfile.h>
+#else
+#include <vorbis/vorbisfile.h>
+#endif
+#endif
+
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
@@ -52,9 +63,28 @@
 
 typedef unsigned char uchar3[3];
 
+struct OVInfo{
+    SDL_AudioCVT cvt;
+    int cvt_len;
+    int mult1;
+    int mult2;
+    unsigned char *buf;
+    long decoded_length;
+#if defined(USE_OGG_VORBIS)
+    ogg_int64_t length;
+    ogg_int64_t pos;
+    OggVorbis_File ovf;
+#endif
+};
+
 class ScriptParser
 {
 public:
+    typedef struct{
+        OVInfo *ovi;
+        int volume;
+    } MusicStruct;
+
     ScriptParser();
     virtual ~ScriptParser();
 
@@ -67,6 +97,7 @@ public:
 
     /* Command */
     int zenkakkoCommand();
+    int windowchipCommand();
     int windowbackCommand();
     int versionstrCommand();
     int usewheelCommand();
@@ -92,6 +123,7 @@ public:
     int rmenuCommand();
     int returnCommand();
     int pretextgosubCommand();
+    int pagetagCommand();
     int numaliasCommand();
     int nsadirCommand();
     int nsaCommand();
@@ -223,6 +255,8 @@ protected:
     bool force_button_shortcut_flag;
     bool rubyon_flag;
     bool zenkakko_flag;
+    bool pagetag_flag;
+    int  windowchip_sprite_no;
     
     int string_buffer_offset;
 
@@ -314,26 +348,30 @@ protected:
     /* Text related variables */
     char *default_env_font;
     int default_text_speed[3];
-    struct TextBuffer{
-        struct TextBuffer *next, *previous;
-        char *buffer2;
-        int num;
-        int buffer2_count;
+    struct Page{
+        struct Page *next, *previous;
 
-        TextBuffer(){
-            buffer2 = NULL;
-            buffer2_count = 0;
+        char *text;
+        int max_text;
+        int text_count;
+        char *tag;
+
+        Page(){
+            text = NULL;
+            text_count = 0;
+            tag = NULL;
         }
-        ~TextBuffer(){
-            if (buffer2) delete[] buffer2;
+        ~Page(){
+            if (text) delete[] text;
+            if (tag)  delete[] tag;
         }
-        int addBuffer( char ch ){
-            if ( buffer2_count >= num ) return -1;
-            buffer2[buffer2_count++] = ch;
+        int add(char ch){
+            if (text_count >= max_text) return -1;
+            text[text_count++] = ch;
             return 0;
         };
-    } *text_buffer, *start_text_buffer, *current_text_buffer; // ring buffer
-    int  max_text_buffer;
+    } *page_list, *start_page, *current_page, current_tag; // ring buffer
+    int  max_page_list;
     int  clickstr_line;
     int  clickstr_state;
     int  linepage_mode;
@@ -341,7 +379,7 @@ protected:
     
     /* ---------------------------------------- */
     /* Sound related variables */
-    int music_volume;
+    MusicStruct music_struct;
     int voice_volume;
     int se_volume;
 
@@ -423,7 +461,7 @@ protected:
     void errorAndExit( const char *str, const char *reason=NULL );
 
     void allocFileIOBuf();
-    int saveFileIOBuf( const char *filename, int offset=0 );
+    int saveFileIOBuf( const char *filename, int offset=0, const char *savestr=NULL );
     int loadFileIOBuf( const char *filename );
 
     void writeChar( char c, bool output_flag );

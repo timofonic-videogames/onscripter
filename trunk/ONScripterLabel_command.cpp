@@ -36,6 +36,7 @@
 #include <errno.h>
 #ifdef WIN32
 #include <direct.h>
+#include <windows.h>
 #endif
 
 #if defined(MACOSX) && (SDL_COMPILEDVERSION >= 1208)
@@ -556,6 +557,35 @@ int ONScripterLabel::spbtnCommand()
 int ONScripterLabel::skipoffCommand()
 {
     skip_flag = false;
+
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::shellCommand()
+{
+    const char *url = script_h.readStr();
+
+#ifdef WIN32
+    HMODULE shdll = LoadLibrary("shell32");
+    if (shdll) {
+        typedef HINSTANCE (WINAPI *SHELLEXECUTE)(HWND, LPCSTR, LPCSTR, LPCSTR, LPCSTR, int);
+        SHELLEXECUTE shexec = SHELLEXECUTE(GetProcAddress(shdll, "ShellExecuteA"));
+        if (shexec) {
+            shexec(NULL, "open", url, NULL, NULL, SW_SHOW);
+        }
+        FreeLibrary(shdll);
+    }
+//#elif defined MACOSX
+//    //Mion - I don't know if this will build or work!
+//    using namespace Carbon;
+//    LSOpenCFURLRef(url, NULL);
+//#elif defined LINUX
+//    //Mion - I don't know if this will build or work!
+//    // Let's assume that a $BROWSER environment variable exists
+//    system("$BROWSER " url);
+#else
+    fprintf(stderr, "[shell] command not supported for this OS\n");
+#endif
 
     return RET_CONTINUE;
 }
