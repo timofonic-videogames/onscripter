@@ -164,7 +164,7 @@ public:
     void pushVariable();
     int  getIntVariable( VariableInfo *var_info=NULL );
 
-    int  getStringFromInteger( char *buffer, int no, int num_column, bool is_zero_inserted=false );
+    int  getStringFromInteger( char *buffer, int no, int num_column, bool is_zero_inserted=false, bool force_zenkaku=false );
 
     int  readScriptSub( FILE *fp, char **buf, int encrypt_mode );
     int  readScript( DirPaths *path );

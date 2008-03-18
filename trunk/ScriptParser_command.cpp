@@ -713,7 +713,7 @@ int ScriptParser::itoaCommand()
 
     char val_str[20];
     if (itoa2_flag)
-        script_h.getStringFromInteger(val_str, val, -1);
+        script_h.getStringFromInteger(val_str, val, -1, false, true);
     else
         sprintf( val_str, "%d", val );
     setStr( &script_h.variable_data[no].str, val_str );
