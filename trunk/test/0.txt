@@ -1,0 +1,100 @@
+;mode800, -*- ponscripter -*-
+;gameid test
+
+*define
+
+dim ?0[10][5][2]
+numalias testnum, 72
+numalias teststr, 72
+numalias wantstr, 73
+numalias answer,  74
+
+; This is ignored by Ponscripter
+numalias PONSCRIPTER, 0
+
+defsub test
+defsub testsub
+
+caption "NScripter test suite"
+versionstr "NScripter test suite"," version 0.1"
+
+savename "Save","Load","File "
+savenumber 20
+effectblank 0
+transmode alpha
+selectcolor #ffffff,#cccccc
+menuselectcolor #ffffff,#aaaaaa,#999999
+defaultspeed 0,0,0
+
+game
+
+*start
+if PONSCRIPTER = 0 skip 2
+h_mapfont 0, "default.ttf"
+
+!s0
+setwindow 8,16,30,23,20,20,0,2,20,1,1,#999999,0,0,639,479
+mov %testnum,0
+mov $wantstr,"NScr"
+mov $teststr,"Test"
+
+; Test itoa, itoa2, atoi, mid, split, and various `if' statements
+;
+test "›››››"
+for %0=210 to 214: movl ?0[7][%0-210], %0, %0, %0: next
+itoa $5, ?0[7][3][1]
+itoa2 $6, ?0[7][3][1]
+mid $4, $5, 1, 1
+if $4 > "0mung" & $4 < "2gsf" puttext "›/": skip 2
+~/
+if $5 = "213" puttext "›/": skip 2
+~/
+if $6 = "‚Q‚P‚R" puttext "›/": skip 2
+~/
+if ?0[7][3][1] + 2 > 214 & ?0[7][3][1] < 214 puttext "›/": skip 2
+~/
+split $5, "1", $6, %7
+atoi %8, $6
+if $6 = "2" & %7 * 2 = %8 * 3 puttext "›": skip 2
+~
+
+; Test user subs and parameter handling
+;
+test "•—@‚Q‚S‚U‚O‚P@‚U‚P@‚R‚U‚T@‚S‚Q@”k"
+mov %61,365
+mov $42,"”k"
+testsub "•—", 24601, %61, $42
+goto *enddefinition
+*testsub
+  getparam $0,%0,i%1,s%2
+  $0@%0@%1@%%1@%2@$%2
+  return
+*enddefinition
+
+; Test `for' loops and array handling
+;
+test "‚R‚O@‚S‚Q@‚T‚S@‚U‚U"
+for %0=0 to 4: movl ?0[8][%0], %0, %0, %0: next
+for %50=0 to 6 step 2
+  mov ?0[8][2][0], ?0[8][2][0] + 1
+  ?0[8][2][0]%50@/
+next
+@
+
+; Test kinsoku
+test "ƒ‚ƒŠƒ\ƒ“u‚±‚Ì¢‚Éˆ«‚ª‚ ‚é‚Æ‚·‚ê‚ÎA‚»‚ê‚Íl‚ÌS‚¾"
+ƒ‚ƒŠƒ\ƒ“u‚±‚Ì¢‚Éˆ«‚ª‚ ‚é‚Æ‚·‚ê‚ÎA‚»‚ê‚Íl‚ÌS/
+‚¾v
+test "ƒ‚ƒŠƒ\ƒ“u‚±‚Ì¢‚Éˆ«‚ª‚ ‚é‚Æ‚·‚ê‚ÎA‚»‚ê‚Íl‚ÌS"
+ƒ‚ƒŠƒ\ƒ“u‚±‚Ì¢‚Éˆ«‚ª‚ ‚é‚Æ‚·‚ê‚ÎA‚»‚ê‚Íl‚Ì/
+S‚¾v
+\
+
+end
+
+*test
+getparam $answer
+inc %testnum
+$wantstr^%testnum@$answer
+$teststr^%testnum@/
+return
