@@ -765,7 +765,7 @@ void ScriptHandler::setNumVariable( int no, int val )
     vd.num = val;
 }
 
-int ScriptHandler::getStringFromInteger( char *buffer, int no, int num_column, bool is_zero_inserted )
+int ScriptHandler::getStringFromInteger( char *buffer, int no, int num_column, bool is_zero_inserted, bool force_zenkaku )
 {
     int i, num_space=0, num_minus = 0;
     if (no < 0){
@@ -787,24 +787,26 @@ int ScriptHandler::getStringFromInteger( char *buffer, int no, int num_column, b
         num_digit -= num_digit+num_minus-num_column;
     }
 
-#if defined(ENABLE_1BYTE_CHAR) && defined(FORCE_1BYTE_CHAR)
-    if (num_minus == 1) no = -no;
-    char format[6];
-    if (is_zero_inserted)
-        sprintf(format, "%%0%dd", num_column);
-    else
-	sprintf(format, "%%%dd", num_column);
+#if defined(ENABLE_1BYTE_CHAR) && defined(FORCE_1BYTE_CHAR)    
+    if (!force_zenkaku) {
+	if (num_minus == 1) no = -no;
+	char format[6];
+	if (is_zero_inserted)
+	    sprintf(format, "%%0%dd", num_column);
+	else
+	    sprintf(format, "%%%dd", num_column);
+	
+	sprintf(buffer, format, no);
+	
+	// Ensure length is multiple of full-width characters
+	if (num_column % 2) {
+	    ++num_column;
+	    strcat(buffer, " ");
+	}
 
-    sprintf(buffer, format, no);
-
-    // Ensure length is multiple of full-width characters
-    if (num_column % 2) {
-	++num_column;
-	strcat(buffer, " ");
+	return num_column;
     }
-
-    return num_column;
-#else
+#endif
     int c = 0;
     if (is_zero_inserted){
         for (i=0 ; i<num_space ; i++){
@@ -833,7 +835,6 @@ int ScriptHandler::getStringFromInteger( char *buffer, int no, int num_column, b
     buffer[num_column*2] = '\0';
 
     return num_column*2;
-#endif
 }
 
 int ScriptHandler::readScriptSub( FILE *fp, char **buf, int encrypt_mode )
