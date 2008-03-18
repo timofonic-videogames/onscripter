@@ -21,4 +21,5 @@ However, builds that display this behaviour will not be 100%
 compatible with some Japanese games.
 
 Other differences, like the kinsoku behaviour in test 4, are arguably
-bugs in NScripter that are fixed in ONScripter.
+bugs in NScripter that are fixed in ONScripter, though the test on the
+second page explains _why_ NScripter does that...
