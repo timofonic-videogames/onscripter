@@ -269,10 +269,10 @@ void ONScripterLabel::drawString( const char *str, uchar3 color, FontInfo *info,
             text[0] = *str++;
             text[1] = '\0';
             drawChar( text, info, false, false, surface, cache_info );
-            if (*str && *str != 0x0a){
-                text[0] = *str++;
-                drawChar( text, info, false, false, surface, cache_info );
-            }
+//Mion: fix for allowing mixed 1 & 2 byte chars
+//            if (*str && *str != 0x0a){//                text[0] = *str++;
+//                drawChar( text, info, false, false, surface, cache_info );
+//            }
         }
     }
     for ( i=0 ; i<3 ; i++ ) info->color[i] = org_color[i];
@@ -330,16 +330,17 @@ void ONScripterLabel::restoreTextBuffer()
                     }
                     if (f_info.isEndOfLine(i)) f_info.newLine();
                 }
+                i++;
             }
             else{
                 out_text[1] = '\0';
-                drawChar( out_text, &f_info, false, false, NULL, &text_info );
-
-                if (i+1 == current_page->text_count) break;
-                out_text[0] = current_page->text[i+1];
-                if (out_text[0] == 0x0a) continue;
+//Mion: fix for allowing mixed 1 & 2 byte chars
+//                drawChar( out_text, &f_info, false, false, NULL, &text_info );
+//
+//                if (i+1 == current_page->text_count) break;
+//                out_text[0] = current_page->text[i+1];
+//                if (out_text[0] == 0x0a) continue;
             }
-            i++;
             drawChar( out_text, &f_info, false, false, NULL, &text_info );
         }
     }
@@ -752,6 +753,9 @@ int ONScripterLabel::processText()
     }
 #ifdef INSANI
     else if ( ch == '!' ){
+#else
+    else if ( ch == '!' && !(script_h.getEndStatus() & ScriptHandler::END_1BYTE_CHAR) ){
+#endif
         string_buffer_offset++;
         if ( script_h.getStringBuffer()[ string_buffer_offset ] == 's' ){
             string_buffer_offset++;
@@ -773,8 +777,10 @@ int ONScripterLabel::processText()
         }
         else if ( script_h.getStringBuffer()[ string_buffer_offset ] == 'w' ||
                   script_h.getStringBuffer()[ string_buffer_offset ] == 'd' ){
+#ifdef INSANI
             skip_in_text = 0;
             event_mode = WAIT_SLEEP_MODE;
+#endif
             bool flag = false;
             if ( script_h.getStringBuffer()[ string_buffer_offset ] == 'd' ) flag = true;
             string_buffer_offset++;
@@ -789,9 +795,9 @@ int ONScripterLabel::processText()
                    script_h.getStringBuffer()[ string_buffer_offset ] == '\t') string_buffer_offset++;
             if ( skip_flag || draw_one_page_flag || ctrl_pressed_status
 #ifdef INSANI
-		 || skip_to_wait
+                  || skip_to_wait
 #endif
-		){
+            ){
                 return RET_CONTINUE | RET_NOREAD;
             }
             else{
@@ -803,189 +809,24 @@ int ONScripterLabel::processText()
                 return RET_WAIT | RET_NOREAD;
             }
         }
+#ifdef INSANI
         else{
-			string_buffer_offset--;
-			goto notacommand;
-		}
+                string_buffer_offset--;
+                goto notacommand;
+        }
+#endif
         return RET_CONTINUE | RET_NOREAD;
     }
-    else if ( ch == '#' ){
-		char hexchecker;
-		for ( int tmpctr = 0; tmpctr <= 5; tmpctr++)
-		{
-			hexchecker = script_h.getStringBuffer()[ string_buffer_offset+tmpctr+1 ];
-			if(!((hexchecker >= '0' && hexchecker <= '9') || (hexchecker >= 'a' && hexchecker <= 'f') || (hexchecker >= 'A' && hexchecker <= 'F'))) goto notacommand;
-		}
-    	readColor( &sentence_font.color, script_h.getStringBuffer() + string_buffer_offset );
-    	readColor( &ruby_font.color, script_h.getStringBuffer() + string_buffer_offset );
-    	string_buffer_offset += 7;
-
-        return RET_CONTINUE | RET_NOREAD;
-    }
-    else if ( ch == '(' && !(script_h.getEndStatus() & ScriptHandler::END_1BYTE_CHAR)){
-        current_page->add('(');
-        startRuby( script_h.getStringBuffer() + string_buffer_offset + 1, sentence_font );
-
-        string_buffer_offset++;
-        return RET_CONTINUE | RET_NOREAD;
-    }
-    else if ( ch == '/'){
-        if ( ruby_struct.stage == RubyStruct::BODY ){
-            current_page->add('/');
-            sentence_font.addLineOffset(ruby_struct.margin);
-            string_buffer_offset = ruby_struct.ruby_end - script_h.getStringBuffer();
-            if (*ruby_struct.ruby_end == ')'){
-                if ( skip_flag || draw_one_page_flag || ctrl_pressed_status )
-                    endRuby(false, true, accumulation_surface);
-                else
-                    endRuby(true, true, accumulation_surface);
-                current_page->add(')');
-                string_buffer_offset++;
-            }
-
-            return RET_CONTINUE | RET_NOREAD;
-        }
-        else if (script_h.getStringBuffer()[string_buffer_offset+1] != 0x0a) goto notacommand;
-        else{ // skip new line
-            new_line_skip_flag = true;
-            string_buffer_offset++;
-            if (script_h.getStringBuffer()[string_buffer_offset] != 0x0a)
-                errorAndExit( "'new line' must follow '/'." );
-            return RET_CONTINUE; // skip the following eol
-        }
-    }
-    else if ( ch == ')' && !(script_h.getEndStatus() & ScriptHandler::END_1BYTE_CHAR) &&
-              ruby_struct.stage == RubyStruct::BODY ){
-        current_page->add(')');
-        string_buffer_offset++;
-        ruby_struct.stage = RubyStruct::NONE;
-        return RET_CONTINUE | RET_NOREAD;
-    }
-    else{
-		notacommand:
-        out_text[0] = ch;
-
-        if ( clickstr_state == CLICK_IGNORE ){
-            clickstr_state = CLICK_NONE;
-        }
-        else{
-            int matched_len = script_h.checkClickstr(script_h.getStringBuffer() + string_buffer_offset);
-
-            if (matched_len > 0){
-                if (matched_len == 2) out_text[1] = script_h.getStringBuffer()[ string_buffer_offset + 1 ];
-                if (sentence_font.getRemainingLine() <= clickstr_line)
-                    return clickNewPage( out_text );
-                else
-                    return clickWait( out_text );
-            }
-            else if (script_h.getStringBuffer()[ string_buffer_offset + 1 ] &&
-                     script_h.checkClickstr(&script_h.getStringBuffer()[string_buffer_offset+1]) == 1 &&
-		     script_h.getEndStatus() & ScriptHandler::END_1BYTE_CHAR){
-                if ( script_h.getStringBuffer()[ string_buffer_offset + 2 ] &&
-                     script_h.checkClickstr(&script_h.getStringBuffer()[string_buffer_offset+2]) > 0){
-                    clickstr_state = CLICK_NONE;
-                }
-                else if (script_h.getStringBuffer()[ string_buffer_offset + 1 ] == '@'){
-                    return clickWait( out_text );
-                }
-                else if (script_h.getStringBuffer()[ string_buffer_offset + 1 ] == '\\'){
-                    return clickNewPage( out_text );
-                }
-                else{
-                    out_text[1] = script_h.getStringBuffer()[ string_buffer_offset + 1 ];
-                    if (sentence_font.getRemainingLine() <= clickstr_line)
-                        return clickNewPage( out_text );
-                    else
-                        return clickWait( out_text );
-                }
-            }
-            else{
-                clickstr_state = CLICK_NONE;
-            }
-        }
-
-        bool flush_flag = true;
-        if ( skip_flag || draw_one_page_flag || ctrl_pressed_status )
-            flush_flag = false;
-        if ( script_h.getStringBuffer()[ string_buffer_offset + 1 ] &&
-             !(script_h.getEndStatus() & ScriptHandler::END_1BYTE_CHAR)){
-            out_text[1] = script_h.getStringBuffer()[ string_buffer_offset + 1 ];
-        drawDoubleChars( out_text, &sentence_font, flush_flag, true, accumulation_surface, &text_info );
-        num_chars_in_sentence++;
-        }
-        else if (script_h.getEndStatus() & ScriptHandler::END_1BYTE_CHAR){
-            drawDoubleChars( out_text, &sentence_font, flush_flag, true, accumulation_surface, &text_info );
-            num_chars_in_sentence++;
-        }
-        if ( skip_flag || draw_one_page_flag || ctrl_pressed_status ){
-            if ( script_h.getStringBuffer()[ string_buffer_offset + 1 ] &&
-                 script_h.getStringBuffer()[ string_buffer_offset + 1 ] != 0x0a &&
-                 !(script_h.getEndStatus() & ScriptHandler::END_1BYTE_CHAR))
-                string_buffer_offset++;
-            string_buffer_offset++;
-            return RET_CONTINUE | RET_NOREAD;
-        }
-        else{
-            event_mode = WAIT_TEXTOUT_MODE;
-	    if ( skip_in_text == 1 || skip_to_wait == 1)
-	        advancePhase( 0 );
-            else if ( sentence_font.wait_time == -1 )
-                advancePhase( default_text_speed[text_speed_no] );
-            else
-                advancePhase( sentence_font.wait_time );
-            return RET_WAIT | RET_NOREAD;
-        }
-    }
-#else
-    else if ( ch == '!' && !(script_h.getEndStatus() & ScriptHandler::END_1BYTE_CHAR) ){
-        string_buffer_offset++;
-        if ( script_h.getStringBuffer()[ string_buffer_offset ] == 's' ){
-            string_buffer_offset++;
-            if ( script_h.getStringBuffer()[ string_buffer_offset ] == 'd' ){
-                sentence_font.wait_time = -1;
-                string_buffer_offset++;
-            }
-            else{
-                int t = 0;
-                while( script_h.getStringBuffer()[ string_buffer_offset ] >= '0' &&
-                       script_h.getStringBuffer()[ string_buffer_offset ] <= '9' ){
-                    t = t*10 + script_h.getStringBuffer()[ string_buffer_offset ] - '0';
-                    string_buffer_offset++;
-                }
-                sentence_font.wait_time = t;
-                while (script_h.getStringBuffer()[ string_buffer_offset ] == ' ' ||
-                       script_h.getStringBuffer()[ string_buffer_offset ] == '\t') string_buffer_offset++;
-            }
-        }
-        else if ( script_h.getStringBuffer()[ string_buffer_offset ] == 'w' ||
-                  script_h.getStringBuffer()[ string_buffer_offset ] == 'd' ){
-            bool flag = false;
-            if ( script_h.getStringBuffer()[ string_buffer_offset ] == 'd' ) flag = true;
-            string_buffer_offset++;
-            int tmp_string_buffer_offset = string_buffer_offset;
-            int t = 0;
-            while( script_h.getStringBuffer()[ string_buffer_offset ] >= '0' &&
-                   script_h.getStringBuffer()[ string_buffer_offset ] <= '9' ){
-                t = t*10 + script_h.getStringBuffer()[ string_buffer_offset ] - '0';
-                string_buffer_offset++;
-            }
-            while (script_h.getStringBuffer()[ string_buffer_offset ] == ' ' ||
-                   script_h.getStringBuffer()[ string_buffer_offset ] == '\t') string_buffer_offset++;
-            if ( skip_flag || draw_one_page_flag || ctrl_pressed_status ){
-                return RET_CONTINUE | RET_NOREAD;
-            }
-            else{
-                event_mode |= WAIT_TEXTOUT_MODE;
-                if ( flag ) event_mode |= WAIT_INPUT_MODE;
-                key_pressed_flag = false;
-                startTimer( t );
-                string_buffer_offset = tmp_string_buffer_offset - 2;
-                return RET_WAIT | RET_NOREAD;
-            }
-        }
-        return RET_CONTINUE | RET_NOREAD;
-    }
+#ifndef INSANI
     else if ( ch == '#' && !(script_h.getEndStatus() & ScriptHandler::END_1BYTE_CHAR) ){
+#else
+    else if ( ch == '#' ){
+         char hexchecker;
+         for ( int tmpctr = 0; tmpctr <= 5; tmpctr++) {
+             hexchecker = script_h.getStringBuffer()[ string_buffer_offset+tmpctr+1 ];
+             if(!((hexchecker >= '0' && hexchecker <= '9') || (hexchecker >= 'a' && hexchecker <= 'f') || (hexchecker >= 'A' && hexchecker <= 'F'))) goto notacommand;
+         }
+#endif
         readColor( &sentence_font.color, script_h.getStringBuffer() + string_buffer_offset );
         readColor( &ruby_font.color, script_h.getStringBuffer() + string_buffer_offset );
         string_buffer_offset += 7;
@@ -998,7 +839,11 @@ int ONScripterLabel::processText()
         string_buffer_offset++;
         return RET_CONTINUE | RET_NOREAD;
     }
+#ifdef INSANI
+    else if ( ch == '/'){
+#else
     else if ( ch == '/' && !(script_h.getEndStatus() & ScriptHandler::END_1BYTE_CHAR) ){
+#endif
         if ( ruby_struct.stage == RubyStruct::BODY ){
             current_page->add('/');
             sentence_font.addLineOffset(ruby_struct.margin);
@@ -1014,6 +859,9 @@ int ONScripterLabel::processText()
 
             return RET_CONTINUE | RET_NOREAD;
         }
+#ifdef INSANI
+        else if (script_h.getStringBuffer()[string_buffer_offset+1] != 0x0a) goto notacommand;
+#endif
         else{ // skip new line
             new_line_skip_flag = true;
             string_buffer_offset++;
@@ -1030,6 +878,9 @@ int ONScripterLabel::processText()
         return RET_CONTINUE | RET_NOREAD;
     }
     else{
+#ifdef INSANI
+        notacommand:
+#endif
         out_text[0] = ch;
 
         if ( clickstr_state == CLICK_IGNORE ){
@@ -1040,7 +891,6 @@ int ONScripterLabel::processText()
 
             if (matched_len > 0){
                 if (matched_len == 2) out_text[1] = script_h.getStringBuffer()[ string_buffer_offset + 1 ];
-         	    skip_in_text = 0;
                 if (sentence_font.getRemainingLine() <= clickstr_line)
                     return clickNewPage( out_text );
                 else
@@ -1048,7 +898,7 @@ int ONScripterLabel::processText()
             }
             else if (script_h.getStringBuffer()[ string_buffer_offset + 1 ] &&
                      script_h.checkClickstr(&script_h.getStringBuffer()[string_buffer_offset+1]) == 1 &&
-		     script_h.getEndStatus() & ScriptHandler::END_1BYTE_CHAR){
+                     script_h.getEndStatus() & ScriptHandler::END_1BYTE_CHAR){
                 if ( script_h.getStringBuffer()[ string_buffer_offset + 2 ] &&
                      script_h.checkClickstr(&script_h.getStringBuffer()[string_buffer_offset+2]) > 0){
                     clickstr_state = CLICK_NONE;
@@ -1107,7 +957,6 @@ int ONScripterLabel::processText()
             return RET_WAIT | RET_NOREAD;
         }
     }
-#endif
 
     return RET_NOMATCH;
 }
