@@ -21,7 +21,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Modified by Haeleth, autumn 2006, to remove unnecessary diagnostics.
+// Modified by Haeleth, autumn 2006, to remove unnecessary diagnostics,
+// and on many occasions thereafter; see SVN logs for all changes
 
 // Modified by Mion of Sonozaki Futago-tachi, March 2008, to update from
 // Ogapee's 20080121 release source code.

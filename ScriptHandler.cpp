@@ -1161,6 +1161,32 @@ void ScriptHandler::addStrAlias( const char *str1, const char *str2 )
     last_str_alias = last_str_alias->next;
 }
 
+bool ScriptHandler::findNumAlias( const char *str, int *value )
+{
+    Alias *p_num_alias = root_num_alias.next;
+    while( p_num_alias ){
+	if ( !strcmp( p_num_alias->alias, str ) ){
+	    *value = p_num_alias->num;
+	    return true;
+	}
+	p_num_alias = p_num_alias->next;
+    }
+    return false;
+}
+    
+bool ScriptHandler::findStrAlias( const char *str, char* buffer )
+{
+    Alias *p_str_alias = root_str_alias.next;
+    while( p_str_alias ){
+	if ( !strcmp( p_str_alias->alias, str ) ){
+	    strcpy( buffer, p_str_alias->str );
+	    return true;
+	}
+	p_str_alias = p_str_alias->next;
+    }
+    return false;
+}
+
 void ScriptHandler::errorAndExit( char *str )
 {
     fprintf( stderr, " **** Script error, %s [%s] ***\n", str, string_buffer );
@@ -1324,19 +1350,10 @@ void ScriptHandler::parseStr( char **buf )
             return;
         }
 
-        Alias *p_str_alias = root_str_alias.next;
-
-        while( p_str_alias ){
-            if ( !strcmp( p_str_alias->alias, (const char*)alias_buf ) ){
-                strcpy( str_string_buffer, p_str_alias->str );
-                break;
-            }
-            p_str_alias = p_str_alias->next;
-        }
-        if ( !p_str_alias ){
-            printf("can't find str alias for %s...\n", alias_buf );
-            exit(-1);
-        }
+	if (!findStrAlias( (const char*)alias_buf, str_string_buffer )) {
+	    printf("can't find str alias for %s...\n", alias_buf );
+	    exit(-1);
+	}
         current_variable.type |= VAR_CONST;
     }
 }
@@ -1401,23 +1418,14 @@ int ScriptHandler::parseInt( char **buf )
         /* Solve num aliases */
         if ( num_alias_flag ){
             alias_buf[ alias_buf_len ] = '\0';
-            Alias *p_num_alias = root_num_alias.next;
 
-            while( p_num_alias ){
-                if ( !strcmp( p_num_alias->alias,
-                              (const char*)alias_buf ) ){
-                    alias_no = p_num_alias->num;
-                    break;
-                }
-                p_num_alias = p_num_alias->next;
-            }
-            if ( !p_num_alias ){
+	    if ( !findNumAlias( (const char*) alias_buf, &alias_no ) ) {
                 //printf("can't find num alias for %s... assume 0.\n", alias_buf );
                 current_variable.type = VAR_NONE;
                 *buf = buf_start;
                 return 0;
-            }
-        }
+	    }
+	}
         current_variable.type = VAR_INT | VAR_CONST;
         ret = alias_no;
     }

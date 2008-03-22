@@ -402,8 +402,8 @@ int ONScripterLabel::leaveTextDisplayMode()
 void ONScripterLabel::doClickEnd()
 {
 #ifdef INSANI
-	skip_to_wait = 0;
-	skip_in_text = 0;
+    skip_to_wait = 0;
+    skip_in_text = 0;
 #endif
 
     if ( automode_flag ){
@@ -428,8 +428,8 @@ void ONScripterLabel::doClickEnd()
 int ONScripterLabel::clickWait( char *out_text )
 {
 #ifdef INSANI
-	skip_to_wait = 0;
-	skip_in_text = 0;
+    skip_to_wait = 0;
+    skip_in_text = 0;
 #endif
 
     if ( (skip_flag || draw_one_page_flag || ctrl_pressed_status) && !textgosub_label ){
@@ -666,7 +666,7 @@ int ONScripterLabel::processText()
 
     if (script_h.getStringBuffer()[string_buffer_offset] == 0x0a ||
 	script_h.getStringBuffer()[string_buffer_offset] == 0x00){
-        skip_in_text = 0;
+        if (!click_skip_page_flag) skip_in_text = 0;
         indent_offset = 0; // redundant
         return RET_CONTINUE;
     }

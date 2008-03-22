@@ -144,12 +144,14 @@ static struct FuncLUT{
     {"defmp3vol",   &ScriptParser::defmp3volCommand},
     {"defaultspeed", &ScriptParser::defaultspeedCommand},
     {"defaultfont", &ScriptParser::defaultfontCommand},
+    {"debugprint", &ScriptParser::debugprintCommand},
     {"dec",   &ScriptParser::decCommand},
     {"date",   &ScriptParser::dateCommand},
     {"cos", &ScriptParser::cosCommand},
     {"cmp",      &ScriptParser::cmpCommand},
     {"clickvoice",   &ScriptParser::clickvoiceCommand},
     {"clickstr",   &ScriptParser::clickstrCommand},
+    {"clickskippage", &ScriptParser::clickskippageCommand},
     {"break",   &ScriptParser::breakCommand},
     {"automode", &ScriptParser::mode_extCommand},
     {"atoi",      &ScriptParser::atoiCommand},
@@ -226,6 +228,7 @@ void ScriptParser::reset()
     labellog_flag = false;
     filelog_flag = false;
     kidokuskip_flag = false;
+    click_skip_page_flag = false;
 
     rmode_flag = true;
     windowback_flag = false;

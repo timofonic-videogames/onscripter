@@ -1168,6 +1168,15 @@ int ScriptParser::clickstrCommand()
     return RET_CONTINUE;
 }
 
+int ScriptParser::clickskippageCommand()
+{
+    if ( current_mode != DEFINE_MODE ) errorAndExit( "clickskippage: not in the define section" );
+
+    click_skip_page_flag = true;
+
+    return RET_CONTINUE;
+}
+
 int ScriptParser::breakCommand()
 {
     if (!last_nest_info->previous || last_nest_info->nest_mode != NestInfo::FOR)
@@ -1260,5 +1269,49 @@ int ScriptParser::addCommand()
     }
     else errorAndExit( "add: no variable." );
 
+    return RET_CONTINUE;
+}
+
+// Backport one of Ponscr's functions (in much uglier form) to get
+// debugprint working properly
+const char* readExpr(ScriptHandler& script_h)
+{
+    static char value[2048];
+    const char* buf = script_h.getNext();
+    while (*buf == ' ' || *buf == '\t' || *buf == 0x0a || *buf == '(') ++buf;
+    if (*buf != '%' && *buf != '?' && (*buf < '0' || *buf > '9') &&
+	*buf != '-' && *buf != '+')
+    {
+	const char* s = script_h.readStr();
+	strncpy(value, s, 2047);
+	value[2047] = 0;
+	if (script_h.current_variable.type == ScriptHandler::VAR_NONE) {
+	    // resolve alias if possible
+	    int alias_no;
+	    if (script_h.findNumAlias(s, &alias_no))
+		snprintf(value, 2048, "%d", alias_no);
+	    else
+		script_h.findStrAlias(s, value);
+	}
+    }
+    else {
+	// int
+	int v = script_h.readInt();
+	snprintf(value, 2048, "%d", v);
+    }
+    return value;
+}
+
+int ScriptParser::debugprintCommand()
+{
+    do {
+	const char* s = readExpr(script_h);
+	if (!s) s = "[no token]";
+	if (s[0] == '`') ++s;
+	fputs(s, stdout);
+    }
+    while (script_h.getEndStatus() & ScriptHandler::END_COMMA);
+    putchar('\n');
+    fflush(stdout);
     return RET_CONTINUE;
 }

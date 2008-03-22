@@ -180,6 +180,9 @@ public:
     void addNumAlias( const char *str, int no );
     void addStrAlias( const char *str1, const char *str2 );
 
+    bool findNumAlias( const char *str, int *value );
+    bool findStrAlias( const char *str, char* buffer );
+
     enum { LABEL_LOG = 0,
                    FILE_LOG = 1
     };

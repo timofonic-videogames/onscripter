@@ -1,3 +1,14 @@
+2008-03-22
+
+  Implement clickskippage, and also add a debugprint command that
+  dumps its parameters to stdout for convenient printf-style
+  debugging. [Haeleth]
+
+  Add a rudimentary test suite; this is far from complete, but will
+  hopefully help a bit in making sure future updates don't break
+  anything. [Haeleth]
+
+
 2008-03-09
 
   Fix MPEG playback for movies with audio sampled at other than
