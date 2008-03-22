@@ -563,9 +563,8 @@ int ONScripterLabel::skipoffCommand()
 
 int ONScripterLabel::shellCommand()
 {
-    const char *url = script_h.readStr();
-
 #ifdef WIN32
+    const char *url = script_h.readStr();
     HMODULE shdll = LoadLibrary("shell32");
     if (shdll) {
         typedef HINSTANCE (WINAPI *SHELLEXECUTE)(HWND, LPCSTR, LPCSTR, LPCSTR, LPCSTR, int);
@@ -575,14 +574,20 @@ int ONScripterLabel::shellCommand()
         }
         FreeLibrary(shdll);
     }
-//#elif defined MACOSX
-//    //Mion - I don't know if this will build or work!
-//    using namespace Carbon;
-//    LSOpenCFURLRef(url, NULL);
-//#elif defined LINUX
-//    //Mion - I don't know if this will build or work!
-//    // Let's assume that a $BROWSER environment variable exists
-//    system("$BROWSER " url);
+#elif defined MACOSX
+    //Mion - I don't know if this will build or work!
+    Carbon::LSOpenCFURLRef(url, NULL);
+#elif defined LINUX
+    //Mion - I don't know if this will build or work!
+    // Let's assume that a $BROWSER environment variable exists
+    // TODO: other approaches exist, try them too
+    const char *url = script_h.readStr();
+    const char *browser = getenv("BROWSER");
+    char* cmdstr = (char*) malloc(strlen(url) + strlen(browser) + 2);
+    strcpy(cmdstr, url);
+    strcat(cmdstr, " ");
+    strcat(cmdstr, browser);
+    system(cmdstr);
 #else
     fprintf(stderr, "[shell] command not supported for this OS\n");
 #endif

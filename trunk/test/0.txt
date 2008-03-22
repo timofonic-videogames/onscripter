@@ -3,17 +3,26 @@
 
 *define
 
+english
+clickskippage
+
 dim ?0[10][5][2]
-numalias testnum, 72
+numalias testnum,   72
+numalias NScripter, 73
+
 numalias teststr, 72
 numalias wantstr, 73
 numalias answer,  74
+numalias answer2, 75
 
 ; This is ignored by Ponscripter
 numalias PONSCRIPTER, 0
 
 defsub test
 defsub testsub
+defsub getcharpos
+defsub erase
+defsub printnicely
 
 caption "NScripter test suite"
 versionstr "NScripter test suite"," version 0.1"
@@ -26,16 +35,34 @@ selectcolor #ffffff,#cccccc
 menuselectcolor #ffffff,#aaaaaa,#999999
 defaultspeed 0,0,0
 
+addkinsoku "：",""
+
+numalias WINDX,  8
+numalias WINDY, 16
+numalias CHARW, 20
+numalias CHARH, 20
+numalias TRACK,  0
+numalias LEAD,   2
+
 game
 
 *start
 if PONSCRIPTER = 0 skip 2
 h_mapfont 0, "default.ttf"
 
-!s0
-setwindow 8,16,30,23,20,20,0,2,20,1,1,#ffffff,0,0,639,479
+; Check interpreter type: is this real NScripter, or a clone like ONScripter?
+; (If getreg reads from registry.txt, we use ` for English text; otherwise
+; we assume we're using NScripter and use > instead.)
+mov %NScripter,1
+getreg $teststr,"nscripter\interpreter\test","IsThisONScripter"
+if $teststr = "yes" mov %NScripter,0
+
+; Set up basic window.
+;
+textspeed 0 ; can't use !s0 in NScripter in "english" mode
+setwindow WINDX,WINDY,30,23,CHARW,CHARH,TRACK,LEAD,20,1,1,#ffffff,0,0,639,479
 mov %testnum,0
-mov $wantstr,"NScr"
+mov $wantstr,"Want"
 mov $teststr,"Test"
 
 ; Test itoa, itoa2, atoi, mid, split, and various `if' statements
@@ -82,27 +109,126 @@ next
 　
 
 ; Test kinsoku
-test "モリソン「この世に悪があるとすれば、それは人の心だ"
+;
+; NScripter itself gets this one wrong!
+test "モリソン「この世に悪があるとすれば、それは人の心"
 モリソン「この世に悪があるとすれば、それは人の心/
 だ」
+erase "だ」","」"
 test "モリソン「この世に悪があるとすれば、それは人の心"
 モリソン「この世に悪があるとすれば、それは人の/
 心だ」
+erase "だ」","」"
+; / is always a valid break point
 test "モリソン「この世に悪があるとすれば、それは人の心だ"
 モリソン「この世に悪があるとすれば、それは人の心だ/
 」
+erase "だ」","」"
+; Test NScr 2.70+ addkinsoku function (in header)
+test "モリソン「この世に悪があるとすれば、それは人の心"
+モリソン「この世に悪があるとすれば、それは人の心だ：
+erase "だ：","："
 \
 
+; Pathological case: will unbreakable tokens cause spurious newlines?
+inc %testnum
 lsp 0,":s/20,20,0;#ffffff#000000ｅｘｔ　ｉｓ　ｎｏｔ　ｍｉｓｓｉｎｇ　ｔｈｅ　Ｔ",28,16
-setwindow 8,16,1,23,20,20,0,2,20,1,1,#ffffff,0,0,639,479
+setwindow WINDX,WINDY,1,23,CHARW,CHARH,TRACK,LEAD,20,1,1,#ffffff,0,0,639,479
 Ｔ」
+locate 0,2: erase "Ｔ","」"
+locate 0,3: erase "Ｔ","」"
+\
+csp 0
+setwindow WINDX,WINDY,30,23,CHARW,CHARH,TRACK,LEAD,20,1,1,#ffffff,0,0,639,479
+
+
+; Test ASCII text.
+;
+; Sadly we need to write all these tests twice, for NScripter and ONScripter;
+; care must be taken to ensure they're always equivalent!  (Obviously
+; NScripter fails them all anyway, but it's useful to be able to show that,
+; in case anyone asks us silly questions like why we don't use NScripter for
+; Windows versions of English games.)
+
+; Is any attempt made to wrap English text nicely?
+;
+test "The quick brown fox jumps over the lazy dog."
+if %NScripter == 1 skip 3
+`The quick brown fox jumps over the lazy dog. FAIL!!!
+skip 2
+>The quick brown fox jumps over the lazy dog. FAIL!!!
+erase "!!", "FAIL!!!"
+
+; Are runs of spaces at the end of a line ignored, or can some of the
+; spaces wrap over into the next line?
+;
+test "Carmina qui quondam studio florente peregi|flebilis heu maestos cogor inire modos"
+if %NScripter == 1 skip 3
+`Carmina qui quondam studio florente peregi         flebilis heu maestos cogor inire modos.
+skip 2
+>Carmina qui quondam studio florente peregi         flebilis heu maestos cogor inire modos.
 \
 
 end
 
+
+;
+; Auxiliary subroutines
+;
+
 *test
 getparam $answer
+split $answer,"|",$answer,$answer2
 inc %testnum
-$wantstr／%testnum　$answer
+$wantstr／%testnum　/
+printnicely $answer
+if $answer2 <> "" printnicely $answer2
 $teststr／%testnum　/
+return
+
+; Erase some characters from the previous line.
+*erase
+getparam $30,$31
+getcharpos %30,%31: sub %31,1
+gosub *blacktext
+locate %30,%31
+printnicely $30
+locate %30,%31
+printnicely $31
+gosub *whitetext
+locate %30,%31
+return
+
+; Why _does_ getcursorpos use different units and a different origin
+; from locate?
+*getcharpos
+getparam i%50,i%51
+getcursorpos %52,%53
+mov %%50,(%52 - WINDX) / (CHARW + TRACK)
+mov %%51,(%53 - WINDY) / (CHARH + LEAD)
+return
+
+; Wow, there's a bit of English text handling that NScripter does
+; better than ONScripter!
+*printnicely
+getparam $20
+if %NScripter == 1 skip 3
+`$20
+return
+$20
+return
+
+; textcolor must be among the worse-designed commands... and it's
+; very annoying that NScripter requires its use in "english" mode.
+*blacktext
+if %NScripter == 0 skip 3
+textcolor #000000
+return
+#000000
+return
+*whitetext
+if %NScripter == 0 skip 3
+textcolor #ffffff
+return
+#ffffff
 return

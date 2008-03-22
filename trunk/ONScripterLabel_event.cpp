@@ -431,11 +431,11 @@ void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
         current_button_state.button = current_over_button;
         volatile_button_state.button = current_over_button;
 #ifdef INSANI
-		//fprintf(stderr, "event_mode = %d\n", event_mode);
-		if ( event_mode & WAIT_TEXTOUT_MODE) {
-         skip_in_text=1;
-      }
-		if ( skip_to_wait ) skip_to_wait=0;
+	//fprintf(stderr, "event_mode = %d\n", event_mode);
+	if ( event_mode & WAIT_TEXTOUT_MODE) {
+	    skip_in_text=1;
+	}
+	if ( skip_to_wait ) skip_to_wait=0;
 #endif
         if ( event->type == SDL_MOUSEBUTTONDOWN )
             current_button_state.down_flag = true;

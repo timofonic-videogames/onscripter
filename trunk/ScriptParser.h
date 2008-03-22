@@ -21,7 +21,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Modified by Haeleth, Autumn 2006, to better support OS X/Linux packaging.
+// Modified by Haeleth, Autumn 2006, to better support OS X/Linux packaging;
+// and since then numerous other times (see SVN changelog for full details)
 
 // Modified by Mion of Sonozaki Futago-tachi, March 2008, to update from
 // Ogapee's 20080121 release source code.
@@ -171,11 +172,13 @@ public:
     int defaultspeedCommand();
     int defaultfontCommand();
     int decCommand();
+    int debugprintCommand();
     int dateCommand();
     int cosCommand();
     int cmpCommand();
     int clickvoiceCommand();
     int clickstrCommand();
+    int clickskippageCommand();
     int breakCommand();
     int atoiCommand();
     int arcCommand();
@@ -245,6 +248,8 @@ protected:
     bool kidokuskip_flag;
     bool kidokumode_flag;
 
+    bool click_skip_page_flag;
+    
     int z_order;
     bool rmode_flag;
     bool windowback_flag;
