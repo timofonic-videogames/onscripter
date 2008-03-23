@@ -169,7 +169,7 @@ size_t NsaReader::getFileLength( const char *file_name )
     if ( ( ret = getFileLengthSub( &archive_info_nsa, file_name )) ) return ret;
 
     // nsa? read
-    for ( i=0 ; i<num_of_nsa_archives ; i++ ){
+    for ( i=0 ; i<num_of_nsa_archives-1 ; i++ ){
         if ( (ret = getFileLengthSub( &archive_info2[i], file_name )) ) return ret;
     }
     
