@@ -8,6 +8,11 @@
   hopefully help a bit in making sure future updates don't break
   anything. [Haeleth]
 
+  Replace the FORCE_1BYTE_CHAR compile-time option with a runtime
+  "language" command.  Use "language english" to get the current
+  behaviour, or pass ONScripter-En the "--english" command-line
+  flag. [Haeleth]
+
 
 2008-03-09
 

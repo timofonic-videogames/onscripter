@@ -421,7 +421,7 @@ unsigned char ScriptParser::convHexToDec( char ch )
 }
 
 void ScriptParser::readColor( uchar3 *color, const char *buf ){
-    if ( buf[0] != '#' ) errorAndExit("readColor: no preceeding #.");
+    if ( buf[0] != '#' ) errorAndExit("readColor: no preceding #.");
     (*color)[0] = convHexToDec( buf[1] ) << 4 | convHexToDec( buf[2] );
     (*color)[1] = convHexToDec( buf[3] ) << 4 | convHexToDec( buf[4] );
     (*color)[2] = convHexToDec( buf[5] ) << 4 | convHexToDec( buf[6] );

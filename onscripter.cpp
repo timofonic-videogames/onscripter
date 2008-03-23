@@ -21,8 +21,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-// Modified by Haeleth, Autumn 2006: fix typos, separate save and root paths
-
 #include "ONScripterLabel.h"
 #include "version.h"
 
@@ -34,6 +32,7 @@ static void optionHelp()
     printf( "  -f, --font file\tset a TTF font file\n");
     printf( "      --registry file\tset a registry file\n");
     printf( "      --dll file\tset a dll file\n");
+    printf( "      --english\tforce English text mode\n");
 #if   defined WIN32
     printf( "  -r, --root path\tset the root path to the archives\n");
     printf( "  -s, --save path\tset the path to use for saved games (default: folder in All Users profile)\n");
@@ -122,6 +121,9 @@ int main( int argc, char **argv )
                 argc--;
                 argv++;
                 ons.setDLLFile(argv[0]);
+            }
+            else if ( !strcmp( argv[0]+1, "-english" ) ){
+                ons.setEnglishMode();
             }
             else if ( !strcmp( argv[0]+1, "r" ) || !strcmp( argv[0]+1, "-root" ) ){
 		hasArchivePath = true;
