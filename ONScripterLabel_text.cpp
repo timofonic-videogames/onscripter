@@ -28,15 +28,6 @@
 
 extern unsigned short convSJIS2UTF16( unsigned short in );
 
-#define IS_KINSOKU(x)	\
-        ( *(x) == (char)0x81 && *((x)+1) == (char)0x41 || \
-          *(x) == (char)0x81 && *((x)+1) == (char)0x42 || \
-          *(x) == (char)0x81 && *((x)+1) == (char)0x48 || \
-          *(x) == (char)0x81 && *((x)+1) == (char)0x49 || \
-          *(x) == (char)0x81 && *((x)+1) == (char)0x76 || \
-          *(x) == (char)0x81 && *((x)+1) == (char)0x78 || \
-          *(x) == (char)0x81 && *((x)+1) == (char)0x5b )
-
 #define IS_ROTATION_REQUIRED(x)	\
         ( !IS_TWO_BYTE(*(x)) || \
           *(x) == (char)0x81 && *((x)+1) == (char)0x50 || \
@@ -251,7 +242,7 @@ void ONScripterLabel::drawString( const char *str, uchar3 color, FontInfo *info,
 #endif
         if ( IS_TWO_BYTE(*str) ){
             /* Kinsoku process */
-            if (info->isEndOfLine(2) && IS_KINSOKU( str+2 )){
+            if (info->isEndOfLine(2) && isStartKinsoku( str+2 )){
                 info->newLine();
                 for (int i=0 ; i<indent_offset ; i++){
                     sentence_font.advanceCharInHankaku(2);
@@ -322,10 +313,10 @@ void ONScripterLabel::restoreTextBuffer()
 #endif
             if ( IS_TWO_BYTE(out_text[0]) ){
                 out_text[1] = current_page->text[i+1];
-                if (IS_KINSOKU( current_page->text+i+2 )){
+                if (isStartKinsoku( current_page->text+i+2 )){
                     int i = 2;
                     while (!f_info.isEndOfLine(i) &&
-                           IS_KINSOKU( current_page->text+i+2 )){
+                           isStartKinsoku( current_page->text+i+2 )){
                         i += 2;
                     }
                     if (f_info.isEndOfLine(i)) f_info.newLine();
@@ -683,10 +674,10 @@ int ONScripterLabel::processText()
     if ( IS_TWO_BYTE(ch) ){ // Shift jis
         /* ---------------------------------------- */
         /* Kinsoku process */
-        if (IS_KINSOKU( script_h.getStringBuffer() + string_buffer_offset + 2)){
+        if (isStartKinsoku( script_h.getStringBuffer() + string_buffer_offset + 2)){
             int i = 2;
             while (!sentence_font.isEndOfLine(i) &&
-                   IS_KINSOKU( script_h.getStringBuffer() + string_buffer_offset + i + 2)){
+                   isStartKinsoku( script_h.getStringBuffer() + string_buffer_offset + i + 2)){
                 i += 2;
             }
 
@@ -960,4 +951,3 @@ int ONScripterLabel::processText()
 
     return RET_NOMATCH;
 }
-

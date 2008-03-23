@@ -224,6 +224,19 @@ int ScriptParser::shadedistanceCommand()
     return RET_CONTINUE;
 }
 
+//Mion: for kinsoku
+int ScriptParser::setkinsokuCommand()
+{
+    if ( current_mode != DEFINE_MODE ) errorAndExit( script_h.getStringBuffer(), "not in the define section" );
+
+    script_h.readStr();
+    char *start = script_h.saveStringBuffer();
+    const char *end = script_h.readStr();
+    setKinsoku(start, end, false);
+    
+    return RET_CONTINUE;
+}
+
 int ScriptParser::selectvoiceCommand()
 {
     if ( current_mode != DEFINE_MODE ) errorAndExit( "selectvoice: not in the define section" );
@@ -1234,6 +1247,19 @@ int ScriptParser::arcCommand()
     // skip "arc" commands after "ns?" command
     
     delete[] buf2;
+    
+    return RET_CONTINUE;
+}
+
+//Mion: for kinsoku
+int ScriptParser::addkinsokuCommand()
+{
+    if ( current_mode != DEFINE_MODE ) errorAndExit( script_h.getStringBuffer(), "not in the define section" );
+
+    script_h.readStr();
+    char *start = script_h.saveStringBuffer();
+    const char *end = script_h.readStr();
+    setKinsoku(start, end, true);
     
     return RET_CONTINUE;
 }
