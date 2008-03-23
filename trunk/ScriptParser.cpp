@@ -71,6 +71,7 @@ static struct FuncLUT{
     {"skip",     &ScriptParser::skipCommand},
     {"sin", &ScriptParser::sinCommand},
     {"shadedistance",     &ScriptParser::shadedistanceCommand},
+    {"setkinsoku",   &ScriptParser::setkinsokuCommand},
     {"selectvoice",     &ScriptParser::selectvoiceCommand},
     {"selectcolor",     &ScriptParser::selectcolorCommand},
     {"savenumber",     &ScriptParser::savenumberCommand},
@@ -144,6 +145,7 @@ static struct FuncLUT{
     {"defmp3vol",   &ScriptParser::defmp3volCommand},
     {"defaultspeed", &ScriptParser::defaultspeedCommand},
     {"defaultfont", &ScriptParser::defaultfontCommand},
+    {"dec",   &ScriptParser::decCommand},
     {"debugprint", &ScriptParser::debugprintCommand},
     {"dec",   &ScriptParser::decCommand},
     {"date",   &ScriptParser::dateCommand},
@@ -156,6 +158,7 @@ static struct FuncLUT{
     {"automode", &ScriptParser::mode_extCommand},
     {"atoi",      &ScriptParser::atoiCommand},
     {"arc",      &ScriptParser::arcCommand},
+    {"addkinsoku",   &ScriptParser::addkinsokuCommand},
     {"add",      &ScriptParser::addCommand},
     {"", NULL}
 };
@@ -192,6 +195,11 @@ ScriptParser::ScriptParser()
             selectvoice_file_name[i] = NULL;
     for ( i=0 ; i<MENUSELECTVOICE_NUM ; i++ )
         menuselectvoice_file_name[i] = NULL;
+
+    //Mion: Default kinsoku
+    start_kinsoku = end_kinsoku = NULL;
+    num_start_kinsoku = num_end_kinsoku = 0;
+    setKinsoku(DEFAULT_START_KINSOKU, DEFAULT_END_KINSOKU, false);
 }
 
 ScriptParser::~ScriptParser()
@@ -205,6 +213,9 @@ ScriptParser::~ScriptParser()
 
     if (file_io_buf) delete[] file_io_buf;
     if (save_data_buf) delete[] save_data_buf;
+    //Mion
+    if (start_kinsoku) delete[] start_kinsoku;
+    if (end_kinsoku) delete[] end_kinsoku;
 }
 
 void ScriptParser::reset()
@@ -932,4 +943,118 @@ void ScriptParser::createKeyTable( const char *key_exe )
     ring_buffer[ring_last] = ch;
     for (i=0 ; i<256 ; i++)
         key_table[ring_buffer[(ring_start+i)%256]] = i;
+}
+
+//Mion: for kinsoku
+void ScriptParser::setKinsoku(const char *start_chrs, const char *end_chrs, bool add)
+{
+    int num_start, num_end, i;
+    const char *kchr;
+    Kinsoku *tmp;
+
+    if (add)
+        printf("addkinsoku: \"%s\",\"%s\"\n", start_chrs, end_chrs);
+    else
+        printf("setkinsoku: \"%s\",\"%s\"\n", start_chrs, end_chrs);
+
+    // count chrs
+    num_start = 0;
+    kchr = start_chrs;
+    while (*kchr != '\0') {
+        if IS_TWO_BYTE(*kchr) kchr++;
+        kchr++;
+        num_start++;
+    }
+
+    num_end = 0;
+    kchr = end_chrs;
+    while (*kchr != '\0') {
+        if IS_TWO_BYTE(*kchr) kchr++;
+        kchr++;
+        num_end++;
+    }
+
+    if (add) {
+        if (start_kinsoku != NULL)
+            tmp = start_kinsoku;
+        else {
+            tmp = new Kinsoku[1];
+            num_start_kinsoku = 0;
+        }
+    } else {
+        if (start_kinsoku != NULL)
+            delete[] start_kinsoku;
+        tmp = new Kinsoku[1];
+        num_start_kinsoku = 0;
+    }
+    start_kinsoku = new Kinsoku[num_start_kinsoku + num_start];
+    kchr = start_chrs;
+    for (i=0; i<num_start_kinsoku+num_start; i++) {
+        if (i < num_start_kinsoku)
+            start_kinsoku[i].chr[0] = tmp[i].chr[0];
+        else
+            start_kinsoku[i].chr[0] = *kchr++;
+        if IS_TWO_BYTE(start_kinsoku[i].chr[0]) {
+            if (i < num_start_kinsoku)
+                start_kinsoku[i].chr[1] = tmp[i].chr[1];
+            else
+                start_kinsoku[i].chr[1] = *kchr++;
+        } else {
+            start_kinsoku[i].chr[1] = '\0';
+        }
+    }
+    num_start_kinsoku += num_start;
+    delete tmp;
+
+    if (add) {
+        if (end_kinsoku != NULL)
+            tmp = end_kinsoku;
+        else {
+            tmp = new Kinsoku[1];
+            num_end_kinsoku = 0;
+        }
+    } else {
+        if (end_kinsoku != NULL)
+            delete[] end_kinsoku;
+        tmp = new Kinsoku[1];
+        num_end_kinsoku = 0;
+    }
+    end_kinsoku = new Kinsoku[num_end_kinsoku + num_end];
+    kchr = end_chrs;
+    for (i=0; i<num_end_kinsoku+num_end; i++) {
+        if (i < num_end_kinsoku)
+            end_kinsoku[i].chr[0] = tmp[i].chr[0];
+        else
+            end_kinsoku[i].chr[0] = *kchr++;
+        if IS_TWO_BYTE(end_kinsoku[i].chr[0]) {
+            if (i < num_end_kinsoku)
+                end_kinsoku[i].chr[1] = tmp[i].chr[1];
+            else
+                end_kinsoku[i].chr[1] = *kchr++;
+        } else {
+            end_kinsoku[i].chr[1] = '\0';
+        }
+    }
+    num_end_kinsoku += num_end;
+    delete tmp;
+}
+
+bool ScriptParser::isStartKinsoku(const char *str)
+{
+    for (int i=0; i<num_start_kinsoku; i++) {
+        if ((start_kinsoku[i].chr[0] == *str) &&
+            (start_kinsoku[i].chr[1] == *(str+1)))
+            return true;
+    }
+    return false;
+}
+
+bool ScriptParser::isEndKinsoku(const char *str)
+{
+    for (int i=0; i<num_end_kinsoku; i++) {
+        if ((end_kinsoku[i].chr[0] == *str) &&
+            (end_kinsoku[i].chr[1] == *(str+1)))
+            return true;
+    }
+    return false;
 }

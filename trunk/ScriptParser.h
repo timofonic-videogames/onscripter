@@ -62,6 +62,10 @@
 #define DEFAULT_LOOKBACK_NAME2 "doncur.bmp"
 #define DEFAULT_LOOKBACK_NAME3 "doffcur.bmp"
 
+// Mion: kinsoku
+#define DEFAULT_START_KINSOKU "」』）］｝、。，．・？！ヽヾゝゞ々ー"
+#define DEFAULT_END_KINSOKU   "「『（［｛"
+
 typedef unsigned char uchar3[3];
 
 struct OVInfo{
@@ -114,6 +118,7 @@ public:
     int skipCommand();
     int sinCommand();
     int shadedistanceCommand();
+    int setkinsokuCommand(); //Mion
     int selectvoiceCommand();
     int selectcolorCommand();
     int savenumberCommand();
@@ -182,6 +187,7 @@ public:
     int breakCommand();
     int atoiCommand();
     int arcCommand();
+    int addkinsokuCommand(); //Mion
     int addCommand();
     
 protected:
@@ -249,7 +255,7 @@ protected:
     bool kidokumode_flag;
 
     bool click_skip_page_flag;
-    
+
     int z_order;
     bool rmode_flag;
     bool windowback_flag;
@@ -381,6 +387,13 @@ protected:
     int  clickstr_state;
     int  linepage_mode;
     int  num_chars_in_sentence;
+    struct Kinsoku {
+        char chr[2];
+    } *start_kinsoku, *end_kinsoku; //Mion: for kinsoku chars
+    int num_start_kinsoku, num_end_kinsoku;
+    void setKinsoku(const char *start_chrs, const char *end_chrs, bool add); //Mion
+    bool isStartKinsoku(const char *str);
+    bool isEndKinsoku(const char *str);
     
     /* ---------------------------------------- */
     /* Sound related variables */
