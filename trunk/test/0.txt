@@ -1,4 +1,4 @@
-;mode800, -*- ponscripter -*-
+;mode800
 ;gameid test
 
 *define
@@ -10,15 +10,18 @@ dim ?0[10][5][2]
 numalias testnum,   72
 numalias NScripter, 73
 
+numalias skipstr, 71
 numalias teststr, 72
 numalias wantstr, 73
-numalias answer,  74
-numalias answer2, 75
+numalias numstr,  74
+numalias answer,  75
+numalias answer2, 76
 
-; This is ignored by Ponscripter
+; This is ignored by Ponscripter, which always defines it as 1.
 numalias PONSCRIPTER, 0
 
 defsub test
+defsub skiptest
 defsub testsub
 defsub getcharpos
 defsub erase
@@ -62,6 +65,7 @@ if $teststr = "yes" mov %NScripter,0
 textspeed 0 ; can't use !s0 in NScripter in "english" mode
 setwindow WINDX,WINDY,30,23,CHARW,CHARH,TRACK,LEAD,20,1,1,#ffffff,0,0,639,479
 mov %testnum,0
+mov $skipstr,"Skip"
 mov $wantstr,"Want"
 mov $teststr,"Test"
 
@@ -135,7 +139,7 @@ erase "‚¾F","F"
 
 
 ; Pathological case: will unbreakable tokens cause spurious newlines?
-inc %testnum
+gosub *nexttest
 lsp 0,":s/20,20,0;#ffffff#000000‚…‚˜‚”@‚‰‚“@‚‚‚”@‚‚‰‚“‚“‚‰‚‚‡@‚”‚ˆ‚…@‚s",28,16
 setwindow WINDX,WINDY,1,23,CHARW,CHARH,TRACK,LEAD,20,1,1,#ffffff,0,0,639,479
 ‚sv
@@ -167,7 +171,7 @@ skip 2
 >The quick brown fox jumps over the lazy dog. FAIL!!!
 erase "!!", "FAIL!!!"
 
-; Are over-long lines broken appropriately?
+; Are over-long tokens broken appropriately?
 ; NScripter passes this one, purely by accident... :)
 ;
 test "[see next]|ReallyIdontknowwhysomepeoplefindunbrokentextsodreadfullyhard"
@@ -178,6 +182,49 @@ skip 3
 >[see next]
 >ReallyIdontknowwhysomepeoplefindunbrokentextsodreadfullyhardtoread.
 erase "toread.", ""
+
+; Where the start of a string falls partway through a line, and the
+; first token of the string needs to wrap, is a wrap permitted before
+; that token?
+;
+if %NScripter == 1 skiptest:skip 5 ; NScripter can't split English lines
+test "The quick brown fox jumps over the lazy dog."
+`The quick brown fox jumps over the lazy dog. /
+`FAIL!!!
+erase "!!", "FAIL!!!"
+
+; What about if we repeat the above the evil way?  (It's been done
+; IRL, I assure you...)
+;
+test "The quick brown fox jumps over the lazy dog."
+if %NScripter == 1 skip 3
+`The quick brown fox jumps over the lazy dog.
+skip 2
+>The quick brown fox jumps over the lazy dog.
+getcharpos %0,%1
+locate 27,%1-1
+if %NScripter == 1 skip 3
+`FAIL!!!
+skip 2
+>FAIL!!!
+erase "!!", "FAIL!!!"
+
+; Are inline pauses treated as break points?  (Mion's rules suggest
+; they shouldn't be, and I agree; if a break is actually desired, the
+; user can split the line with a / before/after the inline pause.)
+;
+if %NScripter == 1 skiptest:skip 4 ; NScripter can't handle !d in english mode
+test "The quick brown fox jumps over the lazy dog."
+`The quick brown fox jumps over the lazy dog. F!d1A!d1I!d1L!d1!!d1!!d1!
+erase "!!", "FAIL!!!"
+
+; Ditto for inline colour changes.
+;
+if %NScripter == 1 skiptest:skip 4 ; It can't do #nnnnnn in english mode either
+test "The quick brown fox jumps over the lazy dog."
+`The quick brown fox jumps over the lazy dog. F#ffffffA#ffffffI#ffffffL#ffffff!#ffffff!#ffffff!
+erase "!!", "FAIL!!!"
+
 
 ; Are runs of spaces at the end of a line ignored, or can some of the
 ; spaces wrap over into the next line?
@@ -199,11 +246,23 @@ end
 *test
 getparam $answer
 split $answer,"|",$answer,$answer2
-inc %testnum
-$wantstr^%testnum@/
+gosub *nexttest
+$wantstr^$numstr@/
 printnicely $answer
 if $answer2 <> "" printnicely $answer2
-$teststr^%testnum@/
+$teststr^$numstr@/
+return
+
+*skiptest
+gosub *nexttest
+$skipstr^$numstr@/
+printnicely "[test not applicable]"
+return
+
+*nexttest
+inc %testnum
+itoa $numstr,%testnum
+len %20,$numstr: mod %20,2: if %20 == 1 add $numstr," "
 return
 
 ; Erase some characters from the previous line.
@@ -253,3 +312,7 @@ textcolor #ffffff
 return
 #ffffff
 return
+
+;; Local Variables:
+;; mode: ponscripter
+;; End:
