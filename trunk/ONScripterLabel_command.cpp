@@ -1214,13 +1214,14 @@ int ONScripterLabel::prnumCommand()
     readColor( &prnum_info[no]->color_list[0], buf );
 
     char num_buf[7];
-#if defined(ENABLE_1BYTE_CHAR) && defined(FORCE_1BYTE_CHAR)
-    // Patch from Mion of Sonozaki Futago-tachi, 2007-11-14
-    script_h.getStringFromInteger( num_buf, prnum_info[no]->param, 6 );
-    num_buf[0] = '`';
-#else
-    script_h.getStringFromInteger( num_buf, prnum_info[no]->param, 3 );
-#endif    
+    if ( script_h.preferred_script == ScriptHandler::LATIN_SCRIPT ){
+	// Patch from Mion of Sonozaki Futago-tachi, 2007-11-14
+	script_h.getStringFromInteger( num_buf, prnum_info[no]->param, 6 );
+	num_buf[0] = '`';
+    }
+    else {
+	script_h.getStringFromInteger( num_buf, prnum_info[no]->param, 3 );
+    }
     setStr( &prnum_info[no]->file_name, num_buf );
 
     setupAnimationInfo( prnum_info[no] );
@@ -1809,6 +1810,28 @@ int ONScripterLabel::ldCommand()
 
         return setEffect( parseEffect(true) );
     }
+}
+
+int ONScripterLabel::languageCommand()
+{
+    const char* which = script_h.readLabel();
+    if ( strcmp(which, "japanese") == 0 ){
+	script_h.preferred_script = ScriptHandler::JAPANESE_SCRIPT;
+    }
+    else if ( strcmp(which, "english") == 0 ){
+#ifdef ENABLE_1BYTE_CHAR	
+	script_h.preferred_script = ScriptHandler::LATIN_SCRIPT;
+#else
+	errorAndExit("cannot set language to english: this ONScripter was "
+		     "not compiled with the ENABLE_1BYTE_CHAR option");
+#endif	
+    }
+    else {
+	char errbuf[2048];
+	snprintf(errbuf, 2047, "unknown language '%s'", which);
+	errorAndExit(errbuf, "valid options are 'japanese' and 'english'");
+    }
+    return RET_CONTINUE;
 }
 
 int ONScripterLabel::jumpfCommand()

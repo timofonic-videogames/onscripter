@@ -26,25 +26,29 @@
 
 #include "ONScripterLabel.h"
 
-#if defined(ENABLE_1BYTE_CHAR) && defined(FORCE_1BYTE_CHAR)
-#define MESSAGE_SAVE_EXIST "`%s%s    Date %s/%s    Time %s:%s"
-#define MESSAGE_SAVE_EMPTY "`%s%s    ------------------------"
-#define MESSAGE_SAVE_CONFIRM "`Save in slot %s%s?"
-#define MESSAGE_LOAD_CONFIRM "`Load from slot %s%s?"
-#define MESSAGE_RESET_CONFIRM "`Return to Title Menu?"
-#define MESSAGE_END_CONFIRM "`Quit?"
-#define MESSAGE_YES "Yes"
-#define MESSAGE_NO "No"
-#else
-#define MESSAGE_SAVE_EXIST "%s%s@%sŒŽ%s“ú%sŽž%s•ª"
-#define MESSAGE_SAVE_EMPTY "%s%s@||||||||||||"
-#define MESSAGE_SAVE_CONFIRM "%s%s‚ÉƒZ[ƒu‚µ‚Ü‚·B‚æ‚ë‚µ‚¢‚Å‚·‚©H"
-#define MESSAGE_LOAD_CONFIRM "%s%s‚ðƒ[ƒh‚µ‚Ü‚·B‚æ‚ë‚µ‚¢‚Å‚·‚©H"
-#define MESSAGE_RESET_CONFIRM "ƒŠƒZƒbƒg‚µ‚Ü‚·B‚æ‚ë‚µ‚¢‚Å‚·‚©H"
-#define MESSAGE_END_CONFIRM "I—¹‚µ‚Ü‚·B‚æ‚ë‚µ‚¢‚Å‚·‚©H"
-#define MESSAGE_YES "‚Í‚¢"
-#define MESSAGE_NO "‚¢‚¢‚¦"
-#endif
+const char* messages[][8] = {
+    { "%s%s@%sŒŽ%s“ú%sŽž%s•ª",
+      "%s%s@||||||||||||",
+      "%s%s‚ÉƒZ[ƒu‚µ‚Ü‚·B‚æ‚ë‚µ‚¢‚Å‚·‚©H",
+      "%s%s‚ðƒ[ƒh‚µ‚Ü‚·B‚æ‚ë‚µ‚¢‚Å‚·‚©H",
+      "ƒŠƒZƒbƒg‚µ‚Ü‚·B‚æ‚ë‚µ‚¢‚Å‚·‚©H",
+      "I—¹‚µ‚Ü‚·B‚æ‚ë‚µ‚¢‚Å‚·‚©H",
+      "‚Í‚¢",
+      "‚¢‚¢‚¦" },
+    { "`%s%s    Date %s/%s    Time %s:%s",
+      "`%s%s    ------------------------",
+      "`Save in slot %s%s?",
+      "`Load from slot %s%s?",
+      "`Return to Title Menu?",
+      "`Quit?",
+      "Yes",
+      "No" }
+};
+
+const char* ONScripterLabel::getMessageString( MessageId which )
+{
+    return messages[script_h.preferred_script][which];
+}
 
 void ONScripterLabel::enterSystemCall()
 {
@@ -338,7 +342,7 @@ void ONScripterLabel::executeSystemLoad()
             menu_font.setXY( (menu_font.num_xy[0] - ((strlen( save_item_name )+1) / 2 + 15) ) / 2 );
 
             if ( save_file_info.valid ){
-                sprintf( buffer, MESSAGE_SAVE_EXIST,
+                sprintf( buffer, getMessageString(MESSAGE_SAVE_EXIST),
                          save_item_name,
                          save_file_info.sjis_no,
                          save_file_info.sjis_month,
@@ -348,7 +352,7 @@ void ONScripterLabel::executeSystemLoad()
                 nofile_flag = false;
             }
             else{
-                sprintf( buffer, MESSAGE_SAVE_EMPTY,
+                sprintf( buffer, getMessageString(MESSAGE_SAVE_EMPTY),
                          save_item_name,
                          save_file_info.sjis_no );
                 nofile_flag = true;
@@ -428,7 +432,7 @@ void ONScripterLabel::executeSystemSave()
             menu_font.setXY( (menu_font.num_xy[0] - ((strlen( save_item_name )+1) / 2 + 15) ) / 2 );
 
             if ( save_file_info.valid ){
-                sprintf( buffer, MESSAGE_SAVE_EXIST,
+                sprintf( buffer, getMessageString(MESSAGE_SAVE_EXIST),
                          save_item_name,
                          save_file_info.sjis_no,
                          save_file_info.sjis_month,
@@ -438,7 +442,7 @@ void ONScripterLabel::executeSystemSave()
                 nofile_flag = false;
             }
             else{
-                sprintf( buffer, MESSAGE_SAVE_EMPTY,
+                sprintf( buffer, getMessageString(MESSAGE_SAVE_EMPTY),
                          save_item_name,
                          save_file_info.sjis_no );
                 nofile_flag = true;
@@ -524,21 +528,21 @@ void ONScripterLabel::executeSystemYesNo()
         if ( yesno_caller == SYSTEM_SAVE ){
             SaveFileInfo save_file_info;
             searchSaveFile( save_file_info, yesno_selected_file_no );
-            sprintf( name, MESSAGE_SAVE_CONFIRM,
+            sprintf( name, getMessageString(MESSAGE_SAVE_CONFIRM),
                      save_item_name,
                      save_file_info.sjis_no );
         }
         else if ( yesno_caller == SYSTEM_LOAD ){
             SaveFileInfo save_file_info;
             searchSaveFile( save_file_info, yesno_selected_file_no );
-            sprintf( name, MESSAGE_LOAD_CONFIRM,
+            sprintf( name, getMessageString(MESSAGE_LOAD_CONFIRM),
                      save_item_name,
                      save_file_info.sjis_no );
         }
         else if ( yesno_caller ==  SYSTEM_RESET )
-            strcpy( name, MESSAGE_RESET_CONFIRM );
+            strcpy( name, getMessageString(MESSAGE_RESET_CONFIRM) );
         else if ( yesno_caller ==  SYSTEM_END )
-            strcpy( name, MESSAGE_END_CONFIRM );
+            strcpy( name, getMessageString(MESSAGE_END_CONFIRM) );
 
 
         menu_font.num_xy[0] = strlen(name)/2;
@@ -570,13 +574,13 @@ void ONScripterLabel::executeSystemYesNo()
 
         int offset1 = strlen(name)/5;
         int offset2 = strlen(name)/2 - offset1;
-        strcpy( name, MESSAGE_YES );
+        strcpy( name, getMessageString(MESSAGE_YES) );
         menu_font.setXY(offset1-2, 2);
         ButtonLink *button = getSelectableSentence( name, &menu_font, false );
         root_button_link.insert( button );
         button->no = 1;
 
-        strcpy( name, MESSAGE_NO );
+        strcpy( name, getMessageString(MESSAGE_NO) );
         menu_font.setXY(offset2, 2);
         button = getSelectableSentence( name, &menu_font, false );
         root_button_link.insert( button );

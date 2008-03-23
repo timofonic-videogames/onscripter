@@ -96,6 +96,8 @@ public:
     void setScaled();
 #endif
     void setMaskType( int mask_type ) { png_mask_type = mask_type; }
+    void setEnglishMode()
+	{ script_h.default_script = ScriptHandler::LATIN_SCRIPT; }
 
     int  init();
     int  eventLoop();
@@ -189,6 +191,7 @@ public:
     int locateCommand();
     int loadgameCommand();
     int ldCommand();
+    int languageCommand();
     int jumpfCommand();
     int jumpbCommand();
     int ispageCommand();
@@ -764,6 +767,18 @@ private:
     bool shelter_draw_cursor_flag;
     struct Page *cached_page;
 
+    enum MessageId {
+	MESSAGE_SAVE_EXIST,
+	MESSAGE_SAVE_EMPTY,
+	MESSAGE_SAVE_CONFIRM,
+	MESSAGE_LOAD_CONFIRM,
+	MESSAGE_RESET_CONFIRM,
+	MESSAGE_END_CONFIRM,
+	MESSAGE_YES,
+	MESSAGE_NO
+    };
+    const char* getMessageString( MessageId which );
+    
     void enterSystemCall();
     void leaveSystemCall( bool restore_flag = true );
     void executeSystemCall();

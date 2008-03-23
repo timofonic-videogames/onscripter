@@ -110,6 +110,7 @@ next
 Å@
 ; the previous line is significant whitespace, forcing a line break
 
+
 ; Test kinsoku
 ;
 ; NScripter itself gets this one wrong!
@@ -152,6 +153,10 @@ setwindow WINDX,WINDY,30,23,CHARW,CHARH,TRACK,LEAD,20,1,1,#ffffff,0,0,639,479
 ; NScripter fails them all anyway, but it's useful to be able to show that,
 ; in case anyone asks us silly questions like why we don't use NScripter for
 ; Windows versions of English games.)
+
+; Switch ONScripter-En into English mode.
+if %NScripter == 1 skip 2
+language english
 
 ; Is any attempt made to wrap English text nicely?
 ;

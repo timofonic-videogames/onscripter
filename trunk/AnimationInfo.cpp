@@ -493,7 +493,14 @@ void AnimationInfo::calcAffineMatrix()
     mat[1][1] =  cos_i*scale_y/100;
 
     // calculate bounding box
-    int min_xy[2], max_xy[2];
+
+    // FIXME (haeleth, 20080323): added initialisers, as otherwise
+    // these arrays appear to be being read from before they're
+    // assigned any values!  I suspect 0 is not the optimal value to
+    // use, as it's probably causing the bounding box to always
+    // stretch from (0, 0).  Need to see what this code is actually
+    // doing and provide more sane initialisation.
+    int min_xy[2] = { 0, 0 }, max_xy[2] = { 0, 0 };
     for (int i=0 ; i<4 ; i++){
         int c_x = (i<2)?(-pos.w/2):(pos.w/2);
         int c_y = ((i+1)&2)?(pos.h/2):(-pos.h/2);

@@ -246,6 +246,11 @@ public:
     int  game_hash;
 
     BaseReader *cBR;
+
+    enum LanguageScript {
+	JAPANESE_SCRIPT = 0,
+	LATIN_SCRIPT = 1
+    } preferred_script, default_script;
     
 private:
     enum { OP_INVALID = 0, // 000

@@ -52,9 +52,11 @@ ScriptHandler::ScriptHandler()
     screen_size = SCREEN_SIZE_640x480;
     global_variable_border = 200;
     
-	save_path = NULL;
+    save_path = NULL;
     game_identifier = NULL;
     game_hash = 0;
+
+    preferred_script = default_script = JAPANESE_SCRIPT;
 }
 
 ScriptHandler::~ScriptHandler()
@@ -121,6 +123,7 @@ void ScriptHandler::reset()
         delete[] clickstr_list;
         clickstr_list = NULL;
     }
+    preferred_script = default_script;
 }
 
 FILE *ScriptHandler::fopen( const char *path, const char *mode, const bool save )
@@ -787,26 +790,27 @@ int ScriptHandler::getStringFromInteger( char *buffer, int no, int num_column, b
         num_digit -= num_digit+num_minus-num_column;
     }
 
-#if defined(ENABLE_1BYTE_CHAR) && defined(FORCE_1BYTE_CHAR)    
-    if (!force_zenkaku) {
-	if (num_minus == 1) no = -no;
-	char format[6];
-	if (is_zero_inserted)
-	    sprintf(format, "%%0%dd", num_column);
-	else
-	    sprintf(format, "%%%dd", num_column);
-	
-	sprintf(buffer, format, no);
-	
-	// Ensure length is multiple of full-width characters
-	if (num_column % 2) {
-	    ++num_column;
-	    strcat(buffer, " ");
+    if (preferred_script == LATIN_SCRIPT) {
+	if (!force_zenkaku) {
+	    if (num_minus == 1) no = -no;
+	    char format[6];
+	    if (is_zero_inserted)
+		sprintf(format, "%%0%dd", num_column);
+	    else
+		sprintf(format, "%%%dd", num_column);
+	    
+	    sprintf(buffer, format, no);
+	    
+	    // Ensure length is multiple of full-width characters
+	    if (num_column % 2) {
+		++num_column;
+		strcat(buffer, " ");
+	    }
+	    
+	    return num_column;
 	}
-
-	return num_column;
     }
-#endif
+
     int c = 0;
     if (is_zero_inserted){
         for (i=0 ; i<num_space ; i++){
