@@ -65,6 +65,7 @@ mov %testnum,0
 mov $wantstr,"Want"
 mov $teststr,"Test"
 
+
 ; Test itoa, itoa2, atoi, mid, split, and various `if' statements
 ;
 test "○○○○○"
@@ -107,6 +108,7 @@ for %50=0 to 6 step 2
   ?0[8][2][0]%50　/
 next
 　
+; the previous line is significant whitespace, forcing a line break
 
 ; Test kinsoku
 ;
@@ -129,6 +131,7 @@ test "モリソン「この世に悪があるとすれば、それは人の心"
 モリソン「この世に悪があるとすれば、それは人の心だ：
 erase "だ：","："
 \
+
 
 ; Pathological case: will unbreakable tokens cause spurious newlines?
 inc %testnum
@@ -159,10 +162,22 @@ skip 2
 >The quick brown fox jumps over the lazy dog. FAIL!!!
 erase "!!", "FAIL!!!"
 
+; Are over-long lines broken appropriately?
+; NScripter passes this one, purely by accident... :)
+;
+test "[see next]|ReallyIdontknowwhysomepeoplefindunbrokentextsodreadfullyhard"
+if %NScripter == 1 skip 4
+`[see next]
+`ReallyIdontknowwhysomepeoplefindunbrokentextsodreadfullyhardtoread.
+skip 3
+>[see next]
+>ReallyIdontknowwhysomepeoplefindunbrokentextsodreadfullyhardtoread.
+erase "toread.", ""
+
 ; Are runs of spaces at the end of a line ignored, or can some of the
 ; spaces wrap over into the next line?
 ;
-test "Carmina qui quondam studio florente peregi|flebilis heu maestos cogor inire modos"
+test "Carmina qui quondam studio florente peregi|flebilis heu maestos cogor inire modos."
 if %NScripter == 1 skip 3
 `Carmina qui quondam studio florente peregi         flebilis heu maestos cogor inire modos.
 skip 2
@@ -208,13 +223,14 @@ mov %%50,(%52 - WINDX) / (CHARW + TRACK)
 mov %%51,(%53 - WINDY) / (CHARH + LEAD)
 return
 
-; Wow, there's a bit of English text handling that NScripter does
-; better than ONScripter!
+; Both ONScripter and NScripter need special treatment to print ASCII
+; strings properly...
 *printnicely
 getparam $20
 if %NScripter == 1 skip 3
 `$20
 return
+len %20,$20: mod %20,2: if %20 == 1 add $20," "
 $20
 return
 
