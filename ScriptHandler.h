@@ -141,6 +141,12 @@ public:
     bool isText();
     bool compareString( const char *buf );
     inline int getEndStatus(){ return end_status; };
+    inline void toggle1ByteEndStatus() {
+        if (end_status && END_1BYTE_CHAR)
+            end_status &= ~END_1BYTE_CHAR;
+        else
+            end_status |= END_1BYTE_CHAR;
+    }
     void skipLine( int no=1 );
     void setLinepage( bool val );
 

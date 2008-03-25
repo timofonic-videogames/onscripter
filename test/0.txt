@@ -236,6 +236,18 @@ skip 2
 >Carmina qui quondam studio florente peregi         flebilis heu maestos cogor inire modos.
 \
 
+;Displaying numerical values correctly in text
+  mov %1,24601
+  itoa $1,%1
+lsp 0, ":s#FFFFFF`Successfully, "+$1+"`!", 20, 100
+print 1
+csp 0
+  `Successfully, `%1`!
+  `Successfully, `$1`!\
+
+; text with a mix of `` phrases and commands, also some Japanese
+‚»‚ê‚Íl` hello there. ` !w200 ` How are you? `@` So then, @is everything printing okay? `\
+
 end
 
 
@@ -247,22 +259,22 @@ end
 getparam $answer
 split $answer,"|",$answer,$answer2
 gosub *nexttest
-$wantstr^$numstr@/
+$wantstr^$numstr@@/
 printnicely $answer
 if $answer2 <> "" printnicely $answer2
-$teststr^$numstr@/
+$teststr^$numstr@@/
 return
 
 *skiptest
 gosub *nexttest
-$skipstr^$numstr@/
+$skipstr^$numstr@@/
 printnicely "[test not applicable]"
 return
 
 *nexttest
 inc %testnum
 itoa $numstr,%testnum
-len %20,$numstr: mod %20,2: if %20 == 1 add $numstr," "
+;len %20,$numstr: mod %20,2: if %20 == 1 add $numstr," "
 return
 
 ; Erase some characters from the previous line.
