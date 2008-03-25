@@ -3161,7 +3161,7 @@ int ONScripterLabel::btnwaitCommand()
                 if ( automode_flag ){
                     event_mode |= WAIT_VOICE_MODE;
                     if ( automode_time < 0 )
-                        startTimer( -automode_time * num_chars_in_sentence );
+                        startTimer( -automode_time * num_chars_in_sentence / 2);
                     else
                         startTimer( automode_time );
                     //current_button_state.button = 0;
