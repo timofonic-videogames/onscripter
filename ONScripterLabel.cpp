@@ -499,6 +499,7 @@ ONScripterLabel::ONScripterLabel()
     }
     glyph_cache[NUM_GLYPH_CACHE-1].next = NULL;
     root_glyph_cache = &glyph_cache[0];
+    string_buffer_breaks = NULL;
 
     // External Players
     music_cmd = getenv("PLAYER_CMD");
@@ -898,6 +899,8 @@ void ONScripterLabel::reset()
     new_line_skip_flag = false;
     text_on_flag = true;
     draw_cursor_flag = false;
+    if (string_buffer_breaks) delete[] string_buffer_breaks;
+    string_buffer_breaks = NULL;
 
     resetSentenceFont();
 
@@ -1233,188 +1236,7 @@ int ONScripterLabel::parseLine( )
     if ( current_mode == DEFINE_MODE ) errorAndExit( "text cannot be displayed in define section." );
     ret = textCommand();
 
-#ifdef ENABLE_1BYTE_CHAR
-    if ( script_h.preferred_script == ScriptHandler::LATIN_SCRIPT ){
-	if (script_h.getStringBuffer()[string_buffer_offset] == ' '){
-	    char *tmp = strchr(script_h.getStringBuffer()+string_buffer_offset+1, ' ');
-	    if (!tmp)
-		tmp = script_h.getStringBuffer() + strlen(script_h.getStringBuffer());
-	    int len = tmp - script_h.getStringBuffer() - string_buffer_offset - 1;
-#ifdef INSANI
-	    /*
-	     * This block takes the current word being considered for
-	     * line-wrapping and checks it to see if it contains an inline
-	     * command of forms:
-	     *
-	     *   !s<int>
-	     *   !d<int>
-	     *   !w<int>
-	     *   !sd
-	     *   #rrggbb
-	     *
-	     * If it does, then we subtract the length of the command from
-	     * the length of the word, then compare it to see if it is at
-	     * the end of a line or not.
-	     *
-	     *
-	     */
-	    char tocheck[255];
-	    char *tocheck_it;
-	    if (len > 0) {
-		strncpy(tocheck,
-			script_h.getStringBuffer() + string_buffer_offset + 1,
-			len);
-		tocheck[len] = '\0';
-	    }
-	    
-	    // In the case of !s ...
-	    if(strstr(tocheck, "!s")) {
-		tocheck_it = strstr(tocheck, "!s");
-		
-		// ... we loop for every !s we find ...
-		while(strstr(tocheck_it, "!s")) {
-		    tocheck_it = strstr(tocheck_it, "!s");
-		    
-		    // There are two possible cases here -- either we're
-		    // seeing !sd -- in which case we subtract 3 from the
-		    // length -- or !s<number> -- in which case we
-		    // subtract some variable number from the length.
-		    
-		    // case: !sd
-		    if(tocheck_it[2] == 'd') {
-			strcpy(tocheck_it, tocheck_it + 3);
-			len = len - 3;
-		    }
-		    // case: !s<number>
-		    else {
-			int bang_s_num = 0;
-			char bang_s_it;
-			
-			// Here, we walk through the characters that fall
-			// after the !s -- for instance, if
-			// tocheckiterator starts out as !s3000oogabooga,
-			// then bang_s_iterator will be 3, then 0, then 0,
-			// then 0, and finally o -- at which point it
-			// detects that we're no longer in a number and
-			// exits out.
-			while (1) {
-			    bang_s_it = tocheck_it[2 + bang_s_num];
-			    if((bang_s_it >= '0') && (bang_s_it <= '9'))
-				bang_s_num++;
-			    else break;
-			}
-			// Then, so long as it wasn't a solitary !s with
-			// no numbers after it (in which case it should be
-			// printed), we subtract the requisite number from
-			// the length -- in the case of !s1 it would be 3,
-			// and in the case of !s20 it would be 4, etc.
-			if(bang_s_num > 0) {
-			    len = len - bang_s_num - 2;
-			    strcpy(tocheck_it, tocheck_it + bang_s_num + 2);
-			}
-			else strcpy(tocheck_it, tocheck_it + 1);
-		    }
-		}
-	    }
-	    
-	    // In the case of !d<int> ...
-	    if(strstr(tocheck, "!d")) {
-		tocheck_it = strstr(tocheck, "!d");
-		
-		// ... we loop for every !d we find ...
-		while(strstr(tocheck_it, "!d")) {
-		    tocheck_it = strstr(tocheck_it, "!d");
-		    
-		    // Unlike in the case of !s, there's only one possible
-		    // case here.
-		    
-		    // case: !d<number>
-		    int bang_d_num = 0;
-		    char bang_d_it;
-		    
-		    // Follows the pattern of !s<num> as above.
-		    while (1) {
-			bang_d_it = tocheck_it[2 + bang_d_num];
-			if((bang_d_it >= '0') && (bang_d_it <= '9'))
-			    bang_d_num++;
-			else break;
-		    }
-		    // Follows the pattern of !s<num> as above.
-		    if(bang_d_num > 0) {
-			len = len - bang_d_num - 2;
-			strcpy(tocheck_it, tocheck_it + bang_d_num + 2);
-		    }
-		    else strcpy(tocheck_it, tocheck_it + 1);
-		}
-	    }
-	    
-	    // In the case of !w<int> ...
-	    if(strstr(tocheck, "!w")) {
-		tocheck_it = strstr(tocheck, "!w");
-		
-		// ... we loop for every !w we find ...
-		while (strstr(tocheck_it, "!w")) {
-		    tocheck_it = strstr(tocheck_it, "!w");
-		    
-		    // Unlike in the case of !s, there's only one possible
-		    // case here.
-		    
-		    // case: !w<number>
-		    int bang_w_num = 0;
-		    char bang_w_it;
-		    
-		    // Follows the pattern of !s<num> as above.
-		    while (1) {
-			bang_w_it = tocheck_it[2 + bang_w_num];
-			
-			if ((bang_w_it >= '0') && (bang_w_it <= '9'))
-			    bang_w_num++;
-			else break;
-		    }
-		    // Follows the pattern of !s<num> as above.
-		    if (bang_w_num > 0) {
-			len = len - bang_w_num - 2;
-			strcpy(tocheck_it, tocheck_it + bang_w_num + 2);
-		    }
-		    else strcpy(tocheck_it, tocheck_it + 1);
-		}
-	    }
-	    
-	    // In the case of #rrggbb ...
-	    if(strstr(tocheck, "#")) {
-		tocheck_it = strstr(tocheck, "#");
-		
-		while(strstr(tocheck_it, "#")) {
-		    tocheck_it = strstr(tocheck_it, "#");
-		    
-		    int hash_color_num = 0;
-		    char c_it;
-		    
-		    while (1) {
-			c_it = tocheck_it[1 + hash_color_num];
-			
-			if (((c_it >= '0') && (c_it <= '9')) ||
-			    ((c_it >= 'a') && (c_it <= 'f')) ||
-			    ((c_it >= 'A') && (c_it <= 'F')))
-			    hash_color_num++;
-			else break;
-		    }
-		    if (hash_color_num >= 6) {
-			len = len - 7;
-			strcpy(tocheck_it, tocheck_it + 7);
-		    }
-		    else strcpy(tocheck_it, tocheck_it + 1);
-		}
-	    }
-#endif // INSANI
-	    if (len > 0 && sentence_font.isEndOfLine(len)){
-		current_page->add( 0x0a );
-		sentence_font.newLine();
-	    }
-	}
-    }
-#endif // ENABLE_1BYTE_CHAR
-    if (script_h.getStringBuffer()[string_buffer_offset] == 0x0a){
+    if (line_enter_status == 3){
         ret = RET_CONTINUE; // suppress RET_CONTINUE | RET_NOREAD
         if (!sentence_font.isLineEmpty() && !new_line_skip_flag){
             current_page->add( 0x0a );

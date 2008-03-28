@@ -210,50 +210,54 @@ const char *ScriptHandler::readToken()
              (ch >= '0' && ch <= '9') ||
              ch == '@' || ch == '\\' || ch == '/' ||
              ch == '%' || ch == '?' || ch == '$' ||
-             ch == '[' || ch == '(' ||
-//#ifndef ENABLE_1BYTE_CHAR
-             ch == '`' ||
-//#endif
+             ch == '[' || ch == '(' || ch == '`' ||
              ch == '!' || ch == '#' || ch == ',' || ch == '"'){ // text
-        bool loop_flag = true;
         bool ignore_click_flag = false;
+        bool clickstr_flag = false;
         bool in_1byte_mode = false;
         do{
+            if (!in_1byte_mode) {
+                SKIP_SPACE(buf);
+                ch = *buf;
+            }
+            if ( IS_TWO_BYTE(ch) ){
+                if (!ignore_click_flag && checkClickstr(buf) > 0)
+                    clickstr_flag = true;
+                else
+                    clickstr_flag = false;
+                addStringBuffer( ch );
+                ch = *++buf;
+                if (ch == 0x0a || ch == '\0') break;
+                addStringBuffer( ch );
+                ch = *++buf;
+                SKIP_SPACE(buf);
+                ch = *buf;
+                if (clickstr_flag) {
+                    // insert a clickwait-or-newpage
+                    addStringBuffer('\\');
+                    addStringBuffer('@');
+                }
+            }
 #ifdef ENABLE_1BYTE_CHAR
-            if (ch == '`'){
-                addStringBuffer( ch );
-                ch = *++buf;
-                in_1byte_mode = !in_1byte_mode;
-            }
-            if (in_1byte_mode) {
-                if (ch == '$'){
-                	if (buf[1] == '$') ++buf; else{
-                	    addStrVariable(&buf);
-	                    while (*--buf == ' ');
-	                    ch = *++buf;
-                	    continue;
-                    }
-                }
-                if ( IS_TWO_BYTE(ch) ){
-                    addStringBuffer( ch );
-                    ch = *++buf;
-                }
-                addStringBuffer( ch );
-                ch = *++buf;
-            }
             else {
-#endif
-                if ( IS_TWO_BYTE(ch) ){
-                    if ( textgosub_flag && !ignore_click_flag && checkClickstr(buf) > 0)
-                        loop_flag = false;
+                if (ch == '`'){
                     addStringBuffer( ch );
                     ch = *++buf;
-                    if (ch == 0x0a || ch == '\0') break;
-                    addStringBuffer( ch );
-                    buf++;
-                    SKIP_SPACE(buf);
-                    ch = *buf;
+                    in_1byte_mode = !in_1byte_mode;
                 }
+                else if (in_1byte_mode) {
+                    if (ch == '$'){
+                        if (buf[1] == '$') ++buf; else{
+                            addStrVariable(&buf);
+                            while (*--buf == ' ');
+                            ch = *++buf;
+                            continue;
+                        }
+                    }
+                    addStringBuffer( ch );
+                    ch = *++buf;
+                }
+#endif
                 else{
                     if (ch == '%' || ch == '?'){
                         addIntVariable(&buf);
@@ -262,32 +266,24 @@ const char *ScriptHandler::readToken()
                         addStrVariable(&buf);
                     }
                     else{
-                        if (textgosub_flag && !ignore_click_flag && checkClickstr(buf) == 1)
-                            loop_flag = false;
-                        addStringBuffer( ch );
+                        if (ch == '_')
+                            ignore_click_flag = true;
+                        else {
+                            ignore_click_flag = false;
+                            addStringBuffer( ch );
+                        }
                         buf++;
-                        ignore_click_flag = false;
-                        if (ch == '_') ignore_click_flag = true;
                     }
                     ch = *buf;
-                    if (ch == 0x0a || ch == '\0' || !loop_flag
-//#ifdef ENABLE_1BYTE_CHAR
-//                    || ch == '`'
-//#endif
-                        ) break;
-                    SKIP_SPACE(buf);
+                    if (ch == 0x0a || ch == '\0') break;
                     ch = *buf;
                 }
 #ifdef ENABLE_1BYTE_CHAR
             }
 #endif
         }
-        while (ch != 0x0a && ch != '\0' && loop_flag
-//#ifdef ENABLE_1BYTE_CHAR
-//               && ch != '`'
-//#endif
-               );
-        if (loop_flag && ch == 0x0a && !(textgosub_flag && linepage_flag)){
+        while (ch != 0x0a && ch != '\0');
+        if (ch == 0x0a && !(textgosub_flag && linepage_flag)){
             addStringBuffer( ch );
             markAsKidoku( buf++ );
         }
@@ -644,10 +640,10 @@ void ScriptHandler::setClickstr(const char *list)
 
 int ScriptHandler::checkClickstr(const char *buf, bool recursive_flag)
 {
-    if ( buf[0] == '@' || buf[0] == '\\' ) return 1;
+    if ((buf[0] == '\\') && (buf[1] == '@')) return -2;  //clickwait-or-page
+    if ((buf[0] == '@') || (buf[0] == '\\')) return -1;
 
     if (clickstr_list == NULL) return 0;
-
     bool only_double_byte_check = true;
     char *click_buf = clickstr_list;
     while(click_buf[0]){
@@ -661,13 +657,13 @@ int ScriptHandler::checkClickstr(const char *buf, bool recursive_flag)
         if (! only_double_byte_check){
             if (!IS_TWO_BYTE(click_buf[0]) && !IS_TWO_BYTE(buf[0]) 
                 && (click_buf[0] == buf[0])){
-                if (!recursive_flag && checkClickstr(buf+1, true) > 0) return 0;
+                if (!recursive_flag && checkClickstr(buf+1, true) != 0) return 0;
                 return 1;
             }
         }
         if (IS_TWO_BYTE(click_buf[0]) && IS_TWO_BYTE(buf[0]) &&
             (click_buf[0] == buf[0]) && (click_buf[1] == buf[1])){
-            if (!recursive_flag && checkClickstr(buf+2, true) > 0) return 0;
+            if (!recursive_flag && checkClickstr(buf+2, true) != 0) return 0;
             return 2;
         }
         if (IS_TWO_BYTE(click_buf[0])) click_buf++;

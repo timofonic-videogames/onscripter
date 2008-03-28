@@ -47,6 +47,8 @@ numalias CHARH, 20
 numalias TRACK,  0
 numalias LEAD,   2
 
+rubyon 17,17
+
 game
 
 *start
@@ -133,7 +135,7 @@ test "モリソン「この世に悪があるとすれば、それは人の心だ"
 erase "だ」","」"
 ; Test NScr 2.70+ addkinsoku function (in header)
 test "モリソン「この世に悪があるとすれば、それは人の心"
-モリソン「この世に悪があるとすれば、それは人の心だ：
+モリソン !w100 「この世に悪があるとすれば、それは人の心だ：
 erase "だ：","："
 \
 
@@ -236,17 +238,27 @@ skip 2
 >Carmina qui quondam studio florente peregi         flebilis heu maestos cogor inire modos.
 \
 
+if %NScripter == 1 skip 2
+language japanese
+;lsp 0, ":s#FFFFFFこの世に悪があるとすれば、それは人の心だ",0,50
+;print 1
+この(世/よ)に(悪/あく)があるとすれば、それは(人/ひと)の(心/こころ)だ\
+
+if %NScripter == 1 skip 15
+language english
 ;Displaying numerical values correctly in text
   mov %1,24601
   itoa $1,%1
-lsp 0, ":s#FFFFFF`Successfully, "+$1+"`!", 20, 100
+lsp 0, ":s#FFFFFF`Succeeded in reading "+$1+"`!", 20, 100
 print 1
 csp 0
-  `Successfully, `%1`!
-  `Successfully, `$1`!\
+  `Successfully,!w200 ` %1`!
+  `Successfully, `$1 `!\
 
 ; text with a mix of `` phrases and commands, also some Japanese
-それは人` hello there. ` !w200 ` How are you? `@` So then, @is everything printing okay? `\
+それは人` hello there. ` !w200 ` How are you? `@ ` So then, @is nearly everything printing okay? `@
+それは人それは人それは人それは人それは人それは人それは人それは人それは人それは人@
+`hそれは人それは人それは人それは人それは人それは人それは人それは人それは人それは人\
 
 end
 
@@ -259,22 +271,22 @@ end
 getparam $answer
 split $answer,"|",$answer,$answer2
 gosub *nexttest
-$wantstr／$numstr　　/
+$wantstr／$numstr　/
 printnicely $answer
 if $answer2 <> "" printnicely $answer2
-$teststr／$numstr　　/
+$teststr／$numstr　/
 return
 
 *skiptest
 gosub *nexttest
-$skipstr／$numstr　　/
+$skipstr／$numstr　/
 printnicely "[test not applicable]"
 return
 
 *nexttest
 inc %testnum
 itoa $numstr,%testnum
-;len %20,$numstr: mod %20,2: if %20 == 1 add $numstr," "
+len %20,$numstr: mod %20,2: if %20 == 1 add $numstr," "
 return
 
 ; Erase some characters from the previous line.
