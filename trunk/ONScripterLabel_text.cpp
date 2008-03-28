@@ -563,7 +563,7 @@ int ONScripterLabel::textCommand()
 
 int ONScripterLabel::processText()
 {
-    printf("textCommand %s %d %d %d\n", script_h.getStringBuffer() + string_buffer_offset, string_buffer_offset, event_mode, line_enter_status);
+    //printf("textCommand %s %d %d %d\n", script_h.getStringBuffer() + string_buffer_offset, string_buffer_offset, event_mode, line_enter_status);
     char out_text[3]= {'\0', '\0', '\0'};
 
     if ( event_mode & (WAIT_INPUT_MODE | WAIT_TEXTOUT_MODE ) ){
@@ -597,6 +597,10 @@ int ONScripterLabel::processText()
     }
 
     if (string_buffer_offset == 0) {
+        line_has_nonspace = true;
+        if (!sentence_font.isLineEmpty()) {
+            new_line_skip_flag = true;
+        }
         if ( script_h.preferred_script == ScriptHandler::JAPANESE_SCRIPT ) {
             processBreaks(new_line_skip_flag, KINSOKU);
         } else {
@@ -613,7 +617,12 @@ int ONScripterLabel::processText()
 	script_h.getStringBuffer()[string_buffer_offset] == 0x00){
         if (!click_skip_page_flag) skip_in_text = 0;
         indent_offset = 0; // redundant
-        line_enter_status = 3;
+        if (!sentence_font.isLineEmpty() && !new_line_skip_flag){
+            printf("ending break\n");
+            doLineBreak();
+        }
+        //event_mode = IDLE_EVENT_MODE;
+        line_enter_status = 0;
         return RET_CONTINUE;
     }
 
@@ -621,7 +630,13 @@ int ONScripterLabel::processText()
 
     char ch = script_h.getStringBuffer()[string_buffer_offset];
 
+    if (!line_has_nonspace) {
+        while (ch == ' ')
+            ch = script_h.getStringBuffer()[++string_buffer_offset];
+    }
+
     if (isTextCommand(script_h.getStringBuffer() + string_buffer_offset) == 0) {
+        line_has_nonspace = true;
         if (sentence_font.isEndOfLine(0) ||
             (IS_TWO_BYTE(ch) && sentence_font.isEndOfLine(1))) {
             // no room for current char on the line
@@ -842,16 +857,17 @@ int ONScripterLabel::processText()
 
 char ONScripterLabel::doLineBreak()
 {
+    current_page->add( 0x0a );
     sentence_font.newLine();
     for (int i=0 ; i<indent_offset ; i++){
         current_page->add(0x81);
         current_page->add(0x40);
         sentence_font.advanceCharInHankaku(2);
     }
+    line_has_nonspace = false;
     char ch = script_h.getStringBuffer()[string_buffer_offset];
-    while (ch == ' ') {
+    while (ch == ' ')
         ch = script_h.getStringBuffer()[++string_buffer_offset];
-    }
     return ch;
 }
 
@@ -906,8 +922,6 @@ int ONScripterLabel::isTextCommand(const char *buf)
     }
     else
         return 0;
-
-
 }
 
 void ONScripterLabel::processBreaks(bool cont_line, LineBreakType style)
@@ -998,7 +1012,7 @@ int ONScripterLabel::findNextBreak(int offset)
             i += cmd;
         } while (cmd > 0);
         if (string_buffer_breaks[i]) {
-            printf("i=%d, len=%d\n", i, len);
+            //printf("i=%d, len=%d\n", i, len);
             return len;
         }
         if (IS_TWO_BYTE(string_buffer[i])) {
