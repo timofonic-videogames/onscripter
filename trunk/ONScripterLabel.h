@@ -571,7 +571,7 @@ private:
     bool draw_cursor_flag;
     int  textgosub_clickstr_state;
     int  indent_offset;
-    int  line_enter_status; // 0 ... no enter, 1 ... pretext, 2 ... body
+    int  line_enter_status; // 0 ... no enter, 1 ... pretext, 2 ... body, 3 ... end
     int  page_enter_status; // 0 ... no enter, 1 ... body
     struct GlyphCache{
         GlyphCache *next;
@@ -586,7 +586,6 @@ private:
     SDL_Surface *renderGlyph(TTF_Font *font, Uint16 text);
     void drawGlyph( SDL_Surface *dst_surface, FontInfo *info, SDL_Color &color, char *text, int xy[2], bool shadow_flag, AnimationInfo *cache_info, SDL_Rect *clip, SDL_Rect &dst_rect );
     void drawChar( char* text, FontInfo *info, bool flush_flag, bool lookback_flag, SDL_Surface *surface, AnimationInfo *cache_info, SDL_Rect *clip=NULL );
-    void drawDoubleChars( char* text, FontInfo *info, bool flush_flag, bool lookback_flag, SDL_Surface *surface, AnimationInfo *cache_info, SDL_Rect *clip=NULL );
     void drawString( const char *str, uchar3 color, FontInfo *info, bool flush_flag, SDL_Surface *surface, SDL_Rect *rect = NULL, AnimationInfo *cache_info=NULL );
     void restoreTextBuffer();
     int  enterTextDisplayMode(bool text_flag = true);
@@ -598,6 +597,17 @@ private:
     void endRuby(bool flush_flag, bool lookback_flag, SDL_Surface *surface);
     int  textCommand();
     int  processText();
+
+    bool *string_buffer_breaks; // can break before a char?
+    enum LineBreakType {
+        SPACEBREAK = 1,
+        KINSOKU = 2,
+        KINSOKU_OR_SPACE = 3
+    };
+    char doLineBreak();
+    int isTextCommand(const char *buf);
+    void processBreaks(bool cont_line, LineBreakType style);
+    int findNextBreak(int offset);
 
     /* ---------------------------------------- */
     /* Effect related variables */
