@@ -599,6 +599,7 @@ private:
     int  processText();
 
     bool *string_buffer_breaks; // can break before a char?
+    bool line_has_nonspace;
     enum LineBreakType {
         SPACEBREAK = 1,
         KINSOKU = 2,

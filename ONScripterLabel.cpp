@@ -500,6 +500,7 @@ ONScripterLabel::ONScripterLabel()
     glyph_cache[NUM_GLYPH_CACHE-1].next = NULL;
     root_glyph_cache = &glyph_cache[0];
     string_buffer_breaks = NULL;
+    line_has_nonspace = false;
 
     // External Players
     music_cmd = getenv("PLAYER_CMD");
@@ -1236,21 +1237,6 @@ int ONScripterLabel::parseLine( )
     if ( current_mode == DEFINE_MODE ) errorAndExit( "text cannot be displayed in define section." );
     ret = textCommand();
 
-    if (line_enter_status == 3){
-        ret = RET_CONTINUE; // suppress RET_CONTINUE | RET_NOREAD
-        if (!sentence_font.isLineEmpty() && !new_line_skip_flag){
-            current_page->add( 0x0a );
-            sentence_font.newLine();
-            for (int i=0 ; i<indent_offset ; i++){
-                current_page->add(0x81);
-                current_page->add(0x40);
-                sentence_font.advanceCharInHankaku(2);
-            }
-        }
-        //event_mode = IDLE_EVENT_MODE;
-        line_enter_status = 0;
-    }
-    
     return ret;
 }
 
