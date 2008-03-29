@@ -36,6 +36,8 @@ effectblank 0
 transmode alpha
 selectcolor #ffffff,#cccccc
 menuselectcolor #ffffff,#aaaaaa,#999999
+menusetwindow 15,18,2,2,0,1,#808080
+rmenu "Reset",reset,"Save",save,"Load",load
 defaultspeed 0,0,0
 
 addkinsoku "ÅF",""
@@ -70,7 +72,6 @@ mov %testnum,0
 mov $skipstr,"Skip"
 mov $wantstr,"Want"
 mov $teststr,"Test"
-
 
 ; Test itoa, itoa2, atoi, mid, split, and various `if' statements
 ;
