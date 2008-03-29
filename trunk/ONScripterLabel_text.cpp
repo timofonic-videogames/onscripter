@@ -419,10 +419,19 @@ int ONScripterLabel::clickWait( char *out_text )
         if ( textgosub_label ){
             saveoffCommand();
 
+            char *next = script_h.getCurrent();
+            while (*next != '@') {
+                if (IS_TWO_BYTE(*next)) next++;
+                next++;
+            }
+            next++;
             textgosub_clickstr_state = CLICK_WAIT;
-            if (script_h.getNext()[0] == 0x0a)
-                textgosub_clickstr_state = CLICK_WAITEOL;
-            gosubReal( textgosub_label, script_h.getNext() );
+            if (*next == 0x0a) {
+                //next = script_h.getNext();
+                //if (*next == 0x0a)
+                    textgosub_clickstr_state = CLICK_WAITEOL;
+            }
+            gosubReal( textgosub_label, next);
             indent_offset = 0;
             line_enter_status = 0;
             string_buffer_offset = 0;
@@ -456,8 +465,20 @@ int ONScripterLabel::clickNewPage( char *out_text )
         if ( textgosub_label ){
             saveoffCommand();
 
+            char *next = script_h.getCurrent();
+            while (*next != '\\') {
+                if (IS_TWO_BYTE(*next)) next++;
+                next++;
+            }
+            next++;
+            if (*next == '@') {
+                // was a clickwait-or-newpage, may be more text
+                next++;
+                if (*next == 0x0a)
+                    next = script_h.getNext();
+            }
             textgosub_clickstr_state = CLICK_NEWPAGE;
-            gosubReal( textgosub_label, script_h.getNext() );
+            gosubReal( textgosub_label, next );
             indent_offset = 0;
             line_enter_status = 0;
             string_buffer_offset = 0;
@@ -614,11 +635,6 @@ int ONScripterLabel::processText()
         }
     }
 
-    if (script_h.getStringBuffer()[string_buffer_offset] == '`') {
-        string_buffer_offset++;
-        script_h.toggle1ByteEndStatus();
-    }
-
     if (script_h.getStringBuffer()[string_buffer_offset] == 0x0a ||
 	script_h.getStringBuffer()[string_buffer_offset] == 0x00){
         if (!click_skip_page_flag) skip_in_text = 0;
@@ -646,7 +662,7 @@ int ONScripterLabel::processText()
         if (sentence_font.isEndOfLine(0) ||
             (IS_TWO_BYTE(ch) && sentence_font.isEndOfLine(1))) {
             // no room for current char on the line
-            printf("at end; breaking before %s", script_h.getStringBuffer() + string_buffer_offset);
+            //printf("at end; breaking before %s", script_h.getStringBuffer() + string_buffer_offset);
             ch = doLineBreak();
         }
         else {
@@ -660,7 +676,7 @@ int ONScripterLabel::processText()
                    break_offset++;
                 break_offset += findNextBreak(break_offset + string_buffer_offset);
                 if (sentence_font.isEndOfLine(break_offset-1)) {
-                    printf("breaking before %s", script_h.getStringBuffer() + string_buffer_offset);
+                    //printf("breaking before %s", script_h.getStringBuffer() + string_buffer_offset);
                     ch = doLineBreak();
                 }
             }
@@ -705,6 +721,10 @@ int ONScripterLabel::processText()
             return clickNewPage( NULL );
         else
             return clickWait( NULL );
+    }
+    else if ( ch == '`' ) {
+        string_buffer_offset++;
+        return RET_CONTINUE | RET_NOREAD;
     }
     else if ( ch == '@' ){ // wait for click
         string_buffer_offset++;
@@ -832,6 +852,7 @@ int ONScripterLabel::processText()
 #ifdef INSANI
         notacommand:
 #endif
+        line_has_nonspace = true;
         out_text[0] = ch;
 
         bool flush_flag = true;
@@ -998,14 +1019,18 @@ bool ONScripterLabel::processBreaks(bool cont_line, LineBreakType style)
                 j = 2;
             else
                 j = 1;
+            bool had_wait = false;
             do {
                 cmd = isTextCommand(string_buffer + i + j);
+                if (string_buffer[i+j] == '@' || string_buffer[i+j] == '\\')
+                    had_wait = true;
                 j += cmd;
             } while (cmd > 0);
             if (!IS_TWO_BYTE(string_buffer[i+j]) &&
                 (string_buffer[i+j] == 0x0a ||
                  string_buffer[i+j] == '/' ||
-                 (string_buffer[i+j] == ' ' && string_buffer[i] != ' '))) {
+                 (string_buffer[i+j] == ' ' &&
+                  (had_wait || string_buffer[i] != ' ')))) {
                 //printf("Can break before %s", string_buffer + i + j);
                 string_buffer_breaks[i+j] = true;
                 if (string_buffer[i+j] == ' ') {
