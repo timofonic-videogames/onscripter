@@ -1,3 +1,10 @@
+2008-03-29
+
+  Add filename-based language selection: if the executable is named
+  "onscripter-en" (or "ONScripter-En", "onscripter_english", etc), it
+  will use English mode by default. [Haeleth]
+
+
 2008-03-22
 
   Implement clickskippage, and also add a debugprint command that

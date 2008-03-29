@@ -87,6 +87,37 @@ int main( int argc, char **argv )
     ons.enableButtonShortCut();
 #endif
 
+    // Check filename: we want binaries named "onscripter-en" to
+    // default to English mode.  We actually match the regex
+    // /(^|[/\\])onscripter[^a-z]en/i, which should allow all likely
+    // variants without being terribly likely to produce unexpected
+    // results.
+    //
+    // The code is ugly because Windows, unlike other mainstream
+    // platforms fails to provide basic regex support in its libc; I'm
+    // loathe to add an entire third-party library just for a single
+    // test, so we do this the hard way.  Thanks, Mr Gates.
+    {
+	char fname[256];
+	strncpy(fname, argv[0], 256);
+	char* it = fname + strlen(fname);
+	if (it > fname + 255) it = fname + 255;
+	while (it >= fname && *it != '/' && *it != '\\') --it;
+	++it;
+	int len = strlen(it);
+	if (len >= 13) {
+	    it[13] = 0;
+	    for (int i = 0; i < 13; ++i) it[i] = tolower(it[i]);
+	    if (it[10] < 'a' || it[10] > 'z') {
+		it[10] = '-';
+		if (strcmp(it, "onscripter-en") == 0) {
+		    printf("Setting English mode based on filename\n");
+		    ons.setEnglishMode();
+		}
+	    }
+	}
+    }
+    
     // ----------------------------------------
     // Parse options
     bool hasArchivePath = false;
