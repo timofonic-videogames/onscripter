@@ -604,7 +604,13 @@ int ONScripterLabel::processText()
         if ( script_h.preferred_script == ScriptHandler::JAPANESE_SCRIPT ) {
             processBreaks(new_line_skip_flag, KINSOKU);
         } else {
-            processBreaks(new_line_skip_flag, SPACEBREAK);
+            if (! processBreaks(new_line_skip_flag, SPACEBREAK)) {
+                // no spaces found in this line, assume kinsoku rules
+                if (processBreaks(new_line_skip_flag, KINSOKU)) {
+                    // okay, it contains ASCII; assume spacebreak again
+                    processBreaks(new_line_skip_flag, SPACEBREAK);
+                }
+            }
         }
     }
 
@@ -618,7 +624,7 @@ int ONScripterLabel::processText()
         if (!click_skip_page_flag) skip_in_text = 0;
         indent_offset = 0; // redundant
         if (!sentence_font.isLineEmpty() && !new_line_skip_flag){
-            printf("ending break\n");
+            //printf("ending break\n");
             doLineBreak();
         }
         //event_mode = IDLE_EVENT_MODE;
@@ -887,6 +893,9 @@ int ONScripterLabel::isTextCommand(const char *buf)
     else if ( *buf == '\\' ){ // new page
         return 1;
     }
+    else if ( *buf == '/' && buf[1] == 0x0a){
+        return 1;
+    }
     else if ( *buf == '!' ){
         offset++;
         if ( buf[offset] == 's' ){
@@ -924,12 +933,13 @@ int ONScripterLabel::isTextCommand(const char *buf)
         return 0;
 }
 
-void ONScripterLabel::processBreaks(bool cont_line, LineBreakType style)
+bool ONScripterLabel::processBreaks(bool cont_line, LineBreakType style)
 {
     char *string_buffer = script_h.getStringBuffer();
     if (string_buffer_breaks) delete[] string_buffer_breaks;
     string_buffer_breaks = new bool[strlen(string_buffer)+2];
     unsigned int i=0, j=0, cmd=0;
+    bool return_val;
 
     do {
         cmd = isTextCommand(string_buffer + i);
@@ -940,12 +950,13 @@ void ONScripterLabel::processBreaks(bool cont_line, LineBreakType style)
         string_buffer_breaks[i] = true;
     else {
         string_buffer_breaks[i] = false;
-        printf("Can't break before %s", string_buffer + i);
+        //printf("Can't break before %s", string_buffer + i);
     }
 
 
     if (style == KINSOKU) {
         // straight kinsoku
+        return_val = false; // does it contain straight ASCII?
         while (i<strlen(string_buffer)) {
             if (IS_TWO_BYTE(string_buffer[i]))
                 j = 2;
@@ -955,19 +966,33 @@ void ONScripterLabel::processBreaks(bool cont_line, LineBreakType style)
                 cmd = isTextCommand(string_buffer + i + j);
                 j += cmd;
             } while (cmd > 0);
+            if (((unsigned char) string_buffer[i+j] < 0x80) &&
+                !(string_buffer[i+j] == 0x00 || string_buffer[i+j] == 0x0a)) {
+                return_val = true;
+                //printf("Found ASCII at %s", string_buffer + i + j);
+            }
             if (isEndKinsoku(string_buffer + i) ||
                 isStartKinsoku(string_buffer + i + j)) {
                 // don't break before s_kinsoku or after e_kinsoku
                 string_buffer_breaks[i+j] = false;
-                printf("Can't break before %s", string_buffer + i + j);
+                //printf("Can't break before %s", string_buffer + i + j);
             } else {
-                string_buffer_breaks[i+j] = true;
+                if (((unsigned char) string_buffer[i+j] < 0x80) &&
+                    !(string_buffer[i+j] == 0x00 ||
+                      string_buffer[i+j] == 0x0a)) {
+                    // treat standard ASCII as start-kinsoku
+                    string_buffer_breaks[i+j] = false;
+                }
+                else
+                    string_buffer_breaks[i+j] = true;
             }
             i += j;
         }
+        return return_val;
     }
-    else if (style == SPACEBREAK) {
+    else { // style == SPACEBREAK
         // straight space-breaking
+        bool return_val = false; // does it contain a space?
         while (i<strlen(string_buffer)) {
             if (IS_TWO_BYTE(string_buffer[i]))
                 j = 2;
@@ -981,14 +1006,24 @@ void ONScripterLabel::processBreaks(bool cont_line, LineBreakType style)
                 (string_buffer[i+j] == 0x0a ||
                  string_buffer[i+j] == '/' ||
                  (string_buffer[i+j] == ' ' && string_buffer[i] != ' '))) {
-                printf("Can break before %s", string_buffer + i + j);
+                //printf("Can break before %s", string_buffer + i + j);
+                string_buffer_breaks[i+j] = true;
+                if (string_buffer[i+j] == ' ') {
+                    return_val = true;
+                }
+            }
+            else if ((unsigned char) string_buffer[i] == 0x81 &&
+                     string_buffer[i+1] == 0x40) {
+                // allow breaks after fullwidth spaces
                 string_buffer_breaks[i+j] = true;
             } else {
                 string_buffer_breaks[i+j] = false;
             }
             i += j;
         }
+        return return_val;
     }
+    return false;
 }
 
 int ONScripterLabel::findNextBreak(int offset)

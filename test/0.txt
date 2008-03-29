@@ -257,6 +257,7 @@ csp 0
 
 ; text with a mix of `` phrases and commands, also some Japanese
 それは人` hello there. ` !w200 ` How are you? `@ ` So then, @is nearly everything printing okay? `@
+`How about if we have a chunk of Japanese near the end? あ　あ　ああ　あ, for example. @
 それは人それは人それは人それは人それは人それは人それは人それは人それは人それは人@
 `hそれは人それは人それは人それは人それは人それは人それは人それは人それは人それは人\
 
