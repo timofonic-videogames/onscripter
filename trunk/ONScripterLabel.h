@@ -603,11 +603,10 @@ private:
     enum LineBreakType {
         SPACEBREAK = 1,
         KINSOKU = 2,
-        KINSOKU_OR_SPACE = 3
-    };
+    } last_line_break_type;
     char doLineBreak();
     int isTextCommand(const char *buf);
-    void processBreaks(bool cont_line, LineBreakType style);
+    bool processBreaks(bool cont_line, LineBreakType style);
     int findNextBreak(int offset);
 
     /* ---------------------------------------- */
