@@ -427,9 +427,9 @@ int ONScripterLabel::clickWait( char *out_text )
             next++;
             textgosub_clickstr_state = CLICK_WAIT;
             if (*next == 0x0a) {
-                //next = script_h.getNext();
-                //if (*next == 0x0a)
-                    textgosub_clickstr_state = CLICK_WAITEOL;
+                textgosub_clickstr_state = CLICK_WAITEOL;
+            } else {
+                new_line_skip_flag = true;
             }
             gosubReal( textgosub_label, next);
             indent_offset = 0;
@@ -474,8 +474,6 @@ int ONScripterLabel::clickNewPage( char *out_text )
             if (*next == '@') {
                 // was a clickwait-or-newpage, may be more text
                 next++;
-                if (*next == 0x0a)
-                    next = script_h.getNext();
             }
             textgosub_clickstr_state = CLICK_NEWPAGE;
             gosubReal( textgosub_label, next );
@@ -618,7 +616,8 @@ int ONScripterLabel::processText()
     }
 
     if (string_buffer_offset == 0) {
-        line_has_nonspace = true;
+        if (!new_line_skip_flag)
+            line_has_nonspace = true;
         if (!sentence_font.isLineEmpty()) {
             new_line_skip_flag = true;
         }
