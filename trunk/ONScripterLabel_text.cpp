@@ -582,7 +582,7 @@ int ONScripterLabel::textCommand()
 
 int ONScripterLabel::processText()
 {
-    //printf("textCommand %s %d %d %d\n", script_h.getStringBuffer() + string_buffer_offset, string_buffer_offset, event_mode, line_enter_status);
+    printf("textCommand %s %d %d %d\n", script_h.getStringBuffer() + string_buffer_offset, string_buffer_offset, event_mode, line_enter_status);
     char out_text[3]= {'\0', '\0', '\0'};
 
     if ( event_mode & (WAIT_INPUT_MODE | WAIT_TEXTOUT_MODE ) ){
@@ -802,6 +802,7 @@ int ONScripterLabel::processText()
         string_buffer_offset += 7;
         return RET_CONTINUE | RET_NOREAD;
     }
+#ifndef INSANI // for now, deactivate ruby altogether
     else if ( ch == '(' && !(script_h.getEndStatus() & ScriptHandler::END_1BYTE_CHAR)){
         current_page->add('(');
         startRuby( script_h.getStringBuffer() + string_buffer_offset + 1, sentence_font );
@@ -809,6 +810,7 @@ int ONScripterLabel::processText()
         string_buffer_offset++;
         return RET_CONTINUE | RET_NOREAD;
     }
+#endif
 #ifdef INSANI
     else if ( ch == '/'){
 #else
@@ -840,6 +842,7 @@ int ONScripterLabel::processText()
             return RET_CONTINUE; // skip the following eol
         }
     }
+#ifndef INSANI // for now, deactivate ruby altogether
     else if ( ch == ')' && !(script_h.getEndStatus() & ScriptHandler::END_1BYTE_CHAR) &&
               ruby_struct.stage == RubyStruct::BODY ){
         current_page->add(')');
@@ -847,6 +850,7 @@ int ONScripterLabel::processText()
         ruby_struct.stage = RubyStruct::NONE;
         return RET_CONTINUE | RET_NOREAD;
     }
+#endif
     else{
 #ifdef INSANI
         notacommand:

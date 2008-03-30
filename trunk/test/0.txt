@@ -64,6 +64,9 @@ mov %NScripter,1
 getreg $teststr,"nscripter\interpreter\test","IsThisONScripter"
 if $teststr = "yes" mov %NScripter,0
 
+if %NScripter == 1 skip 2
+language japanese
+
 ; Set up basic window.
 ;
 textspeed 0 ; can't use !s0 in NScripter in "english" mode
@@ -245,7 +248,7 @@ language japanese
 ;print 1
 この(世/よ)に(悪/あく)があるとすれば、それは(人/ひと)の(心/こころ)だ\
 
-if %NScripter == 1 skip 15
+if %NScripter == 1 skip 18
 language english
 ;Displaying numerical values correctly in text
   mov %1,24601
@@ -258,7 +261,9 @@ csp 0
 
 ; text with a mix of `` phrases and commands, also some Japanese
 それは人` hello there. ` !w200 ` How are you? `@ ` So then, @is nearly everything printing okay? `@
-`How about if we have a chunk of Japanese near the end? あ　あ　ああ　あ, for example. @
+`How about if we have Japanese near the end of the line? あ　あ　あ　あ　あ, for example. @
+`His name is 右代宮 戦人 (Ushiromiya Battler). @
+`*Ring!* a sound effect! @
 それは人それは人それは人それは人それは人それは人それは人それは人それは人それは人@
 `hそれは人それは人それは人それは人それは人それは人それは人それは人それは人それは人\
 

@@ -230,7 +230,6 @@ const char *ScriptHandler::readToken()
                 if (ch == 0x0a || ch == '\0') break;
                 addStringBuffer( ch );
                 ch = *++buf;
-                SKIP_SPACE(buf);
                 ch = *buf;
                 if (clickstr_flag) {
                     // insert a clickwait-or-newpage
