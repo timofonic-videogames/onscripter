@@ -285,35 +285,26 @@ void ONScripterLabel::restoreTextBuffer()
         }
         else{
             out_text[0] = current_page->text[i];
-	    if ( script_h.preferred_script == ScriptHandler::JAPANESE_SCRIPT ){
-		if (out_text[0] == '('){
-		    startRuby(current_page->text + i + 1, f_info);
-		    continue;
-		}
-		else if (out_text[0] == '/' && ruby_struct.stage == RubyStruct::BODY ){
-		    f_info.addLineOffset(ruby_struct.margin);
-		    i = ruby_struct.ruby_end - current_page->text - 1;
-		    if (*ruby_struct.ruby_end == ')'){
-			endRuby(false, false, NULL);
-			i++;
-		    }
-		    continue;
-		}
-		else if (out_text[0] == ')' && ruby_struct.stage == RubyStruct::BODY ){
-		    ruby_struct.stage = RubyStruct::NONE;
-		    continue;
-		}
+            if (out_text[0] == '('){
+	        startRuby(current_page->text + i + 1, f_info);
+	        f_info.addLineOffset(ruby_struct.margin);
+	        continue;
+            }
+            else if (out_text[0] == '/' && ruby_struct.stage == RubyStruct::BODY ){
+	        f_info.addLineOffset(ruby_struct.margin);
+	        i = ruby_struct.ruby_end - current_page->text - 1;
+	        if (*ruby_struct.ruby_end == ')'){
+                    endRuby(false, false, NULL);
+                    i++;
+	        }
+	        continue;
+            }
+            else if (out_text[0] == ')' && ruby_struct.stage == RubyStruct::BODY ){
+	        ruby_struct.stage = RubyStruct::NONE;
+	        continue;
 	    }
             if ( IS_TWO_BYTE(out_text[0]) ){
                 out_text[1] = current_page->text[i+1];
-                if (isStartKinsoku( current_page->text+i+2 )){
-                    int i = 2;
-                    while (!f_info.isEndOfLine(i) &&
-                           isStartKinsoku( current_page->text+i+2 )){
-                        i += 2;
-                    }
-                    if (f_info.isEndOfLine(i)) f_info.newLine();
-                }
                 i++;
             }
             else{

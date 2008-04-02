@@ -49,7 +49,7 @@ numalias CHARH, 20
 numalias TRACK,  0
 numalias LEAD,   2
 
-rubyon 17,17
+rubyon 12,12
 
 game
 
@@ -242,13 +242,8 @@ skip 2
 >Carmina qui quondam studio florente peregi         flebilis heu maestos cogor inire modos.
 \
 
-if %NScripter == 1 skip 2
-language japanese
-;lsp 0, ":s#FFFFFFこの世に悪があるとすれば、それは人の心だ",0,50
-;print 1
-この(世/よ)に(悪/あく)があるとすれば、それは(人/ひと)の(心/こころ)だ\
+if %NScripter == 1 end
 
-if %NScripter == 1 skip 18
 language english
 ;Displaying numerical values correctly in text
   mov %1,24601
@@ -259,10 +254,17 @@ csp 0
   `Successfully,!w200 ` %1`!
   `Successfully, `$1 `!\
 
-; text with a mix of `` phrases and commands, also some Japanese
+; text with a mix of `` phrases and commands, also some Japanese, ruby
 それは人` hello there. ` !w200 ` How are you? `@ ` So then, @is nearly everything printing okay? `@
+`How about if we have Japanese near the end of the line? あああああ, for example. @
 `How about if we have Japanese near the end of the line? あ　あ　あ　あ　あ, for example. @
+br
+この(世界/せかい)に(悪/あく)があるとすれば、それは(人/ひと)の(心/ここころ)だははこの(世/よ)に(悪/あく)があるとすれば、それは(人/ひと)の(心/ここころ)だ@
+br
+`I wonder if `(悪/あく)` ruby in English text would work, say "`(世界/せかい)`", for example. @
 `His name is 右代宮 戦人 (Ushiromiya Battler). @
+br
+`Hello there `(戦人/ばとら)`.  Are you having a `(`good`/いい)` (and/or) bad day?  @
 `*Ring!* a sound effect! @
 それは人それは人それは人それは人それは人それは人それは人それは人それは人それは人@
 `hそれは人それは人それは人それは人それは人それは人それは人それは人それは人それは人\
