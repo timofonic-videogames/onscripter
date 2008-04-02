@@ -500,6 +500,7 @@ ONScripterLabel::ONScripterLabel()
     glyph_cache[NUM_GLYPH_CACHE-1].next = NULL;
     root_glyph_cache = &glyph_cache[0];
     string_buffer_breaks = NULL;
+    string_buffer_margins = NULL;
     line_has_nonspace = false;
 
     // External Players

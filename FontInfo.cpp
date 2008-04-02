@@ -157,7 +157,11 @@ void FontInfo::setLineArea(int num)
 
 bool FontInfo::isEndOfLine(int margin)
 {
-    if (xy[tateyoko_mode] + margin >= num_xy[tateyoko_mode]*2) return true;
+    int offset = 2 * line_offset_xy[tateyoko_mode] / pitch_xy[tateyoko_mode];
+    if (((2 * line_offset_xy[tateyoko_mode]) % pitch_xy[tateyoko_mode]) > 0)
+        offset++;
+    if (xy[tateyoko_mode] + offset + margin >= num_xy[tateyoko_mode]*2)
+        return true;
 
     return false;
 }
@@ -275,7 +279,7 @@ int FontInfo::initRuby(FontInfo &body_info, int body_count, int ruby_count)
         top_xy[tateyoko_mode] += offset;
         pitch_xy[tateyoko_mode] += offset*2;
     }
-    body_info.line_offset_xy[tateyoko_mode] += margin;
+    //body_info.line_offset_xy[tateyoko_mode] += margin;
     
     clear();
 

@@ -599,6 +599,7 @@ private:
     int  processText();
 
     bool *string_buffer_breaks; // can break before a char?
+    char *string_buffer_margins; // where are the ruby margins, and how long?
     bool line_has_nonspace;
     enum LineBreakType {
         SPACEBREAK = 1,
@@ -607,7 +608,7 @@ private:
     char doLineBreak();
     int isTextCommand(const char *buf);
     bool processBreaks(bool cont_line, LineBreakType style);
-    int findNextBreak(int offset);
+    int findNextBreak(int offset, int &len);
 
     /* ---------------------------------------- */
     /* Effect related variables */

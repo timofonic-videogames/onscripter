@@ -37,6 +37,10 @@
 #define IS_TWO_BYTE(x) \
         ( ((x) & 0xe0) == 0xe0 || ((x) & 0xe0) == 0x80 )
 
+// Mion: for escaping parentheses in handled text
+#define LPAREN 0x02
+#define RPAREN 0x03
+
 typedef unsigned char uchar3[3];
 
 class ScriptHandler
