@@ -1005,6 +1005,7 @@ int ScriptHandler::readScript( DirPaths *path )
         }
         else if ( !strncmp( buf, "value", 5 ) ){
             buf += 5;
+            SKIP_SPACE(buf);
             global_variable_border = 0;
             while ( *buf >= '0' && *buf <= '9' )
                 global_variable_border = global_variable_border * 10 + *buf++ - '0';
