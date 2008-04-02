@@ -162,16 +162,26 @@ void ONScripterLabel::drawChar( char* text, FontInfo *info, bool flush_flag, boo
     xy[0] = info->x() * screen_ratio1 / screen_ratio2;
     xy[1] = info->y() * screen_ratio1 / screen_ratio2;
 
+    char out_text[3]= {'\0', '\0', '\0'};
+    if (text[0] == LPAREN) {
+        out_text[0] = '(';
+    } else if (text[0] == RPAREN) {
+        out_text[0] = ')';
+    } else {
+        out_text[0] = text[0];
+        out_text[1] = text[1];
+    }
+
     SDL_Color color;
     SDL_Rect dst_rect;
     if ( info->is_shadow ){
         color.r = color.g = color.b = 0;
-        drawGlyph(surface, info, color, text, xy, true, cache_info, clip, dst_rect);
+        drawGlyph(surface, info, color, out_text, xy, true, cache_info, clip, dst_rect);
     }
     color.r = info->color[0];
     color.g = info->color[1];
     color.b = info->color[2];
-    drawGlyph( surface, info, color, text, xy, false, cache_info, clip, dst_rect );
+    drawGlyph( surface, info, color, out_text, xy, false, cache_info, clip, dst_rect );
 
     info->addShadeArea(dst_rect, shade_distance);
     if ( surface == accumulation_surface &&
@@ -308,12 +318,6 @@ void ONScripterLabel::restoreTextBuffer()
             }
             else{
                 out_text[1] = '\0';
-//Mion: fix for allowing mixed 1 & 2 byte chars
-//                drawChar( out_text, &f_info, false, false, NULL, &text_info );
-//
-//                if (i+1 == current_page->text_count) break;
-//                out_text[0] = current_page->text[i+1];
-//                if (out_text[0] == 0x0a) continue;
             }
             drawChar( out_text, &f_info, false, false, NULL, &text_info );
         }
@@ -582,7 +586,8 @@ int ONScripterLabel::textCommand()
 
 int ONScripterLabel::processText()
 {
-    printf("textCommand %s %d %d %d\n", script_h.getStringBuffer() + string_buffer_offset, string_buffer_offset, event_mode, line_enter_status);
+    //printf("textCommand %s %d %d %d\n", script_h.getStringBuffer() + string_buffer_offset, string_buffer_offset, event_mode, line_enter_status);
+
     char out_text[3]= {'\0', '\0', '\0'};
 
     if ( event_mode & (WAIT_INPUT_MODE | WAIT_TEXTOUT_MODE ) ){
@@ -656,7 +661,8 @@ int ONScripterLabel::processText()
             ch = script_h.getStringBuffer()[++string_buffer_offset];
     }
 
-    if (isTextCommand(script_h.getStringBuffer() + string_buffer_offset) == 0) {
+    int cmd = isTextCommand(script_h.getStringBuffer() + string_buffer_offset);
+    if (cmd <= 0) {
         line_has_nonspace = true;
         if (sentence_font.isEndOfLine(0) ||
             (IS_TWO_BYTE(ch) && sentence_font.isEndOfLine(1))) {
@@ -665,18 +671,31 @@ int ONScripterLabel::processText()
             ch = doLineBreak();
         }
         else {
-            int break_offset;
-            break_offset = findNextBreak(string_buffer_offset);
-            if (break_offset == 0) {
-                // can break before char
-                if ( IS_TWO_BYTE(ch) )
+            int break_offset, length, margins, tmp;
+            break_offset = findNextBreak(string_buffer_offset, length);
+            if (break_offset == string_buffer_offset) {
+                if (cmd < 0) {
+                    break_offset++;
+                    tmp = 0;
+                }
+                else if (IS_TWO_BYTE(ch)) {
                     break_offset += 2;
-                else
-                   break_offset++;
-                break_offset += findNextBreak(break_offset + string_buffer_offset);
-                if (sentence_font.isEndOfLine(break_offset-1)) {
+                    tmp = 2;
+                } else {
+                    break_offset += 1;
+                    tmp = 1;
+                }
+                break_offset = findNextBreak(break_offset, length);
+                //printf("next break before %s", script_h.getStringBuffer() + break_offset);
+                margins = 0;
+                for (int i = string_buffer_offset; i < break_offset; i++)
+                    margins += string_buffer_margins[i];
+                sentence_font.addLineOffset(margins);
+                if (sentence_font.isEndOfLine(length+tmp-1)) {
                     //printf("breaking before %s", script_h.getStringBuffer() + string_buffer_offset);
                     ch = doLineBreak();
+                } else {
+                    sentence_font.addLineOffset(-margins);
                 }
             }
         }
@@ -802,20 +821,14 @@ int ONScripterLabel::processText()
         string_buffer_offset += 7;
         return RET_CONTINUE | RET_NOREAD;
     }
-#ifndef INSANI // for now, deactivate ruby altogether
-    else if ( ch == '(' && !(script_h.getEndStatus() & ScriptHandler::END_1BYTE_CHAR)){
+    else if ( ch == '(' ){
         current_page->add('(');
         startRuby( script_h.getStringBuffer() + string_buffer_offset + 1, sentence_font );
-
+        sentence_font.addLineOffset(ruby_struct.margin);
         string_buffer_offset++;
         return RET_CONTINUE | RET_NOREAD;
     }
-#endif
-#ifdef INSANI
     else if ( ch == '/'){
-#else
-    else if ( ch == '/' && !(script_h.getEndStatus() & ScriptHandler::END_1BYTE_CHAR) ){
-#endif
         if ( ruby_struct.stage == RubyStruct::BODY ){
             current_page->add('/');
             sentence_font.addLineOffset(ruby_struct.margin);
@@ -842,15 +855,12 @@ int ONScripterLabel::processText()
             return RET_CONTINUE; // skip the following eol
         }
     }
-#ifndef INSANI // for now, deactivate ruby altogether
-    else if ( ch == ')' && !(script_h.getEndStatus() & ScriptHandler::END_1BYTE_CHAR) &&
-              ruby_struct.stage == RubyStruct::BODY ){
+    else if ( ch == ')' && ruby_struct.stage == RubyStruct::BODY ){
         current_page->add(')');
         string_buffer_offset++;
         ruby_struct.stage = RubyStruct::NONE;
         return RET_CONTINUE | RET_NOREAD;
     }
-#endif
     else{
 #ifdef INSANI
         notacommand:
@@ -953,6 +963,24 @@ int ONScripterLabel::isTextCommand(const char *buf)
          }
          return 7;
     }
+    else if ( *buf == '(' && rubyon_flag) {
+        // if ruby command, return as -length to indicate ruby
+        bool found_slash = false;
+        while (*buf != ')' && *buf != '\0') {
+            if (IS_TWO_BYTE(*buf)) {
+                buf++;
+                offset--;
+            } else if (*buf == '/') {
+                found_slash = true;
+            }
+            buf++;
+            offset--;
+        }
+        if (*buf == ')' && found_slash) {
+            return --offset;
+        } else
+            return 0;
+    }
     else
         return 0;
 }
@@ -960,14 +988,21 @@ int ONScripterLabel::isTextCommand(const char *buf)
 bool ONScripterLabel::processBreaks(bool cont_line, LineBreakType style)
 {
     char *string_buffer = script_h.getStringBuffer();
-    if (string_buffer_breaks) delete[] string_buffer_breaks;
-    string_buffer_breaks = new bool[strlen(string_buffer)+2];
-    unsigned int i=0, j=0, cmd=0;
+    unsigned int i=0, j=0, k=0;
+    unsigned int len = strlen(string_buffer);
+    int cmd=0;
     bool return_val;
+    bool is_ruby = false;
+    if (string_buffer_breaks) delete[] string_buffer_breaks;
+    string_buffer_breaks = new bool[len+2];
+    if (string_buffer_margins) delete[] string_buffer_margins;
+    string_buffer_margins = new char[len];
+    for (k=0; k<len; k++) string_buffer_margins[k] = 0;
 
+    i = 0;
     do {
         cmd = isTextCommand(string_buffer + i);
-        i += cmd;
+        if (cmd > 0) i += cmd;
     } while (cmd > 0);
     // don't break before first char
     if (cont_line)
@@ -976,32 +1011,60 @@ bool ONScripterLabel::processBreaks(bool cont_line, LineBreakType style)
         string_buffer_breaks[i] = false;
         //printf("Can't break before %s", string_buffer + i);
     }
+    if (cmd < 0) {
+        // ruby - find the size
+        startRuby( string_buffer + i + 1, sentence_font );
+        string_buffer_margins[i] = ruby_struct.margin;
+        string_buffer_margins[i-cmd-1] = ruby_struct.margin;
+        ruby_struct.stage = RubyStruct::NONE;
+        //printf("ruby margin: %d; at %s", string_buffer_margins[i], string_buffer+i);
+        // process ruby as though it's a single unbreakable chunk
+        // with no special kinsoku of its own
+        j = i + -cmd;
+        for (k=i; k<j; k++) {
+            string_buffer_breaks[k] = false;
+        }
+    }
 
 
     if (style == KINSOKU) {
         // straight kinsoku
         return_val = false; // does it contain straight ASCII?
         while (i<strlen(string_buffer)) {
-            if (IS_TWO_BYTE(string_buffer[i]))
-                j = 2;
-            else
-                j = 1;
-            do {
-                cmd = isTextCommand(string_buffer + i + j);
-                j += cmd;
-            } while (cmd > 0);
-            if (((unsigned char) string_buffer[i+j] < 0x80) &&
+            is_ruby = false;
+            if (cmd < 0) {
+                is_ruby = true;
+                j = -cmd;
+                cmd = 0;
+            } 
+            else {
+                if (IS_TWO_BYTE(string_buffer[i]))
+                    j = 2;
+                else
+                    j = 1;
+                do {
+                    cmd = isTextCommand(string_buffer + i + j);
+                    if (cmd > 0) j += cmd;
+                } while (cmd > 0);
+            }
+            if ((cmd >= 0) && ((unsigned char) string_buffer[i+j] < 0x80) &&
                 !(string_buffer[i+j] == 0x00 || string_buffer[i+j] == 0x0a)) {
                 return_val = true;
                 //printf("Found ASCII at %s", string_buffer + i + j);
             }
-            if (isEndKinsoku(string_buffer + i) ||
-                isStartKinsoku(string_buffer + i + j)) {
+            if (cmd < 0) {
+                if (is_ruby || !isEndKinsoku(string_buffer + i))
+                    string_buffer_breaks[i+j] = true;
+                else
+                    string_buffer_breaks[i+j] = false;
+            }
+            else if (isEndKinsoku(string_buffer + i) ||
+                (!is_ruby && isStartKinsoku(string_buffer + i + j))) {
                 // don't break before s_kinsoku or after e_kinsoku
                 string_buffer_breaks[i+j] = false;
                 //printf("Can't break before %s", string_buffer + i + j);
             } else {
-                if (((unsigned char) string_buffer[i+j] < 0x80) &&
+                if ((cmd >= 0) && ((unsigned char) string_buffer[i+j] < 0x80) &&
                     !(string_buffer[i+j] == 0x00 ||
                       string_buffer[i+j] == 0x0a)) {
                     // treat standard ASCII as start-kinsoku
@@ -1011,6 +1074,17 @@ bool ONScripterLabel::processBreaks(bool cont_line, LineBreakType style)
                     string_buffer_breaks[i+j] = true;
             }
             i += j;
+            if (cmd < 0) {
+                // ruby - find the size
+                startRuby( string_buffer + i + 1, sentence_font );
+                string_buffer_margins[i] = ruby_struct.margin;
+                string_buffer_margins[i-cmd-1] = ruby_struct.margin;
+                //printf("ruby margin: %d; at %s", string_buffer_margins[i], string_buffer+i);
+                j = i + -cmd;
+                for (k=i+1; k<j; k++) {
+                    string_buffer_breaks[k] = false;
+                }
+            }
         }
         return return_val;
     }
@@ -1018,7 +1092,12 @@ bool ONScripterLabel::processBreaks(bool cont_line, LineBreakType style)
         // straight space-breaking
         bool return_val = false; // does it contain a space?
         while (i<strlen(string_buffer)) {
-            if (IS_TWO_BYTE(string_buffer[i]))
+            is_ruby = false;
+            if (cmd < 0) {
+                is_ruby = true;
+                j = -cmd;
+            }
+            else if (IS_TWO_BYTE(string_buffer[i]))
                 j = 2;
             else
                 j = 1;
@@ -1027,9 +1106,12 @@ bool ONScripterLabel::processBreaks(bool cont_line, LineBreakType style)
                 cmd = isTextCommand(string_buffer + i + j);
                 if (string_buffer[i+j] == '@' || string_buffer[i+j] == '\\')
                     had_wait = true;
-                j += cmd;
+                if (cmd > 0) j += cmd;
             } while (cmd > 0);
-            if (!IS_TWO_BYTE(string_buffer[i+j]) &&
+            if (cmd < 0) {
+                string_buffer_breaks[i+j] = false;
+            }
+            else if (!IS_TWO_BYTE(string_buffer[i+j]) &&
                 (string_buffer[i+j] == 0x0a ||
                  string_buffer[i+j] == '/' ||
                  (string_buffer[i+j] == ' ' &&
@@ -1048,37 +1130,79 @@ bool ONScripterLabel::processBreaks(bool cont_line, LineBreakType style)
                 string_buffer_breaks[i+j] = false;
             }
             i += j;
+            if (cmd < 0) {
+                // ruby - find the size
+                startRuby( string_buffer + i + 1, sentence_font );
+                string_buffer_margins[i] = ruby_struct.margin;
+                string_buffer_margins[i-cmd-1] = ruby_struct.margin;
+                //printf("ruby margin: %d; at %s", string_buffer_margins[i], string_buffer+i);
+                j = i + -cmd;
+                for (k=i+1; k<j; k++) {
+                    string_buffer_breaks[k] = false;
+                }
+            }
         }
         return return_val;
     }
     return false;
 }
 
-int ONScripterLabel::findNextBreak(int offset)
+int ONScripterLabel::findNextBreak(int offset, int &len)
 {
-    // return offset of first break_before
+    // return offset of first break_before;
+    // use len to return # of printed chars between
     char *string_buffer = script_h.getStringBuffer();
-    int i = 0, len = 0, cmd = 0;
+    int i = 0, cmd = 0, ruby_end = 0;
+    bool in_ruby = false;
+    len = 0;
+
     while (i<offset) {
         cmd = isTextCommand(string_buffer + i);
         if (cmd > 0) {
             i += cmd;
+        } else if (cmd < 0) {
+            if ((i - cmd) > offset) {
+                //offset is inside a ruby body
+                in_ruby = true;
+                ruby_end = i - cmd;
+                cmd = 0;
+                i++;
+            } else {
+                i -= cmd;
+            }
         } else if (IS_TWO_BYTE(string_buffer[i])) {
             i += 2;
         } else {
             i++;
         }
     }
+
     while (i<(int)(strlen(string_buffer)+2)) {
-        do {
-            cmd = isTextCommand(string_buffer + i);
-            i += cmd;
-        } while (cmd > 0);
-        if (string_buffer_breaks[i]) {
-            //printf("i=%d, len=%d\n", i, len);
-            return len;
+        if (in_ruby) {
+            if (string_buffer[i] == '/') {
+                i = ruby_end;
+                in_ruby = false;
+                ruby_end = 0;
+                continue;
+            }
+        } else {
+            do {
+                cmd = isTextCommand(string_buffer + i);
+                if (cmd > 0) i += cmd;
+            } while (cmd > 0);
+            if (cmd < 0) {
+                //printf("found ruby: %s\n", string_buffer + i);
+                in_ruby = true;
+                ruby_end = i - cmd;
+            }
         }
-        if (IS_TWO_BYTE(string_buffer[i])) {
+        if (string_buffer_breaks[i]) {
+            return i;
+        } else if (cmd < 0) {
+            // skip the begin paren
+            i++;
+            cmd = 0;
+        } else if (IS_TWO_BYTE(string_buffer[i])) {
             i += 2;
             len += 2;
         } else {
@@ -1086,6 +1210,6 @@ int ONScripterLabel::findNextBreak(int offset)
             len++;
         }
     }
-    return len;
+    return i;
 }
 

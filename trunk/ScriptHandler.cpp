@@ -253,7 +253,13 @@ const char *ScriptHandler::readToken()
                             continue;
                         }
                     }
-                    addStringBuffer( ch );
+                    // no ruby in 1byte mode; escape parens
+                    if (ch == '(') {
+                        addStringBuffer( LPAREN );
+                    } else if (ch == ')') {
+                        addStringBuffer( RPAREN );
+                    } else
+                        addStringBuffer( ch );
                     ch = *++buf;
                 }
 #endif
@@ -1009,6 +1015,7 @@ int ScriptHandler::readScript( DirPaths *path )
             global_variable_border = 0;
             while ( *buf >= '0' && *buf <= '9' )
                 global_variable_border = global_variable_border * 10 + *buf++ - '0';
+            printf("set global_variable_border: %d", global_variable_border);
         }
         else{
             break;
