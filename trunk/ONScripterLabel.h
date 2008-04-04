@@ -571,7 +571,7 @@ private:
     bool draw_cursor_flag;
     int  textgosub_clickstr_state;
     int  indent_offset;
-    int  line_enter_status; // 0 ... no enter, 1 ... pretext, 2 ... body, 3 ... end
+    int  line_enter_status; // 0 ... no enter, 1 ... pretext, 2 ... body
     int  page_enter_status; // 0 ... no enter, 1 ... body
     struct GlyphCache{
         GlyphCache *next;
@@ -598,15 +598,17 @@ private:
     int  textCommand();
     int  processText();
 
-    bool *string_buffer_breaks; // can break before a char?
-    char *string_buffer_margins; // where are the ruby margins, and how long?
+    //Mion: variables & functions for special text processing
+    bool *string_buffer_breaks;  // can it break before a particular offset?
+    char *string_buffer_margins; // where are the ruby margins, how long (in pixels)
     bool line_has_nonspace;
     enum LineBreakType {
-        SPACEBREAK = 1,
-        KINSOKU = 2,
+        SPACEBREAK = 1, // Western-style, break before spaces
+        KINSOKU = 2,    // Eastern-style, break anywhere except before/after forbidden chars
     } last_line_break_type;
     char doLineBreak();
     int isTextCommand(const char *buf);
+    void processRuby(unsigned int i, int cmd);
     bool processBreaks(bool cont_line, LineBreakType style);
     int findNextBreak(int offset, int &len);
 

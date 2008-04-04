@@ -1237,6 +1237,7 @@ int ONScripterLabel::parseLine( )
     /* Text */
     if ( current_mode == DEFINE_MODE ) errorAndExit( "text cannot be displayed in define section." );
     ret = textCommand();
+    //Mion: moved all text processing into textCommand & its subfunctions
 
     return ret;
 }

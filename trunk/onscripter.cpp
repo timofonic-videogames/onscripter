@@ -32,7 +32,9 @@ static void optionHelp()
     printf( "  -f, --font file\tset a TTF font file\n");
     printf( "      --registry file\tset a registry file\n");
     printf( "      --dll file\tset a dll file\n");
+#ifdef ENABLE_1BYTE_CHAR
     printf( "      --english\tforce English text mode\n");
+#endif
 #if   defined WIN32
     printf( "  -r, --root path\tset the root path to the archives\n");
     printf( "  -s, --save path\tset the path to use for saved games (default: folder in All Users profile)\n");
@@ -87,6 +89,7 @@ int main( int argc, char **argv )
     ons.enableButtonShortCut();
 #endif
 
+#ifdef ENABLE_1BYTE_CHAR
     // Check filename: we want binaries named "onscripter-en" to
     // default to English mode.  We actually match the regex
     // /(^|[/\\])onscripter[^a-z]en/i, which should allow all likely
@@ -117,7 +120,8 @@ int main( int argc, char **argv )
 	    }
 	}
     }
-    
+#endif
+
     // ----------------------------------------
     // Parse options
     bool hasArchivePath = false;
@@ -153,9 +157,11 @@ int main( int argc, char **argv )
                 argv++;
                 ons.setDLLFile(argv[0]);
             }
+#ifdef ENABLE_1BYTE_CHAR
             else if ( !strcmp( argv[0]+1, "-english" ) ){
                 ons.setEnglishMode();
             }
+#endif
             else if ( !strcmp( argv[0]+1, "r" ) || !strcmp( argv[0]+1, "-root" ) ){
 		hasArchivePath = true;
 		argc--;
