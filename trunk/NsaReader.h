@@ -33,15 +33,15 @@ public:
     NsaReader( DirPaths *path=NULL, const unsigned char *key_table=NULL );
     ~NsaReader();
 
-    int open( char *nsa_path=NULL, int archive_type = ARCHIVE_TYPE_NSA );
-    char *getArchiveName() const;
+    int open( const char *nsa_path=NULL, int archive_type = ARCHIVE_TYPE_NSA );
+    const char *getArchiveName() const;
     int getNumFiles();
     
     size_t getFileLength( const char *file_name );
     size_t getFile( const char *file_name, unsigned char *buf, int *location=NULL );
     struct FileInfo getFileByIndex( unsigned int index );
 
-    int openForConvert( char *nsa_name, int archive_type=ARCHIVE_TYPE_NSA );
+    int openForConvert( const char *nsa_name, int archive_type=ARCHIVE_TYPE_NSA );
     int writeHeader( FILE *fp, int archive_type=ARCHIVE_TYPE_NSA );
     size_t putFile( FILE *fp, int no, size_t offset, size_t length, size_t original_length, int compression_type, bool modified_flag, unsigned char *buffer );
     
@@ -50,7 +50,7 @@ private:
     struct ArchiveInfo archive_info_nsa; // for the arc.nsa file
     struct ArchiveInfo archive_info2[MAX_EXTRA_ARCHIVE]; // for the arc1.nsa, arc2.nsa files
     int num_of_nsa_archives;
-    char *nsa_archive_ext;
+    const char *nsa_archive_ext;
 
     size_t getFileLengthSub( ArchiveInfo *ai, const char *file_name );
 };

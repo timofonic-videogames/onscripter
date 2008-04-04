@@ -36,7 +36,7 @@ SarReader::~SarReader()
     close();
 }
 
-int SarReader::open( char *name, int archive_type )
+int SarReader::open( const char *name, int archive_type )
 {
     ArchiveInfo* info = new ArchiveInfo();
 
@@ -224,7 +224,7 @@ int SarReader::close()
     return 0;
 }
 
-char *SarReader::getArchiveName() const
+const char *SarReader::getArchiveName() const
 {
     return "sar";
 }

@@ -36,10 +36,10 @@ public:
     DirectReader( DirPaths *path=NULL, const unsigned char *key_table=NULL );
     ~DirectReader();
 
-    int open( char *name=NULL, int archive_type = ARCHIVE_TYPE_NONE );
+    int open( const char *name=NULL, int archive_type = ARCHIVE_TYPE_NONE );
     int close();
 
-    char *getArchiveName() const;
+    const char *getArchiveName() const;
     int getNumFiles();
     void registerCompressionType( const char *ext, int type );
 

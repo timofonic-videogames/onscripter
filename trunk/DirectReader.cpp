@@ -243,7 +243,7 @@ void DirectReader::writeLong( FILE *fp, unsigned long ch )
     fwrite( &buf, 1, 4, fp );
 }
 
-int DirectReader::open( char *name, int archive_type )
+int DirectReader::open( const char *name, int archive_type )
 {
     return 0;
 }
@@ -253,7 +253,7 @@ int DirectReader::close()
     return 0;
 }
 
-char *DirectReader::getArchiveName() const
+const char *DirectReader::getArchiveName() const
 {
     return "direct";
 }

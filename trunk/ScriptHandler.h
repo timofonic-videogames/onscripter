@@ -182,7 +182,7 @@ public:
 
     LabelInfo lookupLabel( const char* label );
     LabelInfo lookupLabelNext( const char* label );
-    void errorAndExit( char *str );
+    void errorAndExit( const char *str );
 
     ArrayVariable *getRootArrayVariable();
     void loadArrayVariable( FILE *fp );
@@ -212,7 +212,7 @@ public:
         LogLink root_log;
         LogLink *current_log;
         int num_logs;
-        char *filename;
+        const char *filename;
     } log_info[2];
     LogLink *findAndAddLog( LogInfo &info, const char *name, bool add_flag );
     void resetLog( LogInfo &info );

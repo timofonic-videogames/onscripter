@@ -1183,7 +1183,7 @@ bool ScriptHandler::findStrAlias( const char *str, char* buffer )
     return false;
 }
 
-void ScriptHandler::errorAndExit( char *str )
+void ScriptHandler::errorAndExit( const char *str )
 {
     fprintf( stderr, " **** Script error, %s [%s] ***\n", str, string_buffer );
     exit(-1);
