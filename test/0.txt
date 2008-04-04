@@ -259,12 +259,12 @@ csp 0
 `How about if we have Japanese near the end of the line? あああああ, for example. @
 `How about if we have Japanese near the end of the line? あ　あ　あ　あ　あ, for example. @
 br
-この(世界/せかい)に(悪/あく)があるとすれば、それは(人/ひと)の(心/ここころ)だははこの(世/よ)に(悪/あく)があるとすれば、それは(人/ひと)の(心/ここころ)だ@
+この(世界/せかい)に(悪/あく)があるとすれば、それは(人/ひと)の(心/こころ)だははこの(世/よ)に(悪/あく)があるとすれば、それは(人/ひと)の(心/こころ)だ@
 br
 `I wonder if `(悪/あく)` ruby in English text would work, say "`(世界/せかい)`", for example. @
 `His name is 右代宮 戦人 (Ushiromiya Battler). @
 br
-`Hello there `(戦人/ばとら)`.  Are you having a `(`good`/いい)` (and/or) bad day?  @
+`Hello there `(戦人/ばとら)`.  Are you having a `(good/いい)` (and/or) bad day?  @
 `*Ring!* a sound effect! @
 それは人それは人それは人それは人それは人それは人それは人それは人それは人それは人@
 `hそれは人それは人それは人それは人それは人それは人それは人それは人それは人それは人\
