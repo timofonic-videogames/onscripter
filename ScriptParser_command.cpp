@@ -404,7 +404,7 @@ int ScriptParser::nsadirCommand()
 
     const char *buf = script_h.readStr();
     
-    if ( strlen(nsa_path) > 0 ){
+    if ( nsa_path ){
         delete[] nsa_path;
     }
     nsa_path = new char[ strlen(buf) + 2 ];

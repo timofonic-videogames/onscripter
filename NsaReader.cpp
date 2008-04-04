@@ -43,7 +43,7 @@ NsaReader::~NsaReader()
 {
 }
 
-int NsaReader::open( char *nsa_path, int archive_type )
+int NsaReader::open( const char *nsa_path, int archive_type )
 {
     int i,j,n;
     FILE *fp;
@@ -101,7 +101,7 @@ int NsaReader::open( char *nsa_path, int archive_type )
     }
 }
 
-int NsaReader::openForConvert( char *nsa_name, int archive_type )
+int NsaReader::openForConvert( const char *nsa_name, int archive_type )
 {
     sar_flag = false;
     if ( ( archive_info_nsa.file_handle = ::fopen( nsa_name, "rb" ) ) == NULL ){
@@ -126,7 +126,7 @@ size_t NsaReader::putFile( FILE *fp, int no, size_t offset, size_t length, size_
     return putFileSub( ai, fp, no, offset, length, original_length , compression_type, modified_flag, buffer );
 }
 
-char *NsaReader::getArchiveName() const
+const char *NsaReader::getArchiveName() const
 {
     return "nsa";
 }

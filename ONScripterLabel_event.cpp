@@ -475,7 +475,8 @@ void ONScripterLabel::mousePressEvent( SDL_MouseButtonEvent *event )
 void ONScripterLabel::variableEditMode( SDL_KeyboardEvent *event )
 {
     int  i;
-    char *var_name, var_index[12];
+    char var_index[12];
+    const char* var_name;
 
     switch ( event->keysym.sym ) {
       case SDLK_m:

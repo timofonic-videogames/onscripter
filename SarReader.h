@@ -32,9 +32,9 @@ public:
     SarReader( DirPaths *path=NULL, const unsigned char *key_table=NULL );
     ~SarReader();
 
-    int open( char *name=NULL, int archive_type = ARCHIVE_TYPE_SAR );
+    int open( const char *name=NULL, int archive_type = ARCHIVE_TYPE_SAR );
     int close();
-    char *getArchiveName() const;
+    const char *getArchiveName() const;
     int getNumFiles();
     
     size_t getFileLength( const char *file_name );

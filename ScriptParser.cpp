@@ -170,7 +170,7 @@ ScriptParser::ScriptParser()
 
     archive_path = NULL;
     version_str = NULL;
-    nsa_path = "";
+    nsa_path = NULL;
     key_table = NULL;
     force_button_shortcut_flag = false;
     
@@ -230,9 +230,9 @@ void ScriptParser::reset()
     last_user_func = &root_user_func;
 
     // reset misc variables
-    if (strlen(nsa_path) > 0){
+    if ( nsa_path ){
         delete[] nsa_path;
-        nsa_path = "";
+        nsa_path = NULL;
     }
 
     globalon_flag = false;
