@@ -39,6 +39,7 @@ public:
     int open( const char *name=NULL, int archive_type = ARCHIVE_TYPE_NONE );
     int close();
 
+    void setArchivePath( DirPaths *path );
     const char *getArchiveName() const;
     int getNumFiles();
     void registerCompressionType( const char *ext, int type );
