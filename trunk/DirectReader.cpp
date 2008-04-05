@@ -63,14 +63,7 @@ DirectReader::DirectReader( DirPaths *path, const unsigned char *key_table )
     iconv_ref_count++;
 #endif
 
-    if ( path != NULL ){
-        archive_path = path;
-        //archive_path = new char[ strlen(path) + 1 ];
-        //memcpy( archive_path, path, strlen(path) + 1 );
-    }
-    else{
-        archive_path = new DirPaths("");
-    }
+    setArchivePath(path);
 
     int i;
     if (key_table){
@@ -252,6 +245,16 @@ int DirectReader::close()
 {
     return 0;
 }
+
+void DirectReader::setArchivePath( DirPaths *path ) {
+    if ( path != NULL ){
+        archive_path = path;
+    }
+    else{
+        archive_path = new DirPaths("");
+    }
+}
+
 
 const char *DirectReader::getArchiveName() const
 {
