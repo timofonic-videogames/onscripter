@@ -427,7 +427,7 @@ protected:
      
     /* ---------------------------------------- */
     /* Font related variables */
-    FontInfo *current_font, sentence_font, menu_font, ruby_font;
+    Fontinfo *current_font, sentence_font, menu_font, ruby_font;
     struct RubyStruct{
         enum { NONE,
                BODY,

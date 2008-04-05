@@ -212,7 +212,7 @@ int ONScripterLabel::loadSaveFile( int no )
         num_xy[0] = readInt();
         num_xy[1] = readInt();
         current_page->max_text = (num_xy[0]*2+1)*num_xy[1];
-        if (sentence_font.getTateyokoMode() == FontInfo::TATE_MODE)
+        if (sentence_font.getTateyokoMode() == Fontinfo::TATE_MODE)
             current_page->max_text = (num_xy[1]*2+1)*num_xy[0];
         int xy[2];
         xy[0] = readInt();

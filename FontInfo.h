@@ -28,7 +28,9 @@
 
 typedef unsigned char uchar3[3];
 
-class FontInfo{
+// OS X pollutes the main namespace with its own FontInfo type, so we
+// have to use something else.
+class Fontinfo {
 public:
     enum { YOKO_MODE = 0,
            TATE_MODE = 1
@@ -53,7 +55,7 @@ public:
     bool rubyon_flag;
     int tateyoko_mode;
 
-    FontInfo();
+    Fontinfo();
     void reset();
     void *openFont( char *font_file, int ratio1, int ratio2 );
     void setTateyokoMode( int tateyoko_mode );
@@ -75,7 +77,7 @@ public:
 
     SDL_Rect calcUpdatedArea(int start_xy[2], int ratio1, int ratio2 );
     void addShadeArea(SDL_Rect &rect, int shade_distance[2] );
-    int initRuby(FontInfo &body_info, int body_count, int ruby_count);
+    int initRuby(Fontinfo &body_info, int body_count, int ruby_count);
 };
 
 #endif // __FONT_INFO_H__

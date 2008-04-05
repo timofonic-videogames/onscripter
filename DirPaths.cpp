@@ -32,6 +32,7 @@ DirPaths::DirPaths( const char *new_paths )
 {
     num_paths = 0;
     paths = NULL;
+    all_paths = NULL;
     add(new_paths);
 }
 
@@ -71,6 +72,7 @@ void DirPaths::add( const char *new_paths )
     char *dptr;
     int n;
 
+    if (all_paths != NULL) delete[] all_paths;
     all_paths = NULL;
     n = num_paths;
     num_paths++;
