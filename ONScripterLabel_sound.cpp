@@ -472,6 +472,10 @@ int ONScripterLabel::playMPEG( const char *filename, bool click_flag )
                          ((SDL_KeyboardEvent *)&event)->keysym.sym == SDLK_ESCAPE )
                         done_flag = true;
                     break;
+                  case SDL_KEYUP:
+                    // need to catch CTRL keyups
+                    keyUpEvent( (SDL_KeyboardEvent*)&event );
+                    break;
                   case SDL_QUIT:
                     ret = 1;
                   case SDL_MOUSEBUTTONDOWN:
