@@ -454,6 +454,7 @@ int ONScripterLabel::clickNewPage( char *out_text )
         clickstr_state = CLICK_NONE;
         event_mode = WAIT_SLEEP_MODE;
         advancePhase();
+        newPage( true );
         num_chars_in_sentence = 0;
     }
     else{
@@ -1142,7 +1143,7 @@ bool ONScripterLabel::processBreaks(bool cont_line, LineBreakType style)
             } else {
                 string_buffer_breaks[i+j] = false;
                 if ((unsigned char) string_buffer[i+j] < 0x80) {
-                    printf("found ASCII: %d", string_buffer[i + j]);
+                    //printf("found ASCII: %d", string_buffer[i + j]);
                     return_val = true; // found ASCII
                 }
             }
