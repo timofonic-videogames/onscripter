@@ -189,24 +189,20 @@ int ONScripterLabel::textshowCommand()
 
 int ONScripterLabel::textonCommand()
 {
+    int ret = enterTextDisplayMode();
+    if (ret != RET_NOMATCH) return ret;
+
     text_on_flag = true;
-    if ( !(display_mode & TEXT_DISPLAY_MODE) ){
-        dirty_rect.fill( screen_width, screen_height );
-        display_mode = TEXT_DISPLAY_MODE;
-        flush(refreshMode());
-    }
 
     return RET_CONTINUE;
 }
 
 int ONScripterLabel::textoffCommand()
 {
+    int ret = leaveTextDisplayMode(true);
+    if (ret != RET_NOMATCH) return ret;
+
     text_on_flag = false;
-    if ( display_mode & TEXT_DISPLAY_MODE ){
-        dirty_rect.fill( screen_width, screen_height );
-        display_mode = NORMAL_DISPLAY_MODE;
-        flush(refreshMode());
-    }
 
     return RET_CONTINUE;
 }
@@ -1697,6 +1693,7 @@ int ONScripterLabel::logspCommand()
 
     si.is_single_line = false;
     si.is_tight_region = false;
+    si.is_ruby_drawable = true;
     sentence_font.is_newline_accepted = true;
     setupAnimationInfo( &si );
     sentence_font.is_newline_accepted = false;
@@ -1754,9 +1751,9 @@ int ONScripterLabel::loadgameCommand()
 
 int ONScripterLabel::ldCommand()
 {
-    // Don't remove text to animate sprites
-    //int ret = leaveTextDisplayMode();
-    //if ( ret != RET_NOMATCH ) return ret;
+    //Mion: do remove text to animate sprites
+    int ret = leaveTextDisplayMode();
+    if ( ret != RET_NOMATCH ) return ret;
 
     char loc = script_h.readLabel()[0];
     int no = -1;

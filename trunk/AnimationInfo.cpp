@@ -132,6 +132,7 @@ void AnimationInfo::removeTag(){
     is_animatable = false;
     is_single_line = true;
     is_tight_region = true;
+    is_ruby_drawable = false;
     direction = 1;
 
     color[0] = color[1] = color[2] = 0;

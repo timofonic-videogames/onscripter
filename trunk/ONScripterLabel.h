@@ -589,7 +589,7 @@ private:
     void drawString( const char *str, uchar3 color, FontInfo *info, bool flush_flag, SDL_Surface *surface, SDL_Rect *rect = NULL, AnimationInfo *cache_info=NULL );
     void restoreTextBuffer();
     int  enterTextDisplayMode(bool text_flag = true);
-    int  leaveTextDisplayMode();
+    int  leaveTextDisplayMode(bool force_leave_flag = false);
     void doClickEnd();
     int  clickWait( char *out_text );
     int  clickNewPage( char *out_text );
