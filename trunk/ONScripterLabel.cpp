@@ -696,8 +696,6 @@ int ONScripterLabel::init()
         script_h.setKeyTable( key_table );
     }
     
-    if ( open() ) return -1;
-    
     if ( script_h.save_path == NULL ){
         char* gameid = script_h.game_identifier;
         char gamename[20];
@@ -771,6 +769,8 @@ int ONScripterLabel::init()
         cur_paths = archive_path->get_all_paths();
         delete[] cur_paths;
     }
+
+    if ( open() ) return -1;
 
     initSDL();
 
