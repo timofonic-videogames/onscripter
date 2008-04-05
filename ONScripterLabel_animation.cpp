@@ -184,7 +184,7 @@ void ONScripterLabel::setupAnimationInfo( AnimationInfo *anim, FontInfo *info )
         anim->allocImage( pos.w*anim->num_of_cells, pos.h );
         anim->fill( 0, 0, 0, 0 );
         
-        f_info.setRubyOnFlag(false);
+        f_info.setRubyOnFlag(anim->is_ruby_drawable);
         f_info.top_xy[0] = f_info.top_xy[1] = 0;
         for ( int i=0 ; i<anim->num_of_cells ; i++ ){
             f_info.clear();

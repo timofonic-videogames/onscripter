@@ -333,10 +333,10 @@ int ONScripterLabel::enterTextDisplayMode(bool text_flag)
             return RET_WAIT | RET_REREAD;
         }
         else{
-            dirty_rect.clear();
-            dirty_rect.add( sentence_font_info.pos );
 	    SDL_BlitSurface( accumulation_comp_surface, NULL, effect_dst_surface, NULL );
             SDL_BlitSurface( accumulation_surface, NULL, accumulation_comp_surface, NULL );
+            dirty_rect.clear();
+            dirty_rect.add( sentence_font_info.pos );
 
             return setEffect( &window_effect );
         }
@@ -345,7 +345,7 @@ int ONScripterLabel::enterTextDisplayMode(bool text_flag)
     return RET_NOMATCH;
 }
 
-int ONScripterLabel::leaveTextDisplayMode()
+int ONScripterLabel::leaveTextDisplayMode(bool force_leave_flag)
 {
     if ( display_mode & TEXT_DISPLAY_MODE &&
          erase_text_window_mode != 0 ){
@@ -1102,7 +1102,7 @@ bool ONScripterLabel::processBreaks(bool cont_line, LineBreakType style)
     }
     else { // style == SPACEBREAK
         // straight space-breaking
-        bool return_val = false; // does it contain space or printable ASCII?
+        bool return_val = false; // does it contain space?
         while (i<strlen(string_buffer)) {
             is_ruby = false;
             if (cmd < 0) {
@@ -1122,6 +1122,7 @@ bool ONScripterLabel::processBreaks(bool cont_line, LineBreakType style)
             }
             else if (!IS_TWO_BYTE(string_buffer[i+j]) &&
                 (string_buffer[i+j] == 0x0a ||
+                 string_buffer[i+j] == 0x00 ||
                  string_buffer[i+j] == '/' ||
                  (string_buffer[i+j] == ' ' &&
                   (had_wait || string_buffer[i] != ' ')))) {
@@ -1140,8 +1141,10 @@ bool ONScripterLabel::processBreaks(bool cont_line, LineBreakType style)
                 string_buffer_breaks[i+j] = true;
             } else {
                 string_buffer_breaks[i+j] = false;
-                if ((unsigned char) string_buffer[i+j] < 0x80)
+                if ((unsigned char) string_buffer[i+j] < 0x80) {
+                    printf("found ASCII: %d", string_buffer[i + j]);
                     return_val = true; // found ASCII
+                }
             }
             i += j;
             if (cmd < 0) {
