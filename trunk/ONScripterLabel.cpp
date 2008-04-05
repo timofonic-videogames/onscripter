@@ -718,7 +718,8 @@ int ONScripterLabel::init()
 		HRESULT res = gfp(0, CSIDL_COMMON_APPDATA, 0, 0, hpath);
 		if (res != S_FALSE && res != E_FAIL && res != E_INVALIDARG) {
 		    script_h.save_path = new char[strlen(hpath) + strlen(gameid) + 3];
-		    sprintf(script_h.save_path, "%s/%s/", hpath, gameid);
+		    sprintf(script_h.save_path, "%s%c%s%c",
+                            hpath, DELIMITER, gameid, DELIMITER);
 		    CreateDirectory(script_h.save_path, 0);
 		}
 	    }
@@ -737,14 +738,15 @@ int ONScripterLabel::init()
     char path[32768];
     FSRefMakePath(&appsupport, (UInt8*) path, 32768);
     script_h.save_path = new char[strlen(path) + strlen(gameid) + 2];
-    sprintf(script_h.save_path, "%s/%s/", path, gameid);
+    sprintf(script_h.save_path, "%s%c%s%c", path, DELIMITER, gameid, DELIMITER);
 	mkdir(script_h.save_path, 0755);
 #elif defined LINUX
 	// On Linux (and similar *nixen), place in ~/.gameid
 	passwd* pwd = getpwuid(getuid());
 	if (pwd) {
 	    script_h.save_path = new char[strlen(pwd->pw_dir) + strlen(gameid) + 4];
-	    sprintf(script_h.save_path, "%s/.%s/", pwd->pw_dir, gameid);
+	    sprintf(script_h.save_path, "%s%c.%s%c", 
+                    pwd->pw_dir, DELIMITER, gameid, DELIMITER);
 	    mkdir(script_h.save_path, 0755);
 	}
 	else script_h.save_path = archive_path->get_path(0);
@@ -757,6 +759,17 @@ int ONScripterLabel::init()
     if ( script_h.game_identifier ) {
 	delete[] script_h.game_identifier; 
 	script_h.game_identifier = NULL; 
+    }
+
+    if (strcmp(script_h.save_path,archive_path->get_path(0)) != 0) {
+        // insert save_path onto the front of archive_path
+        char *cur_paths = archive_path->get_all_paths();
+        delete archive_path;
+        archive_path = new DirPaths(script_h.save_path);
+        archive_path->add(cur_paths);
+        delete[] cur_paths;
+        cur_paths = archive_path->get_all_paths();
+        delete[] cur_paths;
     }
 
     initSDL();
