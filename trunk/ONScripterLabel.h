@@ -584,16 +584,16 @@ private:
     void setwindowCore();
 
     SDL_Surface *renderGlyph(TTF_Font *font, Uint16 text);
-    void drawGlyph( SDL_Surface *dst_surface, FontInfo *info, SDL_Color &color, char *text, int xy[2], bool shadow_flag, AnimationInfo *cache_info, SDL_Rect *clip, SDL_Rect &dst_rect );
-    void drawChar( char* text, FontInfo *info, bool flush_flag, bool lookback_flag, SDL_Surface *surface, AnimationInfo *cache_info, SDL_Rect *clip=NULL );
-    void drawString( const char *str, uchar3 color, FontInfo *info, bool flush_flag, SDL_Surface *surface, SDL_Rect *rect = NULL, AnimationInfo *cache_info=NULL );
+    void drawGlyph( SDL_Surface *dst_surface, Fontinfo *info, SDL_Color &color, char *text, int xy[2], bool shadow_flag, AnimationInfo *cache_info, SDL_Rect *clip, SDL_Rect &dst_rect );
+    void drawChar( char* text, Fontinfo *info, bool flush_flag, bool lookback_flag, SDL_Surface *surface, AnimationInfo *cache_info, SDL_Rect *clip=NULL );
+    void drawString( const char *str, uchar3 color, Fontinfo *info, bool flush_flag, SDL_Surface *surface, SDL_Rect *rect = NULL, AnimationInfo *cache_info=NULL );
     void restoreTextBuffer();
     int  enterTextDisplayMode(bool text_flag = true);
     int  leaveTextDisplayMode(bool force_leave_flag = false);
     void doClickEnd();
     int  clickWait( char *out_text );
     int  clickNewPage( char *out_text );
-    void startRuby(char *buf, FontInfo &info);
+    void startRuby(char *buf, Fontinfo &info);
     void endRuby(bool flush_flag, bool lookback_flag, SDL_Surface *surface);
     int  textCommand();
     int  processText();
@@ -646,7 +646,7 @@ private:
     int shortcut_mouse_line;
 
     void deleteSelectLink();
-    struct ButtonLink *getSelectableSentence( char *buffer, FontInfo *info, bool flush_flag = true, bool nofile_flag = false );
+    struct ButtonLink *getSelectableSentence( char *buffer, Fontinfo *info, bool flush_flag = true, bool nofile_flag = false );
 
     /* ---------------------------------------- */
     /* Sound related variables */
@@ -739,7 +739,7 @@ private:
     int  proceedAnimation();
     int  estimateNextDuration( AnimationInfo *anim, SDL_Rect &rect, int minimum );
     void resetRemainingTime( int t );
-    void setupAnimationInfo( AnimationInfo *anim, FontInfo *info=NULL );
+    void setupAnimationInfo( AnimationInfo *anim, Fontinfo *info=NULL );
     void parseTaggedString( AnimationInfo *anim );
     void drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo *anim, SDL_Rect &clip );
     void stopAnimation( int click );

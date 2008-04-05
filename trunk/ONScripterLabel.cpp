@@ -623,11 +623,6 @@ int ONScripterLabel::init()
 		CFURLGetFileSystemRepresentation(resourceurl,true,path,maxpath);
             CFRelease(resourceurl);
             if (validpath) {
-//                archive_path->add((const char*) path);
-//            }
-//        }
-//        
-//        if (archive_path->get_num_paths() > 0) {
 		// Verify the archive path by checking for the script file
 		const char* scriptfiles[] =
 		    {"0.txt","00.txt","nscr_sec.dat","nscript.___","nscript.dat",0};
@@ -635,7 +630,7 @@ int ONScripterLabel::init()
 		UInt8 test[maxpath];
 		for(;*p;p++) {
 		    sprintf((char*)test,"%s/%s",(const char*)path,*p);
-
+		    
 		    FSRef ref;
 		    OSErr err = FSPathMakeRef(test, &ref, NULL);
 		    if(err == noErr &&
@@ -763,11 +758,13 @@ int ONScripterLabel::init()
 
     if (strcmp(script_h.save_path,archive_path->get_path(0)) != 0) {
         // insert save_path onto the front of archive_path
-        char *cur_paths = archive_path->get_all_paths();
-        delete archive_path;
-        archive_path = new DirPaths(script_h.save_path);
-        archive_path->add(cur_paths);
-        delete[] cur_paths;
+	// The string returned by get_all_paths is deleted in ~DirPaths(), so the
+	// simplest way to do this is to create the new object before deleting the
+	// old one.
+	DirPaths* new_paths = new DirPaths(script_h.save_path);
+	new_paths->add(archive_path->get_all_paths());
+	delete archive_path;
+	archive_path = new_paths;
         ((DirectReader*) script_h.cBR)->setArchivePath(archive_path);
     }
 
@@ -1413,7 +1410,7 @@ void ONScripterLabel::clearCurrentPage()
     sentence_font.clear();
 
     int num = (sentence_font.num_xy[0]*2+1)*sentence_font.num_xy[1];
-    if (sentence_font.getTateyokoMode() == FontInfo::TATE_MODE)
+    if (sentence_font.getTateyokoMode() == Fontinfo::TATE_MODE)
         num = (sentence_font.num_xy[1]*2+1)*sentence_font.num_xy[1];
 
 // TEST for ados backlog cutoff problem
@@ -1501,7 +1498,7 @@ void ONScripterLabel::newPage( bool next_flag )
     flush( refreshMode(), &sentence_font_info.pos );
 }
 
-struct ONScripterLabel::ButtonLink *ONScripterLabel::getSelectableSentence( char *buffer, FontInfo *info, bool flush_flag, bool nofile_flag )
+struct ONScripterLabel::ButtonLink *ONScripterLabel::getSelectableSentence( char *buffer, Fontinfo *info, bool flush_flag, bool nofile_flag )
 {
     int current_text_xy[2];
     current_text_xy[0] = info->xy[0];
@@ -1534,7 +1531,7 @@ struct ONScripterLabel::ButtonLink *ONScripterLabel::getSelectableSentence( char
     button_link->select_rect = button_link->image_rect = anim->pos;
 
     info->newLine();
-    if (info->getTateyokoMode() == FontInfo::YOKO_MODE)
+    if (info->getTateyokoMode() == Fontinfo::YOKO_MODE)
         info->xy[0] = current_text_xy[0];
     else
         info->xy[1] = current_text_xy[1];

@@ -133,13 +133,13 @@ void ONScripterLabel::resetRemainingTime( int t )
     }
 }
 
-void ONScripterLabel::setupAnimationInfo( AnimationInfo *anim, FontInfo *info )
+void ONScripterLabel::setupAnimationInfo( AnimationInfo *anim, Fontinfo *info )
 {
     anim->deleteSurface();
     anim->abs_flag = true;
 
     if ( anim->trans_mode == AnimationInfo::TRANS_STRING ){
-        FontInfo f_info = sentence_font;
+        Fontinfo f_info = sentence_font;
         if (info) f_info = *info;
 
         if ( anim->font_size_xy[0] >= 0 ){ // in case of Sprite, not rclick menu

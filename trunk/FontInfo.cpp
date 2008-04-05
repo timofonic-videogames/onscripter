@@ -37,7 +37,7 @@ static struct FontContainer{
     };
 } root_font_container;
 
-FontInfo::FontInfo()
+Fontinfo::Fontinfo()
 {
     ttf_font = NULL;
 
@@ -51,7 +51,7 @@ FontInfo::FontInfo()
     reset();
 }
 
-void FontInfo::reset()
+void Fontinfo::reset()
 {
     tateyoko_mode = YOKO_MODE;
     rubyon_flag = false;
@@ -64,7 +64,7 @@ void FontInfo::reset()
     is_newline_accepted = false;
 }
 
-void *FontInfo::openFont( char *font_file, int ratio1, int ratio2 )
+void *Fontinfo::openFont( char *font_file, int ratio1, int ratio2 )
 {
     int font_size;
     if ( font_size_xy[0] < font_size_xy[1] )
@@ -91,18 +91,18 @@ void *FontInfo::openFont( char *font_file, int ratio1, int ratio2 )
     return fc->next->font;
 }
 
-void FontInfo::setTateyokoMode( int tateyoko_mode )
+void Fontinfo::setTateyokoMode( int tateyoko_mode )
 {
     this->tateyoko_mode = tateyoko_mode;
     clear();
 }
 
-int FontInfo::getTateyokoMode()
+int Fontinfo::getTateyokoMode()
 {
     return tateyoko_mode;
 }
 
-int FontInfo::getRemainingLine()
+int Fontinfo::getRemainingLine()
 {
     if (tateyoko_mode == YOKO_MODE)
         return num_xy[1] - xy[1]/2;
@@ -110,23 +110,23 @@ int FontInfo::getRemainingLine()
         return num_xy[1] - num_xy[0] + xy[0]/2 + 1;
 }
 
-int FontInfo::x()
+int Fontinfo::x()
 {
     return xy[0]*pitch_xy[0]/2 + top_xy[0] + line_offset_xy[0] + ruby_offset_xy[0];
 }
 
-int FontInfo::y()
+int Fontinfo::y()
 {
     return xy[1]*pitch_xy[1]/2 + top_xy[1] + line_offset_xy[1] + ruby_offset_xy[1];
 }
 
-void FontInfo::setXY( int x, int y )
+void Fontinfo::setXY( int x, int y )
 {
     if ( x != -1 ) xy[0] = x*2;
     if ( y != -1 ) xy[1] = y*2;
 }
 
-void FontInfo::clear()
+void Fontinfo::clear()
 {
     if (tateyoko_mode == YOKO_MODE)
         setXY(0, 0);
@@ -136,7 +136,7 @@ void FontInfo::clear()
     setRubyOnFlag(rubyon_flag);
 }
 
-void FontInfo::newLine()
+void Fontinfo::newLine()
 {
     if (tateyoko_mode == YOKO_MODE){
         xy[0] = 0;
@@ -149,13 +149,13 @@ void FontInfo::newLine()
     line_offset_xy[0] = line_offset_xy[1] = 0;
 }
 
-void FontInfo::setLineArea(int num)
+void Fontinfo::setLineArea(int num)
 {
     num_xy[tateyoko_mode] = num;
     num_xy[1-tateyoko_mode] = 1;
 }
 
-bool FontInfo::isEndOfLine(int margin)
+bool Fontinfo::isEndOfLine(int margin)
 {
     int offset = 2 * line_offset_xy[tateyoko_mode] / pitch_xy[tateyoko_mode];
     if (((2 * line_offset_xy[tateyoko_mode]) % pitch_xy[tateyoko_mode]) > 0)
@@ -166,24 +166,24 @@ bool FontInfo::isEndOfLine(int margin)
     return false;
 }
 
-bool FontInfo::isLineEmpty()
+bool Fontinfo::isLineEmpty()
 {
     if (xy[tateyoko_mode] == 0) return true;
 
     return false;
 }
 
-void FontInfo::advanceCharInHankaku(int offset)
+void Fontinfo::advanceCharInHankaku(int offset)
 {
     xy[tateyoko_mode] += offset;
 }
 
-void FontInfo::addLineOffset(int offset)
+void Fontinfo::addLineOffset(int offset)
 {
     line_offset_xy[tateyoko_mode] += offset;
 }
 
-void FontInfo::setRubyOnFlag(bool flag)
+void Fontinfo::setRubyOnFlag(bool flag)
 {
     rubyon_flag = flag;
     ruby_offset_xy[0] = ruby_offset_xy[1] = 0;
@@ -193,7 +193,7 @@ void FontInfo::setRubyOnFlag(bool flag)
 	ruby_offset_xy[1] = pitch_xy[1] - font_size_xy[1];
 }
 
-SDL_Rect FontInfo::calcUpdatedArea(int start_xy[2], int ratio1, int ratio2)
+SDL_Rect Fontinfo::calcUpdatedArea(int start_xy[2], int ratio1, int ratio2)
 {
     SDL_Rect rect;
     
@@ -231,7 +231,7 @@ SDL_Rect FontInfo::calcUpdatedArea(int start_xy[2], int ratio1, int ratio2)
     return rect;
 }
 
-void FontInfo::addShadeArea(SDL_Rect &rect, int shade_distance[2])
+void Fontinfo::addShadeArea(SDL_Rect &rect, int shade_distance[2])
 {
     if (is_shadow){
         if (shade_distance[0]>0)
@@ -249,7 +249,7 @@ void FontInfo::addShadeArea(SDL_Rect &rect, int shade_distance[2])
     }
 }
 
-int FontInfo::initRuby(FontInfo &body_info, int body_count, int ruby_count)
+int Fontinfo::initRuby(Fontinfo &body_info, int body_count, int ruby_count)
 {
     top_xy[0] = body_info.x();
     top_xy[1] = body_info.y();

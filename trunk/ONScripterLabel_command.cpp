@@ -39,8 +39,11 @@
 #include <windows.h>
 #endif
 
-#if defined(MACOSX) && (SDL_COMPILEDVERSION >= 1208)
+#ifdef MACOSX
+namespace Carbon {
 #include <CoreFoundation/CoreFoundation.h>
+#include <ApplicationServices/ApplicationServices.h>
+};
 #endif
 
 #define DEFAULT_CURSOR_WAIT    ":l/3,160,2;cursor0.bmp"
@@ -309,7 +312,7 @@ int ONScripterLabel::strspCommand()
     ai->removeTag();
     setStr(&ai->file_name, script_h.readStr());
 
-    FontInfo fi;
+    Fontinfo fi;
     fi.is_newline_accepted = true;
 #ifndef RCA_SCALE
     ai->pos.x = script_h.readInt() * screen_ratio1 / screen_ratio2;
@@ -571,8 +574,13 @@ int ONScripterLabel::shellCommand()
         FreeLibrary(shdll);
     }
 #elif defined MACOSX
-    //Mion - I don't know if this will build or work!
-    Carbon::LSOpenCFURLRef(url, NULL);
+    using namespace Carbon;
+    CFStringRef url_string = CFStringCreateWithCString(NULL, script_h.readStr(),
+						       kCFStringEncodingShiftJIS);
+    CFURLRef url = CFURLCreateWithString(NULL, url_string, NULL);
+    LSOpenCFURLRef(url, NULL);
+    CFRelease(url);
+    CFRelease(url_string);
 #elif defined LINUX
     //Mion - I don't know if this will build or work!
     // Let's assume that a $BROWSER environment variable exists
@@ -2903,7 +2911,7 @@ int ONScripterLabel::cselbtnCommand()
     int csel_no   = script_h.readInt();
     int button_no = script_h.readInt();
 
-    FontInfo csel_info = sentence_font;
+    Fontinfo csel_info = sentence_font;
     csel_info.setRubyOnFlag(false);
     csel_info.top_xy[0] = script_h.readInt();
     csel_info.top_xy[1] = script_h.readInt();
