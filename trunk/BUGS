@@ -1,9 +1,5 @@
 BUGS OR MISFEATURES
 
-* In full-page or fast-forward mode, spurious spaces are inserted at
-  the start of continuation lines (or possibly line breaks are placed
-  one character too early).
-
 * OS X: should look for missing files (eg font) inside bundles, even
   if the main game data is outside the bundle.
 
