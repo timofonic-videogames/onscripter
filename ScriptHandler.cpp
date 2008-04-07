@@ -188,6 +188,7 @@ const char *ScriptHandler::readToken()
 {
     current_script = next_script;
     char *buf = current_script;
+    char *tmp;
     end_status = END_NONE;
     current_variable.type = VAR_NONE;
 
@@ -216,8 +217,11 @@ const char *ScriptHandler::readToken()
         bool clickstr_flag = false;
         bool in_1byte_mode = false;
         do{
-            if (!in_1byte_mode) {
-                SKIP_SPACE(buf);
+            tmp = buf;
+            SKIP_SPACE(tmp);
+            if (!in_1byte_mode || (*tmp == 0x0a) || (*tmp == 0x00)) {
+                // always skip trailing spaces
+                buf = tmp;
                 ch = *buf;
             }
             if ( IS_TWO_BYTE(ch) ){
