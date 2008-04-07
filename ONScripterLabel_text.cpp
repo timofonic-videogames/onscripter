@@ -184,13 +184,13 @@ void ONScripterLabel::drawChar( char* text, Fontinfo *info, bool flush_flag, boo
     color.b = info->color[2];
     drawGlyph( surface, info, color, out_text, xy, false, cache_info, clip, dst_rect );
 
-    info->addShadeArea(dst_rect, shade_distance);
     if ( surface == accumulation_surface &&
          !flush_flag &&
          (!clip || AnimationInfo::doClipping( &dst_rect, clip ) == 0) ){
         dirty_rect.add( dst_rect );
     }
     else if ( flush_flag ){
+        info->addShadeArea(dst_rect, shade_distance);
         flushDirect( dst_rect, REFRESH_NONE_MODE );
     }
 
@@ -348,7 +348,7 @@ int ONScripterLabel::enterTextDisplayMode(bool text_flag)
 int ONScripterLabel::leaveTextDisplayMode(bool force_leave_flag)
 {
     if ( display_mode & TEXT_DISPLAY_MODE &&
-         erase_text_window_mode != 0 ){
+         (force_leave_flag || erase_text_window_mode != 0 ) ){
 
         if ( event_mode & EFFECT_EVENT_MODE ){
             if ( doEffect( &window_effect,  NULL, DIRECT_EFFECT_IMAGE, false ) == RET_CONTINUE ){
@@ -410,7 +410,6 @@ int ONScripterLabel::clickWait( char *out_text )
         return RET_CONTINUE | RET_NOREAD;
     }
     else{
-        clickstr_state = CLICK_WAIT;
         key_pressed_flag = false;
         if ( textgosub_label ){
             saveoffCommand();
@@ -434,6 +433,7 @@ int ONScripterLabel::clickWait( char *out_text )
             return RET_CONTINUE;
         }
 
+        clickstr_state = CLICK_WAIT;
         doClickEnd();
 
         return RET_WAIT | RET_NOREAD;
