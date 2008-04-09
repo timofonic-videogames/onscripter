@@ -50,6 +50,9 @@ static iconv_t iconv_cd = NULL;
 #define N (1 << EI)  /* buffer size */
 #define F ((1 << EJ) + P)  /* lookahead buffer size */
 
+#define IS_TWO_BYTE(x) \
+        ( ((x) & 0xe0) == 0xe0 || ((x) & 0xe0) == 0x80 )
+
 DirectReader::DirectReader( DirPaths *path, const unsigned char *key_table )
 {
     file_full_path = NULL;
@@ -114,6 +117,7 @@ FILE *DirectReader::fopen(const char *path, const char *mode)
     FILE *fp = NULL;
 
     size_t len = archive_path->max_path_len() + strlen(path) + 1;
+
     if (file_path_len < len){
         file_path_len = len;
         if (file_full_path) delete[] file_full_path;
@@ -123,25 +127,78 @@ FILE *DirectReader::fopen(const char *path, const char *mode)
     }
     for (int n=0; n<archive_path->get_num_paths(); n++) {
         sprintf( file_full_path, "%s%s", archive_path->get_path(n), path );
-
+        //printf("filename: \"%s\"\n", file_full_path);
+/*
+#if !defined(WIN32) && !defined(MACOS9) && !defined(PSP) && !defined(__OS2__)
+//Mion: need to escape backslashes in UNIX - which defined covers them?
+        int i = 0;
+        char *buf = file_full_path;
+        while (*buf) {
+            if (*buf == '\\') i++;
+            buf++;
+        }
+        if (i > 0) {
+            // found backslash(es) that need to be escaped
+            len = strlen(file_full_path) + i + 1;
+            if (file_path_len < len) {
+                file_path_len = len;
+            }
+            char *tmp = new char[file_path_len];
+            buf = file_full_path;
+            i = 0;
+            while (*buf) {
+                if (*buf == '\\') *(tmp + i++) = '\\';
+                *(tmp + i++) = *buf++;
+            }
+            *(tmp + i) = '\0';
+            buf = file_full_path;
+            file_full_path = tmp;
+            delete[] buf;
+            //printf("escaped filename: \"%s\"\n", file_full_path);
+        }
+#endif
+*/
         fp = ::fopen( file_full_path, mode );
         if (fp) return fp;
     }
 
 #if !defined(WIN32) && !defined(MACOS9) && !defined(PSP) && !defined(__OS2__)
     // If the file wasn't found, try a case-insensitive search.
-    // (For now, only search the first archive path.)
     char *cur_p = NULL;
     DIR *dp = NULL;
+    
     len = 0;
-    if (archive_path->get_num_paths())
-	len = strlen(archive_path->get_path(0));
-    if (len > 0) dp = opendir(archive_path->get_path(0));
-    else         dp = opendir(".");
+    int n = archive_path->get_num_paths();
+    int i=1;
+    if (n > 0)
+        len = strlen(archive_path->get_path(0));
+    if (len > 0) {
+        dp = opendir(archive_path->get_path(0));
+        sprintf( file_full_path, "%s%s", archive_path->get_path(0), path );
+    } else {
+        dp = opendir(".");
+        sprintf( file_full_path, "%s", path );
+    }
     cur_p = file_full_path+len;
 
     while (1){
-        if (dp == NULL) return NULL;
+        if (dp == NULL) {
+            if (i < n) {
+                len = strlen(archive_path->get_path(i));
+                if (len > 0) {
+                    dp = opendir(archive_path->get_path(i));
+                    sprintf( file_full_path, "%s%s",
+                            archive_path->get_path(i), path );
+                } else {
+                    dp = opendir(".");
+                    sprintf( file_full_path, "%s", path );
+                }
+                cur_p = file_full_path+len;
+                i++;
+            } else
+                return NULL;
+        }
+        if (dp == NULL) continue;
 
         char *delim_p = NULL;
         while(1){
@@ -310,9 +367,12 @@ FILE *DirectReader::getFileHandle( const char *file_name, int &compression_type,
     if ( len > MAX_FILE_NAME_LENGTH ) len = MAX_FILE_NAME_LENGTH;
     memcpy( capital_name, file_name, len );
     capital_name[ len ] = '\0';
-
+//Mion: need to do more careful SJIS checking in this next part
     for ( i=0 ; i<len ; i++ ){
-        if ( capital_name[i] == '/' || capital_name[i] == '\\' ) capital_name[i] = (char)DELIMITER;
+        if (IS_TWO_BYTE(capital_name[i])) {
+            i++;
+        } else if ( capital_name[i] == '/' || capital_name[i] == '\\' )
+            capital_name[i] = (char)DELIMITER;
     }
 
 #ifdef UTF8_FILESYSTEM
