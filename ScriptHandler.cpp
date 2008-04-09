@@ -223,6 +223,7 @@ const char *ScriptHandler::readToken()
                 // always skip trailing spaces
                 buf = tmp;
                 ch = *buf;
+                if (ch == 0x0a || ch == '\0') break;
             }
             if ( IS_TWO_BYTE(ch) ){
                 if (!ignore_click_flag && checkClickstr(buf) > 0)
