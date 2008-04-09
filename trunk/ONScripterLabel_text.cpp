@@ -539,11 +539,6 @@ void ONScripterLabel::endRuby(bool flush_flag, bool lookback_flag, SDL_Surface *
             else{
                 out_text[1] = '\0';
                 drawChar( out_text, &ruby_font, flush_flag,  lookback_flag, surface, &text_info );
-                if ( *(buf+1) ){
-                    out_text[1] = *(buf+1);
-                    drawChar( out_text, &ruby_font, flush_flag,  lookback_flag, surface, &text_info );
-                    buf++;
-                }
             }
             buf++;
         }
@@ -1004,7 +999,7 @@ void ONScripterLabel::processRuby(unsigned int i, int cmd)
     //printf("ruby margin: %d; at %s", string_buffer_margins[i], string_buffer+i);
     j = i + -cmd;
     // no breaking within a ruby
-    for (k=i; k<j; k++) {
+    for (k=i+1; k<j; k++) {
         string_buffer_breaks[k] = false;
     }
 }
@@ -1037,7 +1032,7 @@ bool ONScripterLabel::processBreaks(bool cont_line, LineBreakType style)
         string_buffer_breaks[i] = true;
     else {
         string_buffer_breaks[i] = false;
-        //printf("Can't break before %s", string_buffer + i);
+        //printf("Can't break before:%s", string_buffer + i);
     }
     if (cmd < 0) {
         // at a ruby command
@@ -1080,13 +1075,14 @@ bool ONScripterLabel::processBreaks(bool cont_line, LineBreakType style)
                 (!is_ruby && isStartKinsoku(string_buffer + i + j))) {
                 // don't break before start-kinsoku or after end-kinsoku
                 string_buffer_breaks[i+j] = false;
-                //printf("Can't break before %s", string_buffer + i + j);
+                //printf("Can't break before:%s", string_buffer + i + j);
             } else {
                 if ((cmd >= 0) && ((unsigned char) string_buffer[i+j] < 0x80) &&
                     !(string_buffer[i+j] == ' ' || string_buffer[i+j] == 0x00 ||
                       string_buffer[i+j] == 0x0a)) {
                     // treat standard ASCII as start-kinsoku,
                     // except for space or line-end
+                    printf("Can't break before:%s", string_buffer + i + j);
                     string_buffer_breaks[i+j] = false;
                 }
                 else
@@ -1190,6 +1186,7 @@ int ONScripterLabel::findNextBreak(int offset, int &len)
     while (i<(int)(strlen(string_buffer)+2)) {
         if (in_ruby && (string_buffer[i] == '/')) {
             // done with ruby body; skip past ruby command
+            len += 3; // seems we need to do this to match Nscr
             i = ruby_end;
             in_ruby = false;
             ruby_end = 0;

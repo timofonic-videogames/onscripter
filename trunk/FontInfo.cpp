@@ -275,9 +275,9 @@ int Fontinfo::initRuby(Fontinfo &body_info, int body_count, int ruby_count)
     else{
         int offset = 0;
         if (ruby_count > 0) 
-            offset = (body_count*body_info.pitch_xy[tateyoko_mode] - ruby_count*font_size_xy[tateyoko_mode] + ruby_count) / (ruby_count*2);
-        top_xy[tateyoko_mode] += offset;
-        pitch_xy[tateyoko_mode] += offset*2;
+            offset = (body_count*body_info.pitch_xy[tateyoko_mode] - ruby_count*font_size_xy[tateyoko_mode]) / ruby_count;
+        top_xy[tateyoko_mode] += (offset+1)/2;
+        pitch_xy[tateyoko_mode] += offset;
     }
     //body_info.line_offset_xy[tateyoko_mode] += margin;
     
