@@ -208,7 +208,7 @@ void ONScripterLabel::drawChar( char* text, Fontinfo *info, bool flush_flag, boo
     }
 }
 
-void ONScripterLabel::drawString( const char *str, uchar3 color, Fontinfo *info, bool flush_flag, SDL_Surface *surface, SDL_Rect *rect, AnimationInfo *cache_info )
+void ONScripterLabel::drawString( const char *str, uchar3 color, Fontinfo *info, bool flush_flag, SDL_Surface *surface, SDL_Rect *rect, AnimationInfo *cache_info, bool skip_whitespace_flag )
 {
     int i;
 
@@ -222,7 +222,7 @@ void ONScripterLabel::drawString( const char *str, uchar3 color, Fontinfo *info,
     for ( i=0 ; i<3 ; i++ ) org_color[i] = info->color[i];
     for ( i=0 ; i<3 ; i++ ) info->color[i] = color[i];
 
-    bool skip_whitespace_flag = true;
+    //bool skip_whitespace_flag = true;
     char text[3] = { '\0', '\0', '\0' };
     while( *str ){
         while (*str == ' ' && skip_whitespace_flag) str++;

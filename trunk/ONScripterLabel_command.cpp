@@ -1702,6 +1702,9 @@ int ONScripterLabel::logspCommand()
     si.is_single_line = false;
     si.is_tight_region = false;
     si.is_ruby_drawable = true;
+#ifdef ENABLE_1BYTE_CHAR
+    si.skip_whitespace = false;
+#endif
     sentence_font.is_newline_accepted = true;
     setupAnimationInfo( &si );
     sentence_font.is_newline_accepted = false;

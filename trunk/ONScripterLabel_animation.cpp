@@ -161,7 +161,7 @@ void ONScripterLabel::setupAnimationInfo( AnimationInfo *anim, Fontinfo *info )
 
         SDL_Rect pos;
         if (anim->is_tight_region){
-	    drawString( anim->file_name, anim->color_list[ anim->current_cell ], &f_info, false, NULL, &pos );
+	    drawString( anim->file_name, anim->color_list[ anim->current_cell ], &f_info, false, NULL, &pos, NULL, anim->skip_whitespace );
         }
         else{
             int xy_bak[2];
@@ -188,7 +188,7 @@ void ONScripterLabel::setupAnimationInfo( AnimationInfo *anim, Fontinfo *info )
         f_info.top_xy[0] = f_info.top_xy[1] = 0;
         for ( int i=0 ; i<anim->num_of_cells ; i++ ){
             f_info.clear();
-            drawString( anim->file_name, anim->color_list[i], &f_info, false, NULL, NULL, anim );
+            drawString( anim->file_name, anim->color_list[i], &f_info, false, NULL, NULL, anim, anim->skip_whitespace );
             f_info.top_xy[0] += anim->pos.w * screen_ratio2 / screen_ratio1;
         }
     }
