@@ -234,6 +234,29 @@ void ONScripterLabel::drawString( const char *str, uchar3 color, Fontinfo *info,
             continue;
         }
 #endif
+        if (cache_info && !cache_info->is_tight_region){
+            if (*str == '('){
+                startRuby((char *)str+1, *info);
+                info->addLineOffset(ruby_struct.margin);
+                str++;
+                continue;
+            }
+            else if (*str == '/' && ruby_struct.stage == RubyStruct::BODY ){
+                info->addLineOffset(ruby_struct.margin);
+                str = ruby_struct.ruby_end;
+                if (*ruby_struct.ruby_end == ')'){
+                    endRuby(false, false, NULL, cache_info);
+                    str++;
+                }
+                continue;
+            }
+            else if (*str == ')' && ruby_struct.stage == RubyStruct::BODY ){
+                ruby_struct.stage = RubyStruct::NONE;
+                str++;
+                continue;
+            }
+        }
+
         if ( IS_TWO_BYTE(*str) ){
             /* Kinsoku process */
             if (info->isEndOfLine(2) && isStartKinsoku( str+2 )){
@@ -295,7 +318,7 @@ void ONScripterLabel::restoreTextBuffer()
 	        f_info.addLineOffset(ruby_struct.margin);
 	        i = ruby_struct.ruby_end - current_page->text - 1;
 	        if (*ruby_struct.ruby_end == ')'){
-                    endRuby(false, false, NULL);
+                    endRuby(false, false, NULL, &text_info);
                     i++;
 	        }
 	        continue;
@@ -523,7 +546,7 @@ void ONScripterLabel::startRuby(char *buf, Fontinfo &info)
     ruby_struct.margin = ruby_font.initRuby(info, ruby_struct.body_count/2, ruby_struct.ruby_count/2);
 }
 
-void ONScripterLabel::endRuby(bool flush_flag, bool lookback_flag, SDL_Surface *surface)
+void ONScripterLabel::endRuby(bool flush_flag, bool lookback_flag, SDL_Surface *surface, AnimationInfo *cache_info)
 {
     char out_text[3]= {'\0', '\0', '\0'};
     if ( rubyon_flag ){
@@ -533,12 +556,12 @@ void ONScripterLabel::endRuby(bool flush_flag, bool lookback_flag, SDL_Surface *
             out_text[0] = *buf;
             if ( IS_TWO_BYTE(*buf) ){
                 out_text[1] = *(buf+1);
-                drawChar( out_text, &ruby_font, flush_flag, lookback_flag, surface, &text_info );
+                drawChar( out_text, &ruby_font, flush_flag, lookback_flag, surface, cache_info );
                 buf++;
             }
             else{
                 out_text[1] = '\0';
-                drawChar( out_text, &ruby_font, flush_flag,  lookback_flag, surface, &text_info );
+                drawChar( out_text, &ruby_font, flush_flag,  lookback_flag, surface, cache_info );
             }
             buf++;
         }
@@ -828,9 +851,9 @@ int ONScripterLabel::processText()
             string_buffer_offset = ruby_struct.ruby_end - script_h.getStringBuffer();
             if (*ruby_struct.ruby_end == ')'){
                 if ( skip_flag || draw_one_page_flag || ctrl_pressed_status )
-                    endRuby(false, true, accumulation_surface);
+                    endRuby(false, true, accumulation_surface, &text_info);
                 else
-                    endRuby(true, true, accumulation_surface);
+                    endRuby(true, true, accumulation_surface, &text_info);
                 current_page->add(')');
                 string_buffer_offset++;
             }
