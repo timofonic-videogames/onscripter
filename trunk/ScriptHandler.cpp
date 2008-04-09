@@ -223,7 +223,6 @@ const char *ScriptHandler::readToken()
                 // always skip trailing spaces
                 buf = tmp;
                 ch = *buf;
-                if (ch == 0x0a || ch == '\0') break;
             }
             if ( IS_TWO_BYTE(ch) ){
                 if (!ignore_click_flag && checkClickstr(buf) > 0)
@@ -263,7 +262,8 @@ const char *ScriptHandler::readToken()
                         addStringBuffer( LPAREN );
                     } else if (ch == ')') {
                         addStringBuffer( RPAREN );
-                    } else
+                    } else if (ch == 0x0a || ch == '\0') break;
+                    else
                         addStringBuffer( ch );
                     ch = *++buf;
                 }
