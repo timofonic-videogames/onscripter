@@ -27,7 +27,8 @@
 #include <dirent.h>
 #endif
 
-#ifdef UTF8_FILESYSTEM
+#if defined(MACOSX) || defined(LINUX) || defined(UTF8_FILESYSTEM)
+#define RECODING_FILENAMES
 #ifdef MACOSX
 #include <CoreFoundation/CoreFoundation.h>
 #else
@@ -61,7 +62,7 @@ DirectReader::DirectReader( DirPaths *path, const unsigned char *key_table )
 
     capital_name = new char[MAX_FILE_NAME_LENGTH*2+1];
     capital_name_tmp = new char[MAX_FILE_NAME_LENGTH*2+1];
-#if defined(UTF8_FILESYSTEM) && !defined(MACOSX)
+#if defined(RECODING_FILENAMES) && !defined(MACOSX)
     if (iconv_cd == NULL) iconv_cd = iconv_open("UTF-8", "SJIS");
     iconv_ref_count++;
 #endif
@@ -95,7 +96,7 @@ DirectReader::~DirectReader()
 
     delete[] capital_name;
     delete[] capital_name_tmp;
-#if defined(UTF8_FILESYSTEM) && !defined(MACOSX)
+#if defined(RECODING_FILENAMES) && !defined(MACOSX)
     if (--iconv_ref_count == 0){
         iconv_close(iconv_cd);
         iconv_cd = NULL;
@@ -346,14 +347,44 @@ FILE *DirectReader::getFileHandle( const char *file_name, int &compression_type,
             capital_name[i] = (char)DELIMITER;
     }
 
-#ifdef UTF8_FILESYSTEM
-    convertFromSJISToUTF8(capital_name_tmp, capital_name, len);
-    strcpy(capital_name, capital_name_tmp);
-    len = strlen(capital_name);
-#elif defined(LINUX)
-    convertFromSJISToEUC(capital_name);
-#endif    
-
+    // On non-Windows platforms it's hard to predict how filenames
+    // will be encoded.
+    //
+    // What does this mean?  Simple: if you have any choice in the
+    // matter, DON'T USE JAPANESE IN FILENAMES.  It's nothing but
+    // trouble.  Games that directly access files with Japanese names
+    // should be considered not just essentially unsupported, but
+    // unsupportable.  We do our best, but it's basically impossible
+    // to guarantee that someone on OS X or Linux will manage to
+    // install the game in such a way that it's even _possible_ to
+    // access the filenames (e.g. they may be mangled irretrievably
+    // during the installation process, if the user has a Latin-1
+    // locale...)
+    //
+    // But we DO do our best, which is to try the likely options in
+    // turn; this is inefficent, but hopefully a bit more robust than
+    // requiring a single encoding to be compiled in.
+#ifdef RECODING_FILENAMES
+    // Try Shift_JIS
+    if (!(fp = fopen(capital_name, "rb"))) {
+	// Try UTF-8
+	convertFromSJISToUTF8(capital_name_tmp, capital_name, len);
+	if ((fp = fopen(capital_name_tmp, "rb"))) {
+	    strcpy(capital_name, capital_name_tmp);
+	    len = strlen(capital_name);
+	}
+	else {
+	    // Try EUC-JP
+	    convertFromSJISToEUC(capital_name);
+	    if (!(fp = fopen(capital_name, "rb"))) {
+		fprintf(stderr, "Warning: couldn't access %s even after "
+			"transcoding the filename.\n", file_name);
+	    }
+	}
+    }
+    if (fp) fclose(fp);
+#endif
+    
     *length = 0;
     if ( (fp = fopen( capital_name, "rb" )) != NULL && len >= 3 ){
         compression_type = getRegisteredCompressionType( capital_name );
@@ -438,13 +469,15 @@ void DirectReader::convertFromSJISToEUC( char *buf )
 
 void DirectReader::convertFromSJISToUTF8( char *dst_buf, char *src_buf, size_t src_len )
 {
-#ifdef UTF8_FILESYSTEM
+#ifdef RECODING_FILENAMES
 #ifdef MACOSX
-    CFStringRef unicodeStrRef = CFStringCreateWithBytes(nil, (const UInt8*)src_buf, src_len, 
-                                                        kCFStringEncodingShiftJIS, false);
-    Boolean ret = CFStringGetCString(unicodeStrRef, dst_buf, src_len*2+1, kCFStringEncodingUTF8);
-    CFRelease(unicodeStrRef);
+    CFStringRef unicodeStrRef =
+	CFStringCreateWithBytes(nil, (const UInt8*)src_buf, src_len, 
+				kCFStringEncodingShiftJIS, false);
+    Boolean ret = CFStringGetCString(unicodeStrRef, dst_buf, src_len*2+1,
+				     kCFStringEncodingUTF8);
     if (!ret) strcpy(dst_buf, src_buf);
+    CFRelease(unicodeStrRef);
 #else
     src_len++;
     size_t dst_len = src_len*2+1;
