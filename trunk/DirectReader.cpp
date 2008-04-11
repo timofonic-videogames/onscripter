@@ -127,38 +127,9 @@ FILE *DirectReader::fopen(const char *path, const char *mode)
     }
     for (int n=0; n<archive_path->get_num_paths(); n++) {
         sprintf( file_full_path, "%s%s", archive_path->get_path(n), path );
-        //printf("filename: \"%s\"\n", file_full_path);
-/*
-#if !defined(WIN32) && !defined(MACOS9) && !defined(PSP) && !defined(__OS2__)
-//Mion: need to escape backslashes in UNIX - which defined covers them?
-        int i = 0;
-        char *buf = file_full_path;
-        while (*buf) {
-            if (*buf == '\\') i++;
-            buf++;
-        }
-        if (i > 0) {
-            // found backslash(es) that need to be escaped
-            len = strlen(file_full_path) + i + 1;
-            if (file_path_len < len) {
-                file_path_len = len;
-            }
-            char *tmp = new char[file_path_len];
-            buf = file_full_path;
-            i = 0;
-            while (*buf) {
-                if (*buf == '\\') *(tmp + i++) = '\\';
-                *(tmp + i++) = *buf++;
-            }
-            *(tmp + i) = '\0';
-            buf = file_full_path;
-            file_full_path = tmp;
-            delete[] buf;
-            //printf("escaped filename: \"%s\"\n", file_full_path);
-        }
-#endif
-*/
+//	printf("filename: \"%s\": ", file_full_path);
         fp = ::fopen( file_full_path, mode );
+//	puts(fp ? "found" : "not found");
         if (fp) return fp;
     }
 

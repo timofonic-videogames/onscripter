@@ -356,10 +356,10 @@ int ONScripterLabel::enterTextDisplayMode(bool text_flag)
             return RET_WAIT | RET_REREAD;
         }
         else{
-	    SDL_BlitSurface( accumulation_comp_surface, NULL, effect_dst_surface, NULL );
-            SDL_BlitSurface( accumulation_surface, NULL, accumulation_comp_surface, NULL );
             dirty_rect.clear();
             dirty_rect.add( sentence_font_info.pos );
+	    SDL_BlitSurface( accumulation_comp_surface, NULL, effect_dst_surface, NULL );
+            SDL_BlitSurface( accumulation_surface, NULL, accumulation_comp_surface, NULL );
 
             return setEffect( &window_effect );
         }
