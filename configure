@@ -737,7 +737,8 @@ Linux)   INTERNAL_LDFLAGS="-ldl -lasound" ;;
 FreeBSD) INTERNAL_LDFLAGS="-L/usr/X11R6/lib -lX11 -lXi -lXrandr" ;;
 NetBSD)  INTERNAL_LDFLAGS="\$(foreach x,11 i randr ext render,/usr/X11R6/lib/libX\$(x).a) -lossaudio" ;;
 OpenBSD) INTERNAL_LDFLAGS="-L/usr/X11R6/lib -lX11 -lXi -lXrandr -lossaudio" ;;
-Solaris) INTERNAL_LDFLAGS="-lX11 -lXext" ;;
+Solaris) INTERNAL_LDFLAGS="-lX11 -lXext"
+         EXTRA_DEPS="-DCONST_ICONV" ;;
 esac
 cat >> Makefile <<_EOF
 
@@ -749,7 +750,7 @@ LIBS = -Lextlib/lib \\
        $LINKSDL_ttf \$(shell $FREETYPE_CONFIG --libs) \\
        $LINKbz2 \$(if \$(findstring true,$INTERNAL_SDL),$INTERNAL_LDFLAGS)
 
-DEFS = -DLINUX -DUSE_OGG_VORBIS -DENABLE_1BYTE_CHAR -DINSANI -DHAELETH
+DEFS = -DLINUX -DUSE_OGG_VORBIS -DENABLE_1BYTE_CHAR -DINSANI -DHAELETH $EXTRA_DEPS
 _EOF
 ;; esac
 if [ "$POSIX" = "Linux" ]

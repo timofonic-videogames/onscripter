@@ -38,6 +38,12 @@ static iconv_t iconv_cd = NULL;
 #endif
 #endif
 
+#ifdef CONST_ICONV
+#define ICONVCAST (const char**)
+#else
+#define ICONVCAST
+#endif
+
 #ifndef SEEK_END
 #define SEEK_END 2
 #endif
@@ -481,7 +487,7 @@ void DirectReader::convertFromSJISToUTF8( char *dst_buf, char *src_buf, size_t s
 #else
     src_len++;
     size_t dst_len = src_len*2+1;
-    int ret = iconv(iconv_cd, &src_buf, &src_len, &dst_buf, &dst_len);
+    int ret = iconv(iconv_cd, ICONVCAST &src_buf, &src_len, &dst_buf, &dst_len);
     if (ret == -1) strcpy(dst_buf, src_buf);
 #endif
 #endif
