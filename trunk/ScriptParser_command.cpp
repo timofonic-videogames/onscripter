@@ -1341,3 +1341,10 @@ int ScriptParser::debugprintCommand()
     fflush(stdout);
     return RET_CONTINUE;
 }
+
+int ScriptParser::englishCommand()
+{
+    fputs("NScripter's broken \"english\" command is not supported.\n",
+	  stderr);
+    return RET_CONTINUE;
+}

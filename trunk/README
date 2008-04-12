@@ -113,15 +113,48 @@ POSIX-conformant platform.  You may need to tweak the final link line
 if using static libraries -- see the configure script for examples of
 incantations that work on FreeBSD, NetBSD, and Solaris.
 
-This distribution is also supported on Windows (though only 32-bit
-versions have been tested).  Building on Windows requires the MinGW
-distribution of g++, and the MSYS environment.  Windows users
-unfamiliar with the GNU build environment might prefer to stick with
-the binary distribution, which should work everywhere (this is the one
-thing Microsoft has got right!)
+This distribution is also supported on Windows (primarily 32-bit
+versions).  Building on Windows requires the MinGW distribution of
+g++, and the MSYS environment.  Windows users unfamiliar with the GNU
+build environment might prefer to stick with the binary distribution,
+which should work everywhere (this is one thing Microsoft has got
+right!)
 
 Please see INSTALL in the source distribution for specific build
 instructions.
+
+
+  LOCALISATION
+
+While ONScripter proper, and previous versions of ONScripter-En,
+require English or Japanese settings to be selected at compile-time,
+this version can be run in both English and Japanese modes.
+
+In Japanese mode, the built-in menus are in Japanese, numbers are
+printed using full-width characters, and line-breaking decisions are
+based on Japanese rules (breaks are allowed in the middle of words,
+but not before or after certain special characters).
+
+In English mode, the built-in menus are in English, numbers are
+printed using half-width characters, and line-breaking decisions are
+based on English rules (breaks are only allowed between words).
+
+You can select a mode within a script by using the commands
+  language english
+and
+  language japanese
+It is recommended that you just set the language once at startup, but
+you can switch between them during the game if you need to.  (If you
+do, and your game uses the built-in menus, be sure to switch back to
+your primary language before any point at which the player can bring
+up a menu, or they will probably be very confused!)
+
+The default mode is determined by the name of the ONScripter binary
+(or bundle, on OS X).  If it is something like "onscripter-en" or
+"ONScripter-En.exe", the default mode will be English; otherwise it
+will be Japanese.  (This is intended to allow users to play existing
+games in an appropriate mode -- if releasing a game yourself, you
+should use an explicit language command instead of relying on this.)
 
 
   CONTACT INFORMATION

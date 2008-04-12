@@ -165,6 +165,7 @@ public:
     //int gameCommand();
     int forCommand();
     int filelogCommand();
+    int englishCommand();
     int effectcutCommand();
     int effectblankCommand();
     int effectCommand();

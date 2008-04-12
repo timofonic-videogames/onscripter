@@ -134,6 +134,7 @@ static struct FuncLUT{
     //{"game",    &ScriptParser::gameCommand},
     {"for",   &ScriptParser::forCommand},
     {"filelog",   &ScriptParser::filelogCommand},
+    {"english",   &ScriptParser::englishCommand},
     {"effectcut",   &ScriptParser::effectcutCommand},
     {"effectblank",   &ScriptParser::effectblankCommand},
     {"effect",   &ScriptParser::effectCommand},
