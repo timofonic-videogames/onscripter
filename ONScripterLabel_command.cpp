@@ -1237,13 +1237,7 @@ int ONScripterLabel::puttextCommand()
     if (script_h.getStringBuffer()[string_buffer_offset] == 0x0a){
         ret = RET_CONTINUE; // suppress RET_CONTINUE | RET_NOREAD
         if (!sentence_font.isLineEmpty() && !new_line_skip_flag){
-            current_page->add( 0x0a );
-            sentence_font.newLine();
-            for (int i=0 ; i<indent_offset ; i++){
-                current_page->add(0x81);
-                current_page->add(0x40);
-                sentence_font.advanceCharInHankaku(2);
-            }
+            doLineBreak();
         }
     }
     if (ret != RET_CONTINUE){
