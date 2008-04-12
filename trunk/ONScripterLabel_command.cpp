@@ -34,6 +34,7 @@
 #include <sys/types.h>
 #include <string.h>
 #include <errno.h>
+
 #ifdef WIN32
 #include <direct.h>
 #include <windows.h>
@@ -44,6 +45,12 @@ namespace Carbon {
 #include <CoreFoundation/CoreFoundation.h>
 #include <ApplicationServices/ApplicationServices.h>
 };
+#endif
+
+#ifdef LINUX
+#include <sys/wait.h>
+#include <unistd.h>
+#include <errno.h>
 #endif
 
 #define DEFAULT_CURSOR_WAIT    ":l/3,160,2;cursor0.bmp"
@@ -560,38 +567,104 @@ int ONScripterLabel::skipoffCommand()
     return RET_CONTINUE;
 }
 
+#ifdef LINUX
+int tryToLaunch(const char* command, const char* target)
+{
+    if (!command || !target) return -1;
+    pid_t child = vfork();
+    if (child == -1) {
+	// Parent, failed
+	fprintf(stderr, "Could not open `%s': fork error: %s\n",
+		target, strerror(errno));
+	return 0;
+    }
+    else if (child) {
+	// Parent, success
+	int status;
+	waitpid(child, &status, 0);
+	if (WIFEXITED(status)) return WEXITSTATUS(status);
+	return -1;
+    }
+    else {
+	// Child
+	execlp(command, command, target, (char*) NULL);
+	_exit(255);
+    }
+}
+#endif
+
 int ONScripterLabel::shellCommand()
 {
 #ifdef WIN32
     const char *url = script_h.readStr();
     HMODULE shdll = LoadLibrary("shell32");
     if (shdll) {
-        typedef HINSTANCE (WINAPI *SHELLEXECUTE)(HWND, LPCSTR, LPCSTR, LPCSTR, LPCSTR, int);
-        SHELLEXECUTE shexec = SHELLEXECUTE(GetProcAddress(shdll, "ShellExecuteA"));
+        typedef HINSTANCE (WINAPI *SHELLEXECUTE)(HWND, LPCSTR, LPCSTR, LPCSTR,
+						 LPCSTR, int);
+        SHELLEXECUTE shexec =
+	    SHELLEXECUTE(GetProcAddress(shdll, "ShellExecuteA"));
         if (shexec) {
             shexec(NULL, "open", url, NULL, NULL, SW_SHOW);
         }
         FreeLibrary(shdll);
     }
+    
 #elif defined MACOSX
     using namespace Carbon;
-    CFStringRef url_string = CFStringCreateWithCString(NULL, script_h.readStr(),
-						       kCFStringEncodingShiftJIS);
+    CFStringRef url_string =
+	CFStringCreateWithCString(NULL, script_h.readStr(),
+				  kCFStringEncodingShiftJIS);
     CFURLRef url = CFURLCreateWithString(NULL, url_string, NULL);
     LSOpenCFURLRef(url, NULL);
     CFRelease(url);
     CFRelease(url_string);
+    
 #elif defined LINUX
-    //Mion - I don't know if this will build or work!
-    // Let's assume that a $BROWSER environment variable exists
-    // TODO: other approaches exist, try them too
+    // Linux/BSD/other Unixes don't provide standard APIs for this
+    // kind of thing, but there are various things we can try.
+    
     const char *url = script_h.readStr();
-    const char *browser = getenv("BROWSER");
-    char* cmdstr = (char*) malloc(strlen(url) + strlen(browser) + 2);
-    strcpy(cmdstr, url);
-    strcat(cmdstr, " ");
-    strcat(cmdstr, browser);
-    system(cmdstr);
+    int status;
+
+    // First up is xdg-open, the freedesktop solution that's becoming
+    // standard in the Linux world, at least.
+    //
+    status = tryToLaunch("xdg-open", url);
+    switch (status) {
+    case 0: // Success
+	return RET_CONTINUE;
+
+    case 2: // File not found
+	fprintf(stderr, "Failed to open %s: xdg-error reports that it doesn't "
+		"exist\n", url);
+	return RET_CONTINUE;
+
+    case 255: // execlp() failed (e.g. xdg-open not present)
+	// Don't say anything.
+	break;
+	
+    case 1:   // Syntax error
+    case 3:   // Required tool missing
+    case 4:   // Action failed
+    case -1:  // child didn't exit normally
+    default:  // unknown problem
+	fprintf(stderr, "Open URL with xdg-open failed with status %d\n",
+		status);
+    }
+
+    // Failing that, try $BROWSER, or give up.
+    const char* browser = getenv("BROWSER");
+    if (browser) {
+	char* cmd = new char[strlen(browser) + strlen(url) + 8];
+	sprintf(cmd, "\"%s\" '%s' &", browser, url);
+	system(cmd);
+	delete[] cmd;
+    }
+    else {
+	fputs("Could not determine which web browser to use. "
+	      "Please set BROWSER appropriately.\n", stderr);
+    }
+    
 #else
     fprintf(stderr, "[shell] command not supported for this OS\n");
 #endif

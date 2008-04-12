@@ -1105,7 +1105,7 @@ bool ONScripterLabel::processBreaks(bool cont_line, LineBreakType style)
                       string_buffer[i+j] == 0x0a)) {
                     // treat standard ASCII as start-kinsoku,
                     // except for space or line-end
-                    printf("Can't break before:%s", string_buffer + i + j);
+//                    printf("Can't break before:%s", string_buffer + i + j);
                     string_buffer_breaks[i+j] = false;
                 }
                 else
