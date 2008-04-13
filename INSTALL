@@ -1,4 +1,4 @@
-* TO BUILD ONSCRIPTER FOR YOUR USE
+* TO BUILD ONSCRIPTER-EN FOR YOUR USE
 
 This is the usual
 
@@ -11,25 +11,36 @@ This will use gcc by default; to use icc, start with
   CC=icc ./configure
 
 
-* TO BUILD A RELATIVELY REDISTRIBUTABLE ONSCRIPTER BINARY
+* DEALING WITH UNHELPFUL LIBRARIES
+
+Some system-provided libraries are not ideally configured for use with
+ONScripter-En.  For example, some system-provided SDL libraries cause
+stuttering audio.  You can usually fix this by using the internal
+library pack and configuring with something like
+
+  ./configure --with-internal-sdl
+
+(use --help to get a list of the options you can use to selectively
+replace libraries with internal versions).
+
+
+* TO BUILD A RELATIVELY REDISTRIBUTABLE ONSCRIPTER-EN BINARY
+
+Configure with
 
   ./configure --with-internal-libs
-  make
 
-This will statically link as many libraries as possible into the
-executable, which makes life better on systems with very primitive
-application installation methods, such as OS X and Windows.
+to statically link as many libraries as possible into the executable,
+which makes life better on systems with very primitive application
+installation methods, such as OS X and Windows.
 
-(You may actually prefer to do this other platforms too; I've several
-times had problems with OS-provided SDL libraries producing stuttering
-audio while the internal version worked beautifully.)
-
-If you are compiling ONScripter for a system with modern package
+If you are compiling ONScripter-En for a system with modern package
 management - for example, if you are creating a binary package for a
 specific Linux distribution - then it may make more sense to omit the
 --with-internal-libs, compile a dynamically linked executable, and
 have your package depend on the regular platform-specific packages for
-SDL, Freetype, and all the other dependencies.
+SDL, Freetype, and all the other dependencies.  However, you may still
+need to include some libraries internally to make everything work.
 
 
 * NOTES
