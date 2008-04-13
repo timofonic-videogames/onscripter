@@ -425,7 +425,7 @@ static FT_Error Load_Glyph( TTF_Font* font, Uint16 ch, c_glyph* cached, int want
 	if ( ! cached->index ) {
 		cached->index = FT_Get_Char_Index( face, ch );
 	}
-	error = FT_Load_Glyph( face, cached->index, FT_LOAD_DEFAULT );
+	error = FT_Load_Glyph( face, cached->index, FT_LOAD_DEFAULT | FT_LOAD_NO_BITMAP );
 	if( error ) {
 		return error;
 	}
