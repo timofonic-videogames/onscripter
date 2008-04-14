@@ -159,18 +159,14 @@ FILE *DirectReader::fopen(const char *path, const char *mode)
     }
     cur_p = file_full_path+len;
 
+    struct dirent *entp = NULL;
     while (1){
         if (dp == NULL) {
             if (i < n) {
                 len = strlen(archive_path->get_path(i));
-                if (len > 0) {
-                    dp = opendir(archive_path->get_path(i));
-                    sprintf( file_full_path, "%s%s",
-                            archive_path->get_path(i), path );
-                } else {
-                    dp = opendir(".");
-                    sprintf( file_full_path, "%s", path );
-                }
+                dp = opendir(archive_path->get_path(i));
+                sprintf( file_full_path, "%s%s",
+                        archive_path->get_path(i), path );
                 cur_p = file_full_path+len;
                 i++;
             } else
@@ -190,7 +186,6 @@ FILE *DirectReader::fopen(const char *path, const char *mode)
         memcpy(file_sub_path, cur_p, len);
         file_sub_path[len] = '\0';
         
-        struct dirent *entp;
         while ( (entp = readdir(dp)) != NULL ){
             if ( !strcasecmp( file_sub_path, entp->d_name ) ){
                 memcpy(cur_p, entp->d_name, len);
@@ -199,7 +194,7 @@ FILE *DirectReader::fopen(const char *path, const char *mode)
         }
         closedir( dp );
 
-        if (entp == NULL) return NULL;
+        if (entp == NULL) continue;
         if (delim_p == NULL) break;
 
         memcpy(file_sub_path, file_full_path, delim_p-file_full_path);
@@ -208,6 +203,7 @@ FILE *DirectReader::fopen(const char *path, const char *mode)
 
         cur_p = delim_p+1;
     }
+    if (entp == NULL) return NULL;
 
     fp = ::fopen( file_full_path, mode );
 #endif
