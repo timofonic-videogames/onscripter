@@ -70,7 +70,7 @@ void DirPaths::add( const char *new_paths )
     char **old_paths;
     const char *ptr1, *ptr2;
     char *dptr;
-    int n;
+    int n, i;
 
     if (all_paths != NULL) delete[] all_paths;
     all_paths = NULL;
@@ -88,7 +88,7 @@ void DirPaths::add( const char *new_paths )
         //printf("DirPaths::add(\"%s\")\n", new_paths);
         old_paths = paths;
         paths = new char*[num_paths + 1];
-        for (int i=0; i<n; i++) {
+        for (i=0; i<n; i++) {
             paths[i] = old_paths[i];
         }
         delete[] old_paths;
@@ -100,8 +100,10 @@ void DirPaths::add( const char *new_paths )
     do {
         while ((*ptr2 != '\0') && (*ptr2 != PATH_DELIMITER)) ptr2++;
         if (ptr2 == ptr1) {
-            paths[n] = new char[1];
-            *(paths[n]) = '\0';
+            if (*ptr2 == '\0') break;
+            ptr1++;
+            ptr2++;
+            continue;
         } else {
             paths[n] = new char[ptr2 - ptr1 + 2];
             dptr = paths[n];
@@ -116,10 +118,27 @@ void DirPaths::add( const char *new_paths )
             ptr1++;
             ptr2++;
         }
-        //printf("path: \"%s\"\n", paths[n]);
-        n++;
+        for (i=0; i<n; i++) {
+            if (strcmp(paths[i],paths[n]) == 0)
+                break;
+        }
+        if (i < n) {
+            //printf("path already exists: \"%s\"\n", paths[i]);
+            delete[] paths[n];
+        } else {
+            //printf("added path: \"%s\"\n", paths[n]);
+            n++;
+        }
     } while (*ptr2 != '\0');
-
+    if (n == 0) {
+        // need at least something for a path
+        n = 1;
+        if (paths != NULL) delete[] paths;
+        paths = new char*[2];
+        paths[0] = new char[1];
+        *(paths[0]) = '\0';
+    }
+    num_paths = n;
     paths[num_paths] = NULL;
 }
 
