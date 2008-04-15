@@ -134,10 +134,9 @@ FILE *DirectReader::fopen(const char *path, const char *mode)
     }
     for (int n=0; n<archive_path->get_num_paths(); n++) {
         sprintf( file_full_path, "%s%s", archive_path->get_path(n), path );
-	printf("filename: \"%s\": ", file_full_path);
+	//printf("filename: \"%s\": ", file_full_path);
         fp = ::fopen( file_full_path, mode );
-	puts(fp ? "found" : "not found");
-	fflush(stdout);
+	//puts(fp ? "found" : "not found");
         if (fp) return fp;
     }
 
@@ -380,9 +379,11 @@ FILE *DirectReader::getFileHandle( const char *file_name, int &compression_type,
 	else {
 	    // Try EUC-JP
 	    convertFromSJISToEUC(capital_name);
-	    if (!(fp = fopen(capital_name, "rb"))) {
-		fprintf(stderr, "Warning: couldn't access %s even after "
-			"transcoding the filename.\n", file_name);
+	    if ((fp = fopen(capital_name, "rb"))) {
+	        len = strlen(capital_name);
+	    } else {
+		//fprintf(stderr, "Warning: couldn't access %s even after "
+		//    "transcoding the filename.\n", file_name);
 	    }
 	}
     }
