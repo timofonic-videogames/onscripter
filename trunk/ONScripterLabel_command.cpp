@@ -1829,9 +1829,11 @@ int ONScripterLabel::loadgameCommand()
 
 int ONScripterLabel::ldCommand()
 {
-    //Mion: do remove text to animate sprites
-    int ret = leaveTextDisplayMode();
-    if ( ret != RET_NOMATCH ) return ret;
+    //Mion: remove text to animate sprites, if in normal mode
+    if (!( skip_flag || draw_one_page_flag || ctrl_pressed_status )) {
+        int ret = leaveTextDisplayMode();
+        if ( ret != RET_NOMATCH ) return ret;
+    }
 
     char loc = script_h.readLabel()[0];
     int no = -1;
