@@ -134,9 +134,10 @@ FILE *DirectReader::fopen(const char *path, const char *mode)
     }
     for (int n=0; n<archive_path->get_num_paths(); n++) {
         sprintf( file_full_path, "%s%s", archive_path->get_path(n), path );
-//	printf("filename: \"%s\": ", file_full_path);
+	printf("filename: \"%s\": ", file_full_path);
         fp = ::fopen( file_full_path, mode );
-//	puts(fp ? "found" : "not found");
+	puts(fp ? "found" : "not found");
+	fflush(stdout);
         if (fp) return fp;
     }
 
@@ -193,6 +194,7 @@ FILE *DirectReader::fopen(const char *path, const char *mode)
             }
         }
         closedir( dp );
+        dp = NULL;
 
         if (entp == NULL) continue;
         if (delim_p == NULL) break;
