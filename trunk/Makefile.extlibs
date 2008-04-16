@@ -242,7 +242,7 @@ dclean_sdl_ttf: clean_sdl_ttf
 $(SDLTSRC)/Makefile: $(if $(INTERNAL_SDL),$(EB)/sdl-config) $(if $(INTERNAL_FREETYPE),$(EB)/freetype-config)
 	@echo Configuring internal SDL_ttf...
 	@cd $(SDLTSRC) && \
-	./configure --prefix="$(LPREFIX)" --disable-shared $(REDIR)
+	./configure --prefix="$(LPREFIX)" --disable-shared $(OTHERCONFIG) $(REDIR)
 
 $(EL)/libSDL_ttf$(LIBSUFFIX): $(SDLTSRC)/Makefile
 	@echo Building internal SDL_ttf...

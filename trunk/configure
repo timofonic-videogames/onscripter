@@ -682,7 +682,7 @@ INTERNAL_OGGLIBS=\$(findstring true,$INTERNAL_OGGLIBS)
 export PATH     :=   \$(shell pwd)/extlib/bin:\$(PATH)
 export CFLAGS   := -I\$(shell pwd)/extlib/include \$(CFLAGS)
 export CPPFLAGS := -I\$(shell pwd)/extlib/include \$(CPPFLAGS)
-export LDFLAGS  := -L\$(shell pwd)/extlib/lib \$(LDFLAGS)
+export LDFLAGS  := -L\$(shell pwd)/extlib/lib \$(LDFLAGS) $EXTRALDFLAGS
 
 export CC      := $CC
 export CXX     := $CXX
@@ -778,6 +778,8 @@ onscripter-en$EXE: onscripter$EXE
 .PHONY: all clean distclean
 all: \$(TARGET)
 
+SDLOTHERCONFIG := $SDLOTHERCONFIG
+OTHERCONFIG := $OTHERCONFIG
 include Makefile.extlibs
 include Makefile.onscripter
 
