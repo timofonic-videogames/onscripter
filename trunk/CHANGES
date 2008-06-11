@@ -1,3 +1,8 @@
+2008-06-10
+
+  Reworked text buffer processing to do proper text placement when
+  locate commands were used. [Mion]
+
 2008-04-04
 
   Added "addkinsoku" and "setkinsoku" commands [Mion]

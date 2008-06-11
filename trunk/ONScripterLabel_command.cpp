@@ -1785,6 +1785,35 @@ int ONScripterLabel::locateCommand()
 {
     int x = script_h.readInt();
     int y = script_h.readInt();
+
+    int cur_x = sentence_font.xy[0]/2;
+    int cur_y = sentence_font.xy[1]/2;
+    //printf("locate %d, %d: cur_x: %d, cur_y: %d\n", x, y, cur_x, cur_y);
+
+    //Mion: should adjust the current page buffer
+    if (y < cur_y) {
+        for (int i=y; i < cur_y; i++)
+            current_page->add(TEXT_UP);
+    } else if (cur_y < y) {
+        for (int i=cur_y; i < y; i++)
+            current_page->add(TEXT_DOWN);
+    } else if (sentence_font.xy[1] != cur_y * 2) {
+        // "halfway" through a character
+        current_page->add(TEXT_DOWN);
+        current_page->add(TEXT_UP);
+    }
+    if (x < cur_x) {
+        for (int i=x; i < cur_x; i++)
+            current_page->add(TEXT_LEFT);
+    } else if (cur_x < x) {
+        for (int i=cur_x; i < x; i++)
+            current_page->add(TEXT_RIGHT);
+    } else if (sentence_font.xy[0] != cur_x * 2) {
+        // "halfway" through a character
+        current_page->add(TEXT_LEFT);
+        current_page->add(TEXT_RIGHT);
+    }
+
     sentence_font.setXY( x, y );
 
     return RET_CONTINUE;

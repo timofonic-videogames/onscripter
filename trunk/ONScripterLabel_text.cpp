@@ -327,6 +327,22 @@ void ONScripterLabel::restoreTextBuffer()
 	        ruby_struct.stage = RubyStruct::NONE;
 	        continue;
 	    }
+            else if (out_text[0] == TEXT_UP) {
+                f_info.setXY(-1, f_info.xy[1]/2 - 1);
+                continue;
+            }
+            else if (out_text[0] == TEXT_DOWN) {
+                f_info.setXY(-1, f_info.xy[1]/2 + 1);
+                continue;
+            }
+            else if (out_text[0] == TEXT_LEFT) {
+                f_info.setXY(f_info.xy[0]/2 - 1);
+                continue;
+            }
+            else if (out_text[0] == TEXT_RIGHT) {
+                f_info.setXY(f_info.xy[0]/2 + 1);
+                continue;
+            }
             if ( IS_TWO_BYTE(out_text[0]) ){
                 out_text[1] = current_page->text[i+1];
                 i++;
