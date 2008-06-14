@@ -626,6 +626,7 @@ private:
     int effect_timer_resolution;
     int effect_start_time;
     int effect_start_time_old;
+    int effect_tmp;
 
     int  setEffect( EffectLink *effect );
     int  doEffect( EffectLink *effect, AnimationInfo *anim, int effect_image, bool clear_dirty_region=true );
