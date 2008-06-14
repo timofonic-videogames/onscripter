@@ -452,7 +452,6 @@ void ONScripterLabel::effectCascade( char *params, int duration )
     SDL_Rect dst_rect={0, 0, screen_width, screen_height};
     int mode, width, start, end;
  
-
     if (params[0] == 'u')
         mode = CASCADE_UP;
     else if (params[0] == 'd')
@@ -476,14 +475,38 @@ void ONScripterLabel::effectCascade( char *params, int duration )
     else
         dst_surface = accumulation_surface;
 
+    if (effect_counter == 0)
+        effect_tmp = 0;
+
     if (mode & CASCADE_LR) {
         // moves left-right
         width = screen_width * effect_counter / duration;
-        if ((!mode & CASCADE_IN))
+        if (!(mode & CASCADE_IN))
             width = screen_width - width;
+            
         src_rect.y = dst_rect.y = 0;
         src_rect.h = dst_rect.h = screen_height;
         src_rect.w = dst_rect.w = 1;
+        if ((mode & CASCADE_CROSS) && (width > 0)) {
+            // need to cascade-out the src
+            if (mode & CASCADE_DIR) {
+                // moves right
+                start = 0;
+                end = width;
+                dst_rect.x = end;
+            } else {
+                // moves left
+                start = screen_width - width;
+                end = screen_width;
+                dst_rect.x = start;
+            }
+            src_rect.x = 0;
+            SDL_BlitSurface(effect_src_surface, &dst_rect, accumulation_surface, &src_rect);
+            for (int i=start; i<end; i++) {
+                dst_rect.x = i;
+                SDL_BlitSurface(accumulation_surface, &src_rect, effect_src_surface, &dst_rect);
+            }
+        }
         if (mode & CASCADE_DIR) {
             // moves right
             start = width;
@@ -499,24 +522,45 @@ void ONScripterLabel::effectCascade( char *params, int duration )
             dst_rect.x = i;
             SDL_BlitSurface(src_surface, &src_rect, dst_surface, &dst_rect);
         }
-        if (width > 0) {
+        if ((mode & CASCADE_IN) && (width > 0)) {
             if (mode & CASCADE_DIR)
-                src_rect.x = 0;
+                src_rect.x = effect_tmp;
             else
                 src_rect.x = screen_width - width;
             dst_rect.x = src_rect.x;
-            src_rect.w = dst_rect.w = width;
+            src_rect.w = dst_rect.w = width - effect_tmp;
             SDL_BlitSurface(src_surface, &src_rect, dst_surface, &dst_rect);
+            effect_tmp = width;
         }
     } else {
         // moves up-down
         width = screen_height * effect_counter / duration;
-        if ((!mode & CASCADE_IN))
+        if (!(mode & CASCADE_IN))
             width = screen_height - width;
 
         src_rect.x = dst_rect.x = 0;
         src_rect.h = dst_rect.h = 1;
         src_rect.w = dst_rect.w = screen_width;
+        if ((mode & CASCADE_CROSS) && (width > 0)) {
+            // need to cascade-out the src
+            if (mode & CASCADE_DIR) {
+                // moves down
+                start = 0;
+                end = width;
+                dst_rect.y = end;
+            } else {
+                // moves up
+                start = screen_height - width;
+                end = screen_height;
+                dst_rect.y = start;
+            }
+            src_rect.y = 0;
+            SDL_BlitSurface(effect_src_surface, &dst_rect, accumulation_surface, &src_rect);
+            for (int i=start; i<end; i++) {
+                dst_rect.y = i;
+                SDL_BlitSurface(accumulation_surface, &src_rect, effect_src_surface, &dst_rect);
+            }
+        }
         if (mode & CASCADE_DIR) {
             // moves down
             start = width;
@@ -532,14 +576,15 @@ void ONScripterLabel::effectCascade( char *params, int duration )
             dst_rect.y = i;
             SDL_BlitSurface(src_surface, &src_rect, dst_surface, &dst_rect);
         }
-        if (width > 0) {
+        if ((mode & CASCADE_IN) && (width > 0)) {
             if (mode & CASCADE_DIR)
-                src_rect.y = 0;
+                src_rect.y = effect_tmp;
             else
                 src_rect.y = screen_height - width;
             dst_rect.y = src_rect.y;
-            src_rect.h = dst_rect.h = width;
+            src_rect.h = dst_rect.h = width - effect_tmp;
             SDL_BlitSurface(src_surface, &src_rect, dst_surface, &dst_rect);
+            effect_tmp = width;
         }
     }
     if (mode & CASCADE_CROSS) {
