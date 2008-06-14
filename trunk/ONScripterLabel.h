@@ -432,6 +432,7 @@ private:
     SDL_Surface *screen_surface; // Text + Select_image + Tachi image + background
     SDL_Surface *effect_dst_surface; // Intermediate source buffer for effect
     SDL_Surface *effect_src_surface; // Intermediate destnation buffer for effect
+    SDL_Surface *effect_tmp_surface; // Intermediate buffer for effect
     SDL_Surface *screenshot_surface; // Screenshot
     SDL_Surface *image_surface; // Reference for loadImage()
 
@@ -630,6 +631,7 @@ private:
     int  doEffect( EffectLink *effect, AnimationInfo *anim, int effect_image, bool clear_dirty_region=true );
     void drawEffect( SDL_Rect *dst_rect, SDL_Rect *src_rect, SDL_Surface *surface );
     void generateMosaic( SDL_Surface *src_surface, int level );
+    void effectCascade( char *params, int duration );
 
     /* ---------------------------------------- */
     /* Select related variables */

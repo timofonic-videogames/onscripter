@@ -340,6 +340,22 @@ int ONScripterLabel::doEffect( EffectLink *effect, AnimationInfo *anim, int effe
         SDL_FillRect( accumulation_surface, NULL, SDL_MapRGBA( accumulation_surface->format, 0, 0, 0, 0xff ) );
         drawEffect(&dst_rect, &src_rect, effect_dst_surface);
         break;
+
+      case (CUSTOM_EFFECT_NO - 1): // dll-based
+        char *dll = effect->anim.image_name;
+        char *params = dll;
+        while (*params != 0) {
+            if (*params == '/') {
+                *params++ = 0;
+                break;
+            }
+            params++;
+        }
+        //printf("dll effect: Got dll '%s', params '%s'\n", dll, params);
+        if (!strcmp(dll, "cascade.dll")) {
+            effectCascade(params, effect->duration);
+        }
+        break;
     }
 
     //printf("effect conut %d / dur %d\n", effect_counter, effect->duration);
@@ -354,7 +370,7 @@ int ONScripterLabel::doEffect( EffectLink *effect, AnimationInfo *anim, int effe
     }
     else {
         SDL_BlitSurface(effect_dst_surface,   &dirty_rect.bounding_box,
-			accumulation_surface, &dirty_rect.bounding_box);
+		        accumulation_surface, &dirty_rect.bounding_box);
 	
         if (effect_no)
 	    flush(REFRESH_NONE_MODE, NULL, clear_dirty_region);
@@ -418,4 +434,120 @@ void ONScripterLabel::generateMosaic( SDL_Surface *src_surface, int level )
 
     SDL_UnlockSurface( accumulation_surface );
     SDL_UnlockSurface( src_surface );
+}
+
+void ONScripterLabel::effectCascade( char *params, int duration )
+{
+#define CASCADE_DIR   1
+#define CASCADE_LR    2
+#define CASCADE_UP    0
+#define CASCADE_DOWN  1
+#define CASCADE_LEFT  2
+#define CASCADE_RIGHT 3
+#define CASCADE_CROSS 4
+#define CASCADE_IN    8
+
+    SDL_Surface *src_surface, *dst_surface;
+    SDL_Rect src_rect={0, 0, screen_width, screen_height};
+    SDL_Rect dst_rect={0, 0, screen_width, screen_height};
+    int mode, width, start, end;
+ 
+
+    if (params[0] == 'u')
+        mode = CASCADE_UP;
+    else if (params[0] == 'd')
+        mode = CASCADE_DOWN;
+    else if (params[0] == 'r')
+        mode = CASCADE_RIGHT;
+    else
+        mode = CASCADE_LEFT;
+
+    if (params[1] == 'i')
+        mode |= CASCADE_IN;
+    else if (params[1] == 'x')
+        mode |= CASCADE_IN | CASCADE_CROSS;
+    
+    if (mode & CASCADE_IN)
+        src_surface = effect_dst_surface;
+    else
+        src_surface = effect_src_surface;
+    if (mode & CASCADE_CROSS)
+        dst_surface = effect_tmp_surface;
+    else
+        dst_surface = accumulation_surface;
+
+    if (mode & CASCADE_LR) {
+        // moves left-right
+        width = screen_width * effect_counter / duration;
+        if ((!mode & CASCADE_IN))
+            width = screen_width - width;
+        src_rect.y = dst_rect.y = 0;
+        src_rect.h = dst_rect.h = screen_height;
+        src_rect.w = dst_rect.w = 1;
+        if (mode & CASCADE_DIR) {
+            // moves right
+            start = width;
+            end = screen_width;
+            src_rect.x = start;
+        } else {
+            // moves left
+            start = 0;
+            end = screen_width - width;
+            src_rect.x = end;
+        }
+        for (int i=start; i<end; i++) {
+            dst_rect.x = i;
+            SDL_BlitSurface(src_surface, &src_rect, dst_surface, &dst_rect);
+        }
+        if (width > 0) {
+            if (mode & CASCADE_DIR)
+                src_rect.x = 0;
+            else
+                src_rect.x = screen_width - width;
+            dst_rect.x = src_rect.x;
+            src_rect.w = dst_rect.w = width;
+            SDL_BlitSurface(src_surface, &src_rect, dst_surface, &dst_rect);
+        }
+    } else {
+        // moves up-down
+        width = screen_height * effect_counter / duration;
+        if ((!mode & CASCADE_IN))
+            width = screen_height - width;
+
+        src_rect.x = dst_rect.x = 0;
+        src_rect.h = dst_rect.h = 1;
+        src_rect.w = dst_rect.w = screen_width;
+        if (mode & CASCADE_DIR) {
+            // moves down
+            start = width;
+            end = screen_height;
+            src_rect.y = start;
+        } else {
+            // moves up
+            start = 0;
+            end = screen_height - width;
+            src_rect.y = end;
+        }
+        for (int i=start; i<end; i++) {
+            dst_rect.y = i;
+            SDL_BlitSurface(src_surface, &src_rect, dst_surface, &dst_rect);
+        }
+        if (width > 0) {
+            if (mode & CASCADE_DIR)
+                src_rect.y = 0;
+            else
+                src_rect.y = screen_height - width;
+            dst_rect.y = src_rect.y;
+            src_rect.h = dst_rect.h = width;
+            SDL_BlitSurface(src_surface, &src_rect, dst_surface, &dst_rect);
+        }
+    }
+    if (mode & CASCADE_CROSS) {
+        // do crossfade
+        width = 256 * effect_counter / duration;
+        src_surface = effect_dst_surface;
+        effect_dst_surface = dst_surface;
+        alphaBlend( NULL, ALPHA_BLEND_CONST, width, &dirty_rect.bounding_box );
+        effect_dst_surface = src_surface;
+    }
 }
