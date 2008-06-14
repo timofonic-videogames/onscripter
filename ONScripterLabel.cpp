@@ -776,10 +776,12 @@ int ONScripterLabel::init()
     accumulation_comp_surface = AnimationInfo::allocSurface( screen_width, screen_height );
     effect_src_surface   = AnimationInfo::allocSurface( screen_width, screen_height );
     effect_dst_surface   = AnimationInfo::allocSurface( screen_width, screen_height );
+    effect_tmp_surface   = AnimationInfo::allocSurface( screen_width, screen_height );
     SDL_SetAlpha( accumulation_surface, 0, SDL_ALPHA_OPAQUE );
     SDL_SetAlpha( accumulation_comp_surface, 0, SDL_ALPHA_OPAQUE );
     SDL_SetAlpha( effect_src_surface, 0, SDL_ALPHA_OPAQUE );
     SDL_SetAlpha( effect_dst_surface, 0, SDL_ALPHA_OPAQUE );
+    SDL_SetAlpha( effect_tmp_surface, 0, SDL_ALPHA_OPAQUE );
     screenshot_surface   = NULL;
     text_info.num_of_cells = 1;
     text_info.allocImage( screen_width, screen_height );
