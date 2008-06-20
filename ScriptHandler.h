@@ -40,6 +40,13 @@
 // Mion: for escaping parentheses in handled text
 #define LPAREN 0x02
 #define RPAREN 0x03
+//Mion: for escaping '\' in {}-varlist strings _within script_ (indicates str newline)
+#define STR_BACKSLASH 0x1F
+//Mion: for lookback text relocating
+#define TEXT_UP    0x11
+#define TEXT_RIGHT 0x12
+#define TEXT_DOWN  0x13
+#define TEXT_LEFT  0x14
 
 typedef unsigned char uchar3[3];
 
@@ -173,6 +180,8 @@ public:
     void setNumVariable( int no, int val );
     void pushVariable();
     int  getIntVariable( VariableInfo *var_info=NULL );
+
+    void setStr( char **dst, const char *src, int num=-1 );
 
     int  getStringFromInteger( char *buffer, int no, int num_column, bool is_zero_inserted=false, bool force_zenkaku=false );
 

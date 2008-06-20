@@ -212,7 +212,9 @@ const char *ScriptHandler::readToken()
              ch == '@' || ch == '\\' || ch == '/' ||
              ch == '%' || ch == '?' || ch == '$' ||
              ch == '[' || ch == '(' || ch == '`' ||
-             ch == '!' || ch == '#' || ch == ',' || ch == '"'){ // text
+             ch == '!' || ch == '#' || ch == ',' ||
+             ch == '{' || ch == '<' || ch == '"'){ // text
+
         bool ignore_click_flag = false;
         bool clickstr_flag = false;
         bool in_1byte_mode = false;
@@ -234,7 +236,6 @@ const char *ScriptHandler::readToken()
                 if (ch == 0x0a || ch == '\0') break;
                 addStringBuffer( ch );
                 ch = *++buf;
-                ch = *buf;
                 if (clickstr_flag) {
                     // insert a clickwait-or-newpage
                     addStringBuffer('\\');
@@ -275,6 +276,58 @@ const char *ScriptHandler::readToken()
                     else if (ch == '$'){
                         addStrVariable(&buf);
                     }
+                    else if (ch == '{') {
+                        // comma list of var/val pairs
+                        buf++;
+                        pushCurrent(buf);
+                        next_script = buf;
+                        while( *buf != '}' ) {
+                        
+                            readVariable();
+                            pushVariable();
+                            //printf("variable: $%d\n", pushed_variable.var_no);
+                            buf = next_script;
+
+                            if ( pushed_variable.type & VAR_INT ) {
+                                int x = parseIntExpression(&buf);
+                                setInt( &pushed_variable, x );
+                                //printf("int: %d\n", x);
+                            } else if ( pushed_variable.type & VAR_STR ) {
+                                bool invar_1byte_mode = false;
+                                int tmp_count = 0;
+                                strcpy(saved_string_buffer, "");
+                                while (*buf != 0x0a && *buf != '\0' &&
+                                       (invar_1byte_mode || ((*buf != ',') && (*buf != '}')))) {
+#ifdef ENABLE_1BYTE_CHAR
+                                    if (*buf == '`')
+                                        invar_1byte_mode = !invar_1byte_mode;
+#endif
+                                    if ((tmp_count+1 >= STRING_BUFFER_LENGTH) ||
+                                        (IS_TWO_BYTE(*buf) && (tmp_count+2 >= STRING_BUFFER_LENGTH)))
+                                        errorAndExit("readToken: var string length exceeds 2048 bytes.");
+                                    else if (IS_TWO_BYTE(*buf)) {
+                                        saved_string_buffer[tmp_count++] = *buf++;
+                                        saved_string_buffer[tmp_count++] = *buf++;
+                                    } else if ((*buf == '\\') || (*buf == STR_BACKSLASH)) {
+                                        saved_string_buffer[tmp_count++] = '\\';
+                                        *buf++ = STR_BACKSLASH;
+                                    } else
+                                        saved_string_buffer[tmp_count++] = *buf++;
+                                    saved_string_buffer[tmp_count] = '\0';
+                                }
+                                setStr( &variable_data[ pushed_variable.var_no ].str, saved_string_buffer );
+                                //printf("string: %s\n", saved_string_buffer);
+                            }
+                            next_script = checkComma(buf);
+                            buf = next_script;
+                            if (!(getEndStatus() & END_COMMA)) break;
+                        }
+                        end_status = END_NONE;
+                        current_variable.type = VAR_NONE;
+                        popCurrent();
+                        if (*buf == '}')
+                            buf++;
+                    }
                     else{
                         if (ch == '_')
                             ignore_click_flag = true;
@@ -297,7 +350,7 @@ const char *ScriptHandler::readToken()
             addStringBuffer( ch );
             markAsKidoku( buf++ );
         }
-
+        //printf("text string_buffer: %s\n", string_buffer);
         text_flag = true;
     }
     else if ((ch >= 'a' && ch <= 'z') ||
@@ -748,6 +801,24 @@ void ScriptHandler::setInt( VariableInfo *var_info, int val, int offset )
     }
     else{
         errorAndExit( "setInt: no variables." );
+    }
+}
+
+void ScriptHandler::setStr( char **dst, const char *src, int num )
+{
+    if ( *dst ) delete[] *dst;
+    *dst = NULL;
+    
+    if ( src ){
+        if (num >= 0){
+            *dst = new char[ num + 1 ];
+            memcpy( *dst, src, num );
+            (*dst)[num] = '\0';
+        }
+        else{
+            *dst = new char[ strlen( src ) + 1];
+            strcpy( *dst, src );
+        }
     }
 }
 
