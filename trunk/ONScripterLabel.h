@@ -67,12 +67,6 @@
 
 #define NUM_GLYPH_CACHE 30
 
-//Mion: chars for lookback text relocate command
-#define TEXT_UP    17
-#define TEXT_RIGHT 18
-#define TEXT_DOWN  19
-#define TEXT_LEFT  20
-
 class ONScripterLabel : public ScriptParser
 {
 public:

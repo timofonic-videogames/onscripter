@@ -1,3 +1,6 @@
+
+; A test for the "cascade.dll" effect.
+
 *define
 game
 

@@ -3,6 +3,7 @@
 
 *define
 
+pretextgosub *pretext
 english
 clickskippage
 
@@ -242,9 +243,76 @@ skip 2
 >Carmina qui quondam studio florente peregi         flebilis heu maestos cogor inire modos.
 \
 
+; Switch ONScripter-En into Japanese mode.
+if %NScripter == 1 skip 2
+language japanese
+
+; Setting variables in-text: Japanese
+; (doesn't work with Nscripter in "english" mode
+;
+if %NScripter == 1 skip 8
+テキストボタン{$50,テキストをボタンのように扱う機能です。,%53,45}を使って、このように、ツールヒント{$51,マウスを重ねるとこのように字が表示されます。}のようなことも出来ます。\
+%53$50
+$51 \
+ＳＴＲＳＰ命令{$50,ＳＴＲＳＰ命令は、複数行の文字列スプライトを作ります。}の実験も兼ねています。ちょっと難しいですが、うまく活用すれば「街」{$51,チュンソフトのサウンドノベルです。}や流行り神{$52,日本一ソフトウェアのホラーアドベンチャーゲームです。}で使われているＴＩＰＳ機能のような効果も出せるはずです。\
+$50
+$51
+$52 \
+
+; pretextgosub test - Japanese
+;
+[PASS]モリソン「この世」に悪があるとすれば、それは人の心だ\
+csp 0
+[ALSOPASS]モリソン「この世」に悪があるとすれば、それは人の心だ\
+csp 0
+print 1
+
+; locate lookback test
+;
+locate 4,6
+if %NScripter == 1 skip 5
+`Carmina qui quondam studio florente peregi
+locate 5,2
+`flebilis heu maestos cogor inire modos.
+skip 4
+>Carmina qui quondam studio florente peregi
+locate 5,2
+>flebilis heu maestos cogor inire modos.
+\
+
+locate 2,10
+if %NScripter == 1 skip 5
+`Now do lookback to see if text stays positioned.
+locate 10,15
+`Did it work?
+skip 4
+>Now do lookback to see if text stays positioned.
+locate 10,15
+>Did it work?
+\
+
 if %NScripter == 1 end
 
 language english
+
+; Setting variables in-text: English
+;  The {} sections need to be out of `` mode, otherwise taken as literal text
+;
+`On the next line you should see 'red'` {$50,`red`,$51,`yellow`} ` and 'yellow'. @
+`$50 and $51. \
+`On the next line you should see 'blue'` {$50,`blue`} ` and 'green'` {$51,`green`} `. @
+`$50 and $51. \
+
+; pretextgosub test - English
+;  The [] must begin the line, be out of `` mode
+;
+[`You pass!`]`The words "You pass!" should show below.
+csp 0
+\
+[`Pass `again!]`Did we pass again?
+csp 0
+\
+
 ;Displaying numerical values correctly in text
   mov %1,24601
   itoa $1,%1
@@ -344,6 +412,13 @@ if %NScripter == 0 skip 3
 textcolor #ffffff
 return
 #ffffff
+return
+
+*pretext
+gettag $0
+if $0 == "" return
+lsp 0, ":s#FFFFFF"+$0, 20, 100
+print 1
 return
 
 ;; Local Variables:

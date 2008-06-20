@@ -587,15 +587,65 @@ void ONScripterLabel::endRuby(bool flush_flag, bool lookback_flag, SDL_Surface *
 
 int ONScripterLabel::textCommand()
 {
-    if (pretextgosub_label &&
+//Mion: mostly from ogapee20080121
+    char *buf = script_h.getCurrent();
+    bool in_1byte_mode = false;
+
+    if (pretextgosub_label && 
+        (!pagetag_flag || page_enter_status == 0) &&
         (line_enter_status == 0 ||
          (line_enter_status == 1 &&
-          (script_h.getStringBuffer()[string_buffer_offset] == '[' ||
-           zenkakko_flag &&
-           (unsigned char) script_h.getStringBuffer()[string_buffer_offset] == 0x81
-           && (unsigned char) script_h.getStringBuffer()[string_buffer_offset+1] == 0x79))) ){
+          (buf[0] == '[' ||
+           zenkakko_flag && buf[0] == (char)0x81 && buf[1] == (char)0x79))) ) {
+        if (buf[0] == '[')
+            buf++;
+        else if (zenkakko_flag && buf[0] == (char)0x81 && buf[1] == (char)0x79)
+            buf += 2;
+        else
+            buf = NULL;
+        
+        char *end_buf = buf;
+        while (end_buf && *end_buf){
+#ifdef ENABLE_1BYTE_CHAR
+            if (*end_buf == '`') {
+                in_1byte_mode = !in_1byte_mode;
+                end_buf++;
+            }
+#endif
+            else if (!in_1byte_mode && zenkakko_flag &&
+                     end_buf[0] == (char)0x81 && end_buf[1] == (char)0x7A){
+                script_h.setCurrent(end_buf+2);
+                break;
+            }
+            else if (!in_1byte_mode && *end_buf == ']'){
+                script_h.setCurrent(end_buf+1);
+                break;
+            }
+            else if (IS_TWO_BYTE(end_buf[0]))
+                end_buf+=2;
+            else
+                end_buf++;
+        }
+
+        if (current_page->tag) delete[] current_page->tag;
+        if (current_tag.tag) delete[] current_tag.tag;
+        if (buf){
+            int len = end_buf - buf;
+            current_page->tag = new char[len+1];
+            memcpy(current_page->tag, buf, len);
+            current_page->tag[len] = 0;
+
+            current_tag.tag = new char[len+1];
+            memcpy(current_tag.tag, current_page->tag, len+1);
+        }
+        else{
+            current_page->tag = NULL;
+            current_tag.tag = NULL;
+        }
+
         gosubReal( pretextgosub_label, script_h.getCurrent() );
         line_enter_status = 1;
+
         return RET_CONTINUE;
     }
 
@@ -603,11 +653,13 @@ int ONScripterLabel::textCommand()
     if ( ret != RET_NOMATCH ) return ret;
 
     line_enter_status = 2;
+    if (pagetag_flag) page_enter_status = 1;
+
     ret = processText();
     if (ret == RET_CONTINUE){
         indent_offset = 0;
     }
-
+    
     return ret;
 }
 
