@@ -263,7 +263,7 @@ $52 \
 ;
 [PASS]モリソン「この世」に悪があるとすれば、それは人の心だ\
 csp 0
-[ALSOPASS]モリソン「この世」に悪があるとすれば、それは人の心だ\
+[ALSO/PASS]モリソン「この世」に悪があるとすれば、それは人の心だ\
 csp 0
 print 1
 
@@ -306,10 +306,10 @@ language english
 ; pretextgosub test - English
 ;  The [] must begin the line, be out of `` mode
 ;
-[`You pass!`]`The words "You pass!" should show below.
+[`You pass!`/`Yay!`]`The words "You pass!" should show below.
 csp 0
 \
-[`Pass `again!]`Did we pass again?
+[`Pass `again` w/o error!`/`Yay!`]`Did we pass again?
 csp 0
 \
 
@@ -415,9 +415,10 @@ return
 return
 
 *pretext
-gettag $0
-if $0 == "" return
-lsp 0, ":s#FFFFFF"+$0, 20, 100
+gettag $60,$61
+if $60 == "" return
+if $61 == "" lsp 0, ":s#FFFFFF"+$60, 20, 100 : print 1 : return
+lsp 0, ":s#FFFFFF"+$60+"--"+$61, 20, 100
 print 1
 return
 
