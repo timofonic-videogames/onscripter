@@ -610,9 +610,9 @@ int ONScripterLabel::textCommand()
             if (*end_buf == '`') {
                 in_1byte_mode = !in_1byte_mode;
                 end_buf++;
-            }
+            } else
 #endif
-            else if (!in_1byte_mode && zenkakko_flag &&
+            if (!in_1byte_mode && zenkakko_flag &&
                      end_buf[0] == (char)0x81 && end_buf[1] == (char)0x7A){
                 script_h.setCurrent(end_buf+2);
                 break;

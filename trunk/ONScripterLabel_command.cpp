@@ -2171,7 +2171,14 @@ int ONScripterLabel::gettagCommand()
         else if ( script_h.pushed_variable.type & ScriptHandler::VAR_STR ){
             if (buf){
                 const char *buf_start = buf;
-                while(*buf != '/' && *buf != 0){
+                bool in_1byte_mode = false;
+                while((in_1byte_mode || *buf != '/') && *buf != 0){
+#ifdef ENABLE_1BYTE_CHAR
+                    if (*buf == '`') {
+                        in_1byte_mode = !in_1byte_mode;
+                        buf++;
+                    } else
+#endif
                     if (IS_TWO_BYTE(*buf))
                         buf += 2;
                     else
