@@ -226,9 +226,42 @@ int ONScripterLabel::texthideCommand()
     return RET_CONTINUE;
 }
 
+int ONScripterLabel::textexbtnCommand()
+{
+    int txtbtn_no = script_h.readInt();
+    const char *buf = script_h.readStr();
+
+    TextButtonInfoLink *info = text_button_info.next;
+    TextButtonInfoLink *found = NULL;
+    while (info) {
+        if (info->no == txtbtn_no)
+            found = info;
+        info = info->next;
+    }
+    
+    if (found) {
+        ButtonLink *button = found->button;
+        while (button) {
+            button->exbtn_ctl   = new char[ strlen( buf ) + 1 ];
+            strcpy( button->exbtn_ctl, buf );
+            button = button->same;
+        }
+        printf("textexbtn: made %d '%s'\n", txtbtn_no, buf);
+    }
+
+    return RET_CONTINUE;
+}
+
 int ONScripterLabel::textclearCommand()
 {
     newPage( false );
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::textbtnstartCommand()
+{
+    txtbtn_start_num = script_h.readInt();
+
     return RET_CONTINUE;
 }
 
@@ -773,6 +806,12 @@ void ONScripterLabel::setwindowCore()
 
     }
 #endif
+    while (current_page_colors.next) {
+        ColorChange *tmp = current_page_colors.next;
+        current_page_colors.next = tmp->next;
+        delete tmp;
+    }
+    setColor(current_page_colors.color, sentence_font.color);
 }
 
 int ONScripterLabel::setwindow3Command()
@@ -1856,6 +1895,18 @@ int ONScripterLabel::loadgameCommand()
     }
 }
 
+int ONScripterLabel::linkcolorCommand()
+{
+    const char *buf;
+    
+    buf = script_h.readStr();
+    readColor( &linkcolor[0], buf );
+    buf = script_h.readStr();
+    readColor( &linkcolor[1], buf );
+
+    return RET_CONTINUE;
+}
+
 int ONScripterLabel::ldCommand()
 {
     //Mion: remove text to animate sprites, if in normal mode
@@ -2104,6 +2155,29 @@ int ONScripterLabel::gettimerCommand()
     else{
         script_h.setInt( &script_h.current_variable, btnwait_time );
     }
+
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::gettextbtnstrCommand()
+{
+    script_h.readVariable();
+    script_h.pushVariable();
+
+    int txtbtn_no = script_h.readInt();
+
+    TextButtonInfoLink *info = text_button_info.next;
+    TextButtonInfoLink *found = NULL;
+    while (info) {
+        if (info->no == txtbtn_no)
+            found = info;
+        info = info->next;
+    }
+
+    if (found)
+        setStr(&script_h.variable_data[ script_h.pushed_variable.var_no ].str, found->text);
+    else
+        setStr(&script_h.variable_data[ script_h.pushed_variable.var_no ].str, NULL);
 
     return RET_CONTINUE;
 }
@@ -2694,6 +2768,25 @@ int ONScripterLabel::erasetextwindowCommand()
     return RET_CONTINUE;
 }
 
+int ONScripterLabel::erasetextbtnCommand()
+{
+    TextButtonInfoLink *info = text_button_info.next;
+    while (info) {
+        ButtonLink *cur_button_link = info->button;
+        while (cur_button_link) {
+            cur_button_link->show_flag = 1;
+            cur_button_link->anim[0]->visible = true;
+            cur_button_link->anim[0]->setCell(0);
+            dirty_rect.add( cur_button_link->image_rect );
+            cur_button_link = cur_button_link->same;
+        }
+        info = info->next;
+    }
+    flush( refreshMode() );
+
+    return RET_CONTINUE;
+}
+
 int ONScripterLabel::endCommand()
 {
     quit();
@@ -3218,7 +3311,11 @@ int ONScripterLabel::btnwaitCommand()
 
         ButtonLink *p_button_link = root_button_link.next;
         while( p_button_link ){
-            p_button_link->show_flag = 0;
+            ButtonLink *cur_button_link = p_button_link;
+            while (cur_button_link) {
+                cur_button_link->show_flag = 0;
+                cur_button_link = cur_button_link->same;
+            }
             p_button_link = p_button_link->next;
         }
 
@@ -3235,15 +3332,20 @@ int ONScripterLabel::btnwaitCommand()
 
         ButtonLink *p_button_link = root_button_link.next;
         while( p_button_link ){
-            p_button_link->show_flag = 0;
-            if ( p_button_link->button_type == ButtonLink::SPRITE_BUTTON ||
-                 p_button_link->button_type == ButtonLink::EX_SPRITE_BUTTON ){
-            }
-            else if ( p_button_link->button_type == ButtonLink::TMP_SPRITE_BUTTON ){
-                p_button_link->show_flag = 1;
-            }
-            else if ( p_button_link->anim[1] != NULL ){
-                p_button_link->show_flag = 2;
+            ButtonLink *cur_button_link = p_button_link;
+            while (cur_button_link) {
+                cur_button_link->show_flag = 0;
+                if ( cur_button_link->button_type == ButtonLink::SPRITE_BUTTON ||
+                     cur_button_link->button_type == ButtonLink::EX_SPRITE_BUTTON ){
+                }
+                else if ( cur_button_link->button_type == ButtonLink::TMP_SPRITE_BUTTON ){
+                    cur_button_link->show_flag = 1;
+                }
+                else if ( cur_button_link->anim[1] != NULL ){
+                    cur_button_link->show_flag = 2;
+                }
+                dirty_rect.add( cur_button_link->image_rect );
+                cur_button_link = cur_button_link->same;
             }
             p_button_link = p_button_link->next;
         }
@@ -3283,6 +3385,7 @@ int ONScripterLabel::btnwaitCommand()
             event_mode |= WAIT_TIMER_MODE;
             advancePhase();
         }
+        refreshMouseOverButton();
 
         return RET_WAIT | RET_REREAD;
     }
@@ -3345,6 +3448,7 @@ int ONScripterLabel::btndefCommand()
     }
 
     deleteButtonLink();
+    processTextButtonInfo();
 
     disableGetButtonFlag();
 

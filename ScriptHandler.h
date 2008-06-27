@@ -42,6 +42,9 @@
 #define RPAREN 0x03
 //Mion: for escaping '\' in {}-varlist strings _within script_ (indicates str newline)
 #define STR_BACKSLASH 0x1F
+//Mion: for escaping '<' & '>' to textbtn delimiters
+#define STR_TXTBTN_START 0x01
+#define STR_TXTBTN_END   0x04
 //Mion: for lookback text relocating
 #define TEXT_UP    0x11
 #define TEXT_RIGHT 0x12
@@ -131,6 +134,7 @@ public:
 
     // function for string access
     inline char *getStringBuffer(){ return string_buffer; };
+    inline char *getSavedStringBuffer(){ return saved_string_buffer; };
     char *saveStringBuffer();
     void addStringBuffer( char ch );
     

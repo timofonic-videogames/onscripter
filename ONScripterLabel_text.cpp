@@ -219,8 +219,8 @@ void ONScripterLabel::drawString( const char *str, uchar3 color, Fontinfo *info,
     /* ---------------------------------------- */
     /* Draw selected characters */
     uchar3 org_color;
-    for ( i=0 ; i<3 ; i++ ) org_color[i] = info->color[i];
-    for ( i=0 ; i<3 ; i++ ) info->color[i] = color[i];
+    setColor(org_color, info->color);
+    setColor(info->color, color);
 
     //bool skip_whitespace_flag = true;
     char text[3] = { '\0', '\0', '\0' };
@@ -303,7 +303,13 @@ void ONScripterLabel::restoreTextBuffer()
     char out_text[3] = { '\0','\0','\0' };
     Fontinfo f_info = sentence_font;
     f_info.clear();
+    setColor(f_info.color, current_page_colors.color);
+    ColorChange *nextcolor = current_page_colors.next;
     for ( int i=0 ; i<current_page->text_count ; i++ ){
+        if (nextcolor && (nextcolor->offset == i)) {
+            setColor(f_info.color, nextcolor->color);
+            nextcolor = nextcolor->next;
+        }
         if ( current_page->text[i] == 0x0a ){
             f_info.newLine();
         }
@@ -450,6 +456,7 @@ int ONScripterLabel::clickWait( char *out_text )
     }
     else{
         key_pressed_flag = false;
+        
         if ( textgosub_label ){
             saveoffCommand();
 
@@ -498,6 +505,7 @@ int ONScripterLabel::clickNewPage( char *out_text )
     }
     else{
         key_pressed_flag = false;
+
         if ( textgosub_label ){
             saveoffCommand();
 
@@ -818,6 +826,8 @@ int ONScripterLabel::processText()
     }
     else if (script_h.checkClickstr(&script_h.getStringBuffer()[string_buffer_offset]) == -2) {
         // got the special "\@" clickwait-or-page
+        if (in_txtbtn)
+            terminateTextButton();
         string_buffer_offset += 2;
         if (sentence_font.getRemainingLine() <= clickstr_line)
             return clickNewPage( NULL );
@@ -829,16 +839,22 @@ int ONScripterLabel::processText()
         return RET_CONTINUE | RET_NOREAD;
     }
     else if ( ch == '@' ){ // wait for click
+        if (in_txtbtn)
+            terminateTextButton();
         string_buffer_offset++;
         return clickWait( NULL );
     }
     else if ( ch == '\\' ){ // new page
+        if (in_txtbtn)
+            terminateTextButton();
         string_buffer_offset++;
         return clickNewPage( NULL );
     }
     else if ( ch == '!' ){
         string_buffer_offset++;
         if ( script_h.getStringBuffer()[ string_buffer_offset ] == 's' ){
+            if (in_txtbtn)
+                terminateTextButton();
             string_buffer_offset++;
             if ( script_h.getStringBuffer()[ string_buffer_offset ] == 'd' ){
                 sentence_font.wait_time = -1;
@@ -871,6 +887,8 @@ int ONScripterLabel::processText()
                 t = t*10 + script_h.getStringBuffer()[ string_buffer_offset ] - '0';
                 string_buffer_offset++;
             }
+            if (in_txtbtn)
+                terminateTextButton();
             if ( skip_flag || draw_one_page_flag || ctrl_pressed_status
 #ifdef INSANI
                   || skip_to_wait
@@ -902,6 +920,10 @@ int ONScripterLabel::processText()
          }
         readColor( &sentence_font.color, script_h.getStringBuffer() + string_buffer_offset );
         readColor( &ruby_font.color, script_h.getStringBuffer() + string_buffer_offset );
+        ColorChange *newcolor = new ColorChange;
+        setColor(newcolor->color, sentence_font.color);
+        newcolor->offset = current_page->text_count;
+        current_page_colors.insert(newcolor);
         string_buffer_offset += 7;
         return RET_CONTINUE | RET_NOREAD;
     }
@@ -934,6 +956,8 @@ int ONScripterLabel::processText()
         else{ // skip new line
             new_line_skip_flag = true;
             string_buffer_offset++;
+            if (in_txtbtn)
+                terminateTextButton();
             if (script_h.getStringBuffer()[string_buffer_offset] != 0x0a)
                 errorAndExit( "'new line' must follow '/'." );
             return RET_CONTINUE; // skip the following eol
@@ -943,6 +967,73 @@ int ONScripterLabel::processText()
         current_page->add(')');
         string_buffer_offset++;
         ruby_struct.stage = RubyStruct::NONE;
+        return RET_CONTINUE | RET_NOREAD;
+    }
+    else if ( ch == STR_TXTBTN_START ) { //begins a textbutton
+        if (!in_txtbtn) {
+            uchar3 tmpcolor;
+            setColor(tmpcolor, linkcolor[0]);
+            setColor(linkcolor[0], sentence_font.color);
+            setColor(sentence_font.color, tmpcolor);
+            setColor(ruby_font.color, tmpcolor);
+            ColorChange *newcolor = new ColorChange;
+            setColor(newcolor->color, sentence_font.color);
+            newcolor->offset = current_page->text_count;
+            current_page_colors.insert(newcolor);
+            text_button_info.insert(new TextButtonInfoLink);
+            text_button_info.next->xy[0] = sentence_font.xy[0];
+            text_button_info.next->xy[1] = sentence_font.xy[1];
+            string_buffer_offset++;
+            // need to read in optional integer value
+            int num = 0;
+            while ( script_h.getStringBuffer()[ string_buffer_offset ] >= '0' &&
+                    script_h.getStringBuffer()[ string_buffer_offset ] <= '9' ) {
+                num *= 10;
+                num += script_h.getStringBuffer()[ string_buffer_offset ] - '0';
+                string_buffer_offset++;
+            }
+            if (num > 0) {
+                next_txtbtn_num = num;
+                text_button_info.next->no = num;
+            } else {
+                text_button_info.next->no = next_txtbtn_num++;
+            }
+            text_button_info.next->prtext = current_page->text
+                + current_page->text_count;
+            text_button_info.next->text = script_h.getStringBuffer() + 
+                string_buffer_offset;
+            in_txtbtn = true;
+        } else
+            string_buffer_offset++;
+        return RET_CONTINUE | RET_NOREAD;
+    }
+    else if ( ch == STR_TXTBTN_END ) {   //ends a textbutton
+        if (in_txtbtn) {
+            uchar3 tmpcolor;
+            char *tmptext;
+            int txtbtn_len = script_h.getStringBuffer() + string_buffer_offset
+                - text_button_info.next->text;
+            tmptext = new char[txtbtn_len + 1];
+            strncpy(tmptext, text_button_info.next->text, txtbtn_len);
+            tmptext[txtbtn_len] = '\0';
+            text_button_info.next->text = tmptext;
+            txtbtn_len = current_page->text + current_page->text_count
+                - text_button_info.next->prtext;
+            tmptext = new char[txtbtn_len + 1];
+            strncpy(tmptext, text_button_info.next->prtext, txtbtn_len);
+            tmptext[txtbtn_len] = '\0';
+            text_button_info.next->prtext = tmptext;
+            setColor(tmpcolor, linkcolor[0]);
+            setColor(linkcolor[0], sentence_font.color);
+            setColor(sentence_font.color, tmpcolor);
+            setColor(ruby_font.color, tmpcolor);
+            ColorChange *newcolor = new ColorChange;
+            setColor(newcolor->color, sentence_font.color);
+            newcolor->offset = current_page->text_count;
+            current_page_colors.insert(newcolor);
+            in_txtbtn = false;
+        }
+        string_buffer_offset++;
         return RET_CONTINUE | RET_NOREAD;
     }
     else{
@@ -1014,7 +1105,10 @@ int ONScripterLabel::isTextCommand(const char *buf)
     }
 #endif
     else if ((*buf == '@') || (*buf == '\\')) {
-        // backtick, clickwait, new page
+        // clickwait, new page
+        return 1;
+    }
+    else if ( *buf == STR_TXTBTN_START || *buf == STR_TXTBTN_END ){
         return 1;
     }
     else if ( *buf == '/') {
@@ -1310,5 +1404,24 @@ int ONScripterLabel::findNextBreak(int offset, int &len)
     }
     // didn't find a break
     return i;
+}
+
+void ONScripterLabel::terminateTextButton()
+//Mion: use to destroy improperly terminated text button
+{
+    uchar3 tmpcolor;
+    TextButtonInfoLink *tmp = text_button_info.next;
+    tmp->text = tmp->prtext = NULL;
+    text_button_info.next = tmp->next;
+    delete tmp;
+    setColor(tmpcolor, linkcolor[0]);
+    setColor(linkcolor[0], sentence_font.color);
+    setColor(sentence_font.color, tmpcolor);
+    setColor(ruby_font.color, tmpcolor);
+    ColorChange *newcolor = new ColorChange;
+    setColor(newcolor->color, sentence_font.color);
+    newcolor->offset = current_page->text_count;
+    current_page_colors.insert(newcolor);
+    in_txtbtn = false;
 }
 
