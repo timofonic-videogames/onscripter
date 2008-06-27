@@ -126,7 +126,9 @@ public:
     int textonCommand();
     int textoffCommand();
     int texthideCommand();
+    int textexbtnCommand();
     int textclearCommand();
+    int textbtnstartCommand();
     int texecCommand();
     int tateyokoCommand();
     int talCommand();
@@ -190,6 +192,7 @@ public:
     int logspCommand();
     int locateCommand();
     int loadgameCommand();
+    int linkcolorCommand();
     int ldCommand();
     int languageCommand();
     int jumpfCommand();
@@ -205,6 +208,7 @@ public:
     int getvoicevolCommand();
     int getversionCommand();
     int gettimerCommand();
+    int gettextbtnstrCommand();
     int gettextCommand();
     int gettaglogCommand();
     int gettagCommand();
@@ -232,6 +236,7 @@ public:
     int exec_dllCommand();
     int exbtnCommand();
     int erasetextwindowCommand();
+    int erasetextbtnCommand();
     int endCommand();
     int dwavestopCommand();
     int dwaveCommand();
@@ -452,6 +457,7 @@ private:
         } BUTTON_TYPE;
 
         struct ButtonLink *next;
+        struct ButtonLink *same; //Mion: to link buttons that act in concert
         BUTTON_TYPE button_type;
         int no;
         int sprite_no;
@@ -464,18 +470,23 @@ private:
         ButtonLink(){
             button_type = NORMAL_BUTTON;
             next = NULL;
+            same = NULL;
             exbtn_ctl = NULL;
             anim[0] = anim[1] = NULL;
             show_flag = 0;
         };
         ~ButtonLink(){
-            if ((button_type == NORMAL_BUTTON ||
+            if ((button_type == NORMAL_BUTTON || 
                  button_type == TMP_SPRITE_BUTTON) && anim[0]) delete anim[0];
             if ( exbtn_ctl ) delete[] exbtn_ctl;
         };
         void insert( ButtonLink *button ){
             button->next = this->next;
             this->next = button;
+        };
+        void connect( ButtonLink *button ){
+            button->same = this->same;
+            this->same = button;
         };
         void removeSprite( int no ){
             ButtonLink *p = this;
@@ -492,9 +503,40 @@ private:
                 }
             }
         };
-    } root_button_link, *current_button_link, *shelter_button_link, exbtn_d_button_link;
+    } root_button_link, *current_button_link, *shelter_button_link,
+      exbtn_d_button_link, text_button_link;
 
     int current_over_button;
+
+    /* ---------------------------------------- */
+    /* Mion: textbtn related variables */
+    struct TextButtonInfoLink{
+        struct TextButtonInfoLink *next;
+        char *text; //actual "text" of the button
+        char *prtext; // button text as printed (w/linebreaks)
+        ButtonLink *button;
+        int xy[2];
+        int no;
+        TextButtonInfoLink(){
+            next = NULL;
+            text = NULL;
+            button = NULL;
+            xy[0] = xy[1] = -1;
+            no = -1;
+        };
+        ~TextButtonInfoLink(){
+            if (text) delete[] text;
+            if (prtext) delete[] prtext;
+        };
+        void insert( TextButtonInfoLink *info ){
+            info->next = this->next;
+            this->next = info;
+        };
+    } text_button_info;
+    int txtbtn_start_num;
+    int next_txtbtn_num;
+    bool in_txtbtn;
+    uchar3 linkcolor[2];
 
     bool getzxc_flag;
     bool gettab_flag;
@@ -508,6 +550,9 @@ private:
 
     void resetSentenceFont();
     void deleteButtonLink();
+    void processTextButtonInfo();
+    void deleteTextButtonInfo();
+    void terminateTextButton();
     void refreshMouseOverButton();
     void refreshSprite( int sprite_no, bool active_flag, int cell_no, SDL_Rect *check_src_rect, SDL_Rect *check_dst_rect );
 
@@ -649,7 +694,7 @@ private:
     int shortcut_mouse_line;
 
     void deleteSelectLink();
-    struct ButtonLink *getSelectableSentence( char *buffer, Fontinfo *info, bool flush_flag = true, bool nofile_flag = false );
+    struct ButtonLink *getSelectableSentence( char *buffer, Fontinfo *info, bool flush_flag = true, bool nofile_flag = false, bool skip_whitespace = true );
 
     /* ---------------------------------------- */
     /* Sound related variables */

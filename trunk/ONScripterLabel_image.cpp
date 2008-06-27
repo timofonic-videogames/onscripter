@@ -377,8 +377,12 @@ void ONScripterLabel::refreshSurface( SDL_Surface *surface, SDL_Rect *clip_src, 
 
     ButtonLink *p_button_link = root_button_link.next;
     while( p_button_link ){
-        if (p_button_link->show_flag > 0){
-            drawTaggedSurface( surface, p_button_link->anim[p_button_link->show_flag-1], clip );
+        ButtonLink *cur_button_link = p_button_link;
+        while (cur_button_link) {
+            if (cur_button_link->show_flag > 0){
+                drawTaggedSurface( surface, cur_button_link->anim[cur_button_link->show_flag-1], clip );
+            }
+            cur_button_link = cur_button_link->same;
         }
         p_button_link = p_button_link->next;
     }
@@ -388,7 +392,9 @@ void ONScripterLabel::refreshSprite( int sprite_no, bool active_flag,
 				     int cell_no, SDL_Rect *check_src_rect,
 				     SDL_Rect *check_dst_rect )
 {
-    if ( sprite_info[sprite_no].image_name && 
+    if ( (sprite_info[sprite_no].image_name ||
+         (sprite_info[sprite_no].trans_mode == AnimationInfo::TRANS_STRING &&
+          sprite_info[sprite_no].file_name)) && 
          ( sprite_info[ sprite_no ].visible != active_flag ||
            (cell_no >= 0 && sprite_info[ sprite_no ].current_cell != cell_no ) ||
            AnimationInfo::doClipping(check_src_rect, &sprite_info[ sprite_no ].pos) == 0 ||

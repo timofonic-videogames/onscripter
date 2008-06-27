@@ -81,8 +81,10 @@ static struct FuncLUT{
     {"texton",   &ONScripterLabel::textonCommand},
     {"textoff",   &ONScripterLabel::textoffCommand},
     {"texthide",   &ONScripterLabel::texthideCommand},
+    {"textexbtn",   &ONScripterLabel::textexbtnCommand},
     {"textclear",   &ONScripterLabel::textclearCommand},
     {"textbtnwait",   &ONScripterLabel::btnwaitCommand},
+    {"textbtnstart",   &ONScripterLabel::textbtnstartCommand},
     {"texec",   &ONScripterLabel::texecCommand},
     {"tateyoko",   &ONScripterLabel::tateyokoCommand},
     {"tal", &ONScripterLabel::talCommand},
@@ -167,6 +169,7 @@ static struct FuncLUT{
     {"logsp", &ONScripterLabel::logspCommand},
     {"locate", &ONScripterLabel::locateCommand},
     {"loadgame", &ONScripterLabel::loadgameCommand},
+    {"linkcolor", &ONScripterLabel::linkcolorCommand},
     {"ld", &ONScripterLabel::ldCommand},
     {"layermessage", &ONScripterLabel::layermessageCommand},
     {"jumpf", &ONScripterLabel::jumpfCommand},
@@ -187,6 +190,7 @@ static struct FuncLUT{
     {"getspmode", &ONScripterLabel::getspmodeCommand},
     {"getsevol", &ONScripterLabel::getsevolCommand},
     {"getscreenshot", &ONScripterLabel::getscreenshotCommand},
+    {"gettextbtnstr", &ONScripterLabel::gettextbtnstrCommand},
     {"gettext", &ONScripterLabel::gettextCommand},
     {"gettaglog", &ONScripterLabel::gettaglogCommand},
     {"gettag", &ONScripterLabel::gettagCommand},
@@ -214,6 +218,7 @@ static struct FuncLUT{
     {"exbtn_d", &ONScripterLabel::exbtnCommand},
     {"exbtn", &ONScripterLabel::exbtnCommand},
     {"erasetextwindow", &ONScripterLabel::erasetextwindowCommand},
+    {"erasetextbtn", &ONScripterLabel::erasetextbtnCommand},
     {"end", &ONScripterLabel::endCommand},
     {"dwavestop", &ONScripterLabel::dwavestopCommand},
     {"dwaveplayloop", &ONScripterLabel::dwaveCommand},
@@ -991,6 +996,13 @@ void ONScripterLabel::resetSub()
     for (i=0 ; i<4 ; i++) lookback_info[i].reset();
     sentence_font_info.reset();
 
+    //Mion: reset textbtn
+    deleteTextButtonInfo();
+    readColor( &linkcolor[0], "#FFFF22" ); // yellow - link color
+    readColor( &linkcolor[1], "#88FF88" ); // cyan - mouseover link color
+    txtbtn_start_num = next_txtbtn_num = 1;
+    in_txtbtn = false;
+
     dirty_rect.fill( screen_width, screen_height );
 }
 
@@ -1011,6 +1023,12 @@ void ONScripterLabel::resetSentenceFont()
     sentence_font_info.pos.y = 0;
     sentence_font_info.pos.w = screen_width+1;
     sentence_font_info.pos.h = screen_height+1;
+    while (current_page_colors.next) {
+        ColorChange *tmp = current_page_colors.next;
+        current_page_colors.next = tmp->next;
+        delete tmp;
+    }
+    setColor(current_page_colors.color, sentence_font.color);
 }
 
 void ONScripterLabel::flush( int refresh_mode, SDL_Rect *rect, bool clear_dirty_flag, bool direct_flag )
@@ -1070,43 +1088,59 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
     /* Check button */
     int button = 0;
     ButtonLink *p_button_link = root_button_link.next;
+    ButtonLink *cur_button_link;
     while( p_button_link ){
-        if ( x >= p_button_link->select_rect.x && x < p_button_link->select_rect.x + p_button_link->select_rect.w &&
-             y >= p_button_link->select_rect.y && y < p_button_link->select_rect.y + p_button_link->select_rect.h ){
-            button = p_button_link->no;
-            break;
+        cur_button_link = p_button_link;
+        while (cur_button_link) {
+            if ( x >= cur_button_link->select_rect.x &&
+                 x < cur_button_link->select_rect.x + cur_button_link->select_rect.w &&
+                 y >= cur_button_link->select_rect.y &&
+                 y < cur_button_link->select_rect.y + cur_button_link->select_rect.h ){
+                button = cur_button_link->no;
+                break;
+            }
+            cur_button_link = cur_button_link->same;
         }
+        if (button != 0) break;
         p_button_link = p_button_link->next;
         c++;
     }
 
-    if ( current_over_button != button ){
+    if ( (current_over_button != button) || (current_button_link != p_button_link)){
         DirtyRect dirty = dirty_rect;
         dirty_rect.clear();
 
         SDL_Rect check_src_rect = {0, 0, 0, 0};
         SDL_Rect check_dst_rect = {0, 0, 0, 0};
         if ( current_over_button != 0 ){
-            current_button_link->show_flag = 0;
-            check_src_rect = current_button_link->image_rect;
-            if ( current_button_link->button_type == ButtonLink::SPRITE_BUTTON ||
-                 current_button_link->button_type == ButtonLink::EX_SPRITE_BUTTON ){
-                sprite_info[ current_button_link->sprite_no ].visible = true;
-                sprite_info[ current_button_link->sprite_no ].setCell(0);
-            }
-            else if ( current_button_link->button_type == ButtonLink::TMP_SPRITE_BUTTON ){
-                current_button_link->show_flag = 1;
-                current_button_link->anim[0]->visible = true;
-                current_button_link->anim[0]->setCell(0);
-            }
-            else if ( current_button_link->anim[1] != NULL ){
-                current_button_link->show_flag = 2;
-            }
-            dirty_rect.add( current_button_link->image_rect );
-        }
+            cur_button_link = current_button_link;
+            while (cur_button_link) {
+                cur_button_link->show_flag = 0;
+                check_src_rect = cur_button_link->image_rect;
+                if ( cur_button_link->button_type == ButtonLink::SPRITE_BUTTON ||
+                     cur_button_link->button_type == ButtonLink::EX_SPRITE_BUTTON ){
+                    sprite_info[ cur_button_link->sprite_no ].visible = true;
+                    sprite_info[ cur_button_link->sprite_no ].setCell(0);
+                }
+                else if ( cur_button_link->button_type == ButtonLink::TMP_SPRITE_BUTTON){
+                    cur_button_link->show_flag = 1;
+                    cur_button_link->anim[0]->visible = true;
+                    cur_button_link->anim[0]->setCell(0);
+                }
+                else if ( cur_button_link->anim[1] != NULL ){
+                    cur_button_link->show_flag = 2;
+                }
+                dirty_rect.add( cur_button_link->image_rect );
+                if ( exbtn_d_button_link.exbtn_ctl){
+                    decodeExbtnControl( exbtn_d_button_link.exbtn_ctl, &check_src_rect, &check_dst_rect );
+                }
 
-        if ( exbtn_d_button_link.exbtn_ctl ){
-            decodeExbtnControl( exbtn_d_button_link.exbtn_ctl, &check_src_rect, &check_dst_rect );
+                cur_button_link = cur_button_link->same;
+            }
+        } else {
+            if ( exbtn_d_button_link.exbtn_ctl ){
+                decodeExbtnControl( exbtn_d_button_link.exbtn_ctl, &check_src_rect, &check_dst_rect );
+            }
         }
 
         if ( p_button_link ){
@@ -1120,25 +1154,32 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
                     playSound(selectvoice_file_name[SELECTVOICE_OVER],
                               SOUND_WAVE|SOUND_OGG, false, MIX_WAVE_CHANNEL);
             }
-            check_dst_rect = p_button_link->image_rect;
-            if ( p_button_link->button_type == ButtonLink::SPRITE_BUTTON ||
-                 p_button_link->button_type == ButtonLink::EX_SPRITE_BUTTON ){
-                sprite_info[ p_button_link->sprite_no ].setCell(1);
-                sprite_info[ p_button_link->sprite_no ].visible = true;
-                if ( p_button_link->button_type == ButtonLink::EX_SPRITE_BUTTON ){
-                    decodeExbtnControl( p_button_link->exbtn_ctl, &check_src_rect, &check_dst_rect );
+            cur_button_link = p_button_link;
+            while (cur_button_link) {
+                check_dst_rect = cur_button_link->image_rect;
+                if ( cur_button_link->button_type == ButtonLink::SPRITE_BUTTON ||
+                     cur_button_link->button_type == ButtonLink::EX_SPRITE_BUTTON ){
+                    sprite_info[ cur_button_link->sprite_no ].setCell(1);
+                    sprite_info[ cur_button_link->sprite_no ].visible = true;
+                    if ( cur_button_link->button_type == ButtonLink::EX_SPRITE_BUTTON ){
+                        decodeExbtnControl( cur_button_link->exbtn_ctl, &check_src_rect, &check_dst_rect );
+                    }
                 }
+                else if ( cur_button_link->button_type == ButtonLink::TMP_SPRITE_BUTTON){
+                    cur_button_link->show_flag = 1;
+                    cur_button_link->anim[0]->visible = true;
+                    cur_button_link->anim[0]->setCell(1);
+                    if ( cur_button_link->exbtn_ctl){
+                        decodeExbtnControl( cur_button_link->exbtn_ctl, &check_src_rect, &check_dst_rect );
+                    }
+                }
+                else if ( cur_button_link->button_type == ButtonLink::NORMAL_BUTTON ||
+                          cur_button_link->button_type == ButtonLink::LOOKBACK_BUTTON ){
+                    cur_button_link->show_flag = 1;
+                }
+                dirty_rect.add( cur_button_link->image_rect );
+                cur_button_link = cur_button_link->same;
             }
-            else if ( p_button_link->button_type == ButtonLink::TMP_SPRITE_BUTTON ){
-                p_button_link->show_flag = 1;
-                p_button_link->anim[0]->visible = true;
-                p_button_link->anim[0]->setCell(1);
-            }
-            else if ( p_button_link->button_type == ButtonLink::NORMAL_BUTTON ||
-                      p_button_link->button_type == ButtonLink::LOOKBACK_BUTTON ){
-                p_button_link->show_flag = 1;
-            }
-            dirty_rect.add( p_button_link->image_rect );
             current_button_link = p_button_link;
             shortcut_mouse_line = c;
         }
@@ -1369,12 +1410,71 @@ SDL_Surface *ONScripterLabel::loadImage( char *file_name, bool *has_alpha )
 }
 
 /* ---------------------------------------- */
+void ONScripterLabel::processTextButtonInfo()
+{
+    TextButtonInfoLink *info = text_button_info.next;
+    while (info) {
+        ButtonLink *firstbtn = NULL;
+        char *text = info->prtext;
+        char *text2;
+        Fontinfo f_info = sentence_font;
+        //f_info.clear();
+        f_info.xy[0] = info->xy[0];
+        f_info.xy[1] = info->xy[1];
+        setColor(f_info.off_color, linkcolor[0]);
+        setColor(f_info.on_color, linkcolor[1]);
+        do {
+            text2 = strchr(text, 0x0a);
+            if (text2) {
+                *text2 = '\0';
+            }
+            ButtonLink *txtbtn = getSelectableSentence(text, &f_info, true, false, false);
+            //printf("made txtbtn: %d '%s'\n", info->no, text);
+            txtbtn->no = info->no;
+            if (firstbtn)
+                firstbtn->connect(txtbtn);
+            else
+                firstbtn = txtbtn;
+            f_info.xy[0] = info->xy[0];
+            f_info.xy[1] = info->xy[1];
+            f_info.newLine();
+            if (text2) {
+                *text2 = 0x0a;
+                text2++;
+            }
+            text = text2;
+        } while (text2);
+        root_button_link.insert(firstbtn);
+        info->button = firstbtn;
+        info = info->next;
+    }
+}
+
+void ONScripterLabel::deleteTextButtonInfo()
+{
+    TextButtonInfoLink *i1 = text_button_info.next;
+
+    while( i1 ){
+        TextButtonInfoLink *i2 = i1;
+        i1 = i1->next;
+        delete i2;
+    }
+    text_button_info.next = NULL;
+    next_txtbtn_num = txtbtn_start_num;
+}
+
 void ONScripterLabel::deleteButtonLink()
 {
     ButtonLink *b1 = root_button_link.next;
 
     while( b1 ){
-        ButtonLink *b2 = b1;
+        ButtonLink *b2 = b1->same;
+        while ( b2 ) {
+            ButtonLink *b3 = b2;
+            b2 = b2->same;
+            delete b3;
+        }
+        b2 = b1;
         b1 = b1->next;
         delete b2;
     }
@@ -1382,6 +1482,13 @@ void ONScripterLabel::deleteButtonLink()
 
     if ( exbtn_d_button_link.exbtn_ctl ) delete[] exbtn_d_button_link.exbtn_ctl;
     exbtn_d_button_link.exbtn_ctl = NULL;
+
+    TextButtonInfoLink *i1 = text_button_info.next;
+    
+    while (i1) {
+        i1->button = NULL;
+        i1 = i1->next;
+    }
 }
 
 void ONScripterLabel::refreshMouseOverButton()
@@ -1439,6 +1546,14 @@ void ONScripterLabel::clearCurrentPage()
 
     text_info.fill( 0, 0, 0, 0 );
     cached_page = current_page;
+
+    while (current_page_colors.next) {
+        ColorChange *tmp = current_page_colors.next;
+        current_page_colors.next = tmp->next;
+        delete tmp;
+    }
+    setColor(current_page_colors.color, sentence_font.color);
+    deleteTextButtonInfo();
 }
 
 void ONScripterLabel::shadowTextDisplay( SDL_Surface *surface, SDL_Rect &clip )
@@ -1494,13 +1609,13 @@ void ONScripterLabel::newPage( bool next_flag )
         //line_enter_status = 0;
         page_enter_status = 0;
     }
-
+    
     clearCurrentPage();
 
     flush( refreshMode(), &sentence_font_info.pos );
 }
 
-struct ONScripterLabel::ButtonLink *ONScripterLabel::getSelectableSentence( char *buffer, Fontinfo *info, bool flush_flag, bool nofile_flag )
+struct ONScripterLabel::ButtonLink *ONScripterLabel::getSelectableSentence( char *buffer, Fontinfo *info, bool flush_flag, bool nofile_flag, bool skip_whitespace )
 {
     int current_text_xy[2];
     current_text_xy[0] = info->xy[0];
@@ -1524,6 +1639,7 @@ struct ONScripterLabel::ButtonLink *ONScripterLabel::getSelectableSentence( char
             anim->color_list[0][i] = info->off_color[i];
         anim->color_list[1][i] = info->on_color[i];
     }
+    anim->skip_whitespace = skip_whitespace;
     setStr( &anim->file_name, buffer );
     anim->pos.x = info->x() * screen_ratio1 / screen_ratio2;
     anim->pos.y = info->y() * screen_ratio1 / screen_ratio2;

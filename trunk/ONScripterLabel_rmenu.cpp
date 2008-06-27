@@ -57,6 +57,8 @@ void ONScripterLabel::enterSystemCall()
     shelter_select_link = root_select_link.next;
     root_select_link.next = NULL;
     shelter_event_mode = event_mode;
+    shelter_colors = current_page_colors.next;
+    current_page_colors.next = NULL;
     shelter_mouse_state.x = last_mouse_state.x;
     shelter_mouse_state.y = last_mouse_state.y;
     event_mode = IDLE_EVENT_MODE;
@@ -80,6 +82,7 @@ void ONScripterLabel::leaveSystemCall( bool restore_flag )
     if ( restore_flag ){
 
         current_page = cached_page;
+        current_page_colors.next = shelter_colors;
         restoreTextBuffer();
         root_button_link.next = shelter_button_link;
         root_select_link.next = shelter_select_link;
@@ -95,8 +98,8 @@ void ONScripterLabel::leaveSystemCall( bool restore_flag )
 
     //printf("leaveSystemCall %d %d\n",event_mode, clickstr_state);
 
-    refreshMouseOverButton();
     advancePhase();
+    refreshMouseOverButton();
 }
 
 void ONScripterLabel::executeSystemCall()
@@ -671,7 +674,6 @@ void ONScripterLabel::setupLookbackButton()
 
 void ONScripterLabel::executeSystemLookback()
 {
-    int i;
     uchar3 color;
 
     current_font = &sentence_font;
@@ -720,12 +722,10 @@ void ONScripterLabel::executeSystemLookback()
     setupLookbackButton();
     refreshMouseOverButton();
 
-    for ( i=0 ; i<3 ; i++ ){
-        color[i] = sentence_font.color[i];
-        sentence_font.color[i] = lookback_color[i];
-    }
+    setColor(color, current_page_colors.color);
+    setColor(current_page_colors.color, lookback_color);
     restoreTextBuffer();
-    for ( i=0 ; i<3 ; i++ ) sentence_font.color[i] = color[i];
+    setColor(current_page_colors.color, color);
 
     dirty_rect.fill( screen_width, screen_height );
     flush( refreshMode() );

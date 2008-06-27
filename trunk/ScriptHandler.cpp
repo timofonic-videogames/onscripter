@@ -276,6 +276,14 @@ const char *ScriptHandler::readToken()
                     else if (ch == '$'){
                         addStrVariable(&buf);
                     }
+                    else if (ch == '<'){
+                        addStringBuffer(STR_TXTBTN_START);
+                        ch = *++buf;
+                    }
+                    else if (ch == '>'){
+                        addStringBuffer(STR_TXTBTN_END);
+                        ch = *++buf;
+                    }
                     else if (ch == '{') {
                         // comma list of var/val pairs
                         buf++;
