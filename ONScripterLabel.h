@@ -626,6 +626,26 @@ private:
         SDL_Surface *surface;
     } *root_glyph_cache, glyph_cache[NUM_GLYPH_CACHE];
 
+    //Mion: use the following for tracking text color changes in current page
+    struct ColorChange{
+        struct ColorChange *next;
+        uchar3 color;
+        int offset;
+        ColorChange(){
+            color[0] = color[1] = color[2] = 0;
+            offset = -1;
+            next = NULL;
+        };
+        void insert( ColorChange *newcolor ){
+            if (next) {
+                next->insert(newcolor);
+            } else
+                next = newcolor;
+        };
+    } current_page_colors, *shelter_colors;
+    void deleteColorChanges();
+    void textbtnColorChange();
+
     int  refreshMode();
     void setwindowCore();
 

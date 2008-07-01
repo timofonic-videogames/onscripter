@@ -389,24 +389,6 @@ protected:
     int  linepage_mode;
     int  num_chars_in_sentence;
 
-    //Mion: use the following for tracking text color changes in current page
-    struct ColorChange{
-        struct ColorChange *next;
-        uchar3 color;
-        int offset;
-        ColorChange(){
-            color[0] = color[1] = color[2] = 0;
-            offset = -1;
-            next = NULL;
-        };
-        void insert( ColorChange *newcolor ){
-            if (next) {
-                next->insert(newcolor);
-            } else
-                next = newcolor;
-        };
-    } current_page_colors, *shelter_colors;
-
     struct Kinsoku {
         char chr[2];
     } *start_kinsoku, *end_kinsoku; //Mion: for kinsoku chars

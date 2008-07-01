@@ -971,15 +971,7 @@ int ONScripterLabel::processText()
     }
     else if ( ch == STR_TXTBTN_START ) { //begins a textbutton
         if (!in_txtbtn) {
-            uchar3 tmpcolor;
-            setColor(tmpcolor, linkcolor[0]);
-            setColor(linkcolor[0], sentence_font.color);
-            setColor(sentence_font.color, tmpcolor);
-            setColor(ruby_font.color, tmpcolor);
-            ColorChange *newcolor = new ColorChange;
-            setColor(newcolor->color, sentence_font.color);
-            newcolor->offset = current_page->text_count;
-            current_page_colors.insert(newcolor);
+            textbtnColorChange();
             text_button_info.insert(new TextButtonInfoLink);
             text_button_info.next->xy[0] = sentence_font.xy[0];
             text_button_info.next->xy[1] = sentence_font.xy[1];
@@ -1009,7 +1001,6 @@ int ONScripterLabel::processText()
     }
     else if ( ch == STR_TXTBTN_END ) {   //ends a textbutton
         if (in_txtbtn) {
-            uchar3 tmpcolor;
             char *tmptext;
             int txtbtn_len = script_h.getStringBuffer() + string_buffer_offset
                 - text_button_info.next->text;
@@ -1023,14 +1014,7 @@ int ONScripterLabel::processText()
             strncpy(tmptext, text_button_info.next->prtext, txtbtn_len);
             tmptext[txtbtn_len] = '\0';
             text_button_info.next->prtext = tmptext;
-            setColor(tmpcolor, linkcolor[0]);
-            setColor(linkcolor[0], sentence_font.color);
-            setColor(sentence_font.color, tmpcolor);
-            setColor(ruby_font.color, tmpcolor);
-            ColorChange *newcolor = new ColorChange;
-            setColor(newcolor->color, sentence_font.color);
-            newcolor->offset = current_page->text_count;
-            current_page_colors.insert(newcolor);
+            textbtnColorChange();
             in_txtbtn = false;
         }
         string_buffer_offset++;
@@ -1409,11 +1393,18 @@ int ONScripterLabel::findNextBreak(int offset, int &len)
 void ONScripterLabel::terminateTextButton()
 //Mion: use to destroy improperly terminated text button
 {
-    uchar3 tmpcolor;
     TextButtonInfoLink *tmp = text_button_info.next;
     tmp->text = tmp->prtext = NULL;
     text_button_info.next = tmp->next;
     delete tmp;
+    in_txtbtn = false;
+    textbtnColorChange();
+}
+
+void ONScripterLabel::textbtnColorChange()
+//Mion: swap linkcolor[0] with sentence_font color, make color change
+{
+    uchar3 tmpcolor;
     setColor(tmpcolor, linkcolor[0]);
     setColor(linkcolor[0], sentence_font.color);
     setColor(sentence_font.color, tmpcolor);
@@ -1422,6 +1413,4 @@ void ONScripterLabel::terminateTextButton()
     setColor(newcolor->color, sentence_font.color);
     newcolor->offset = current_page->text_count;
     current_page_colors.insert(newcolor);
-    in_txtbtn = false;
 }
-
