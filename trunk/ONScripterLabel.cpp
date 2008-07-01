@@ -1019,15 +1019,12 @@ void ONScripterLabel::resetSentenceFont()
     sentence_font.pitch_xy[1] = 2 + sentence_font.font_size_xy[1];
     sentence_font.wait_time = 20;
     sentence_font.window_color[0] = sentence_font.window_color[1] = sentence_font.window_color[2] = 0x99;
+    sentence_font.color[0] = sentence_font.color[1] = sentence_font.color[2] = 0xff;
     sentence_font_info.pos.x = 0;
     sentence_font_info.pos.y = 0;
     sentence_font_info.pos.w = screen_width+1;
     sentence_font_info.pos.h = screen_height+1;
-    while (current_page_colors.next) {
-        ColorChange *tmp = current_page_colors.next;
-        current_page_colors.next = tmp->next;
-        delete tmp;
-    }
+    deleteColorChanges();
     setColor(current_page_colors.color, sentence_font.color);
 }
 
@@ -1410,6 +1407,15 @@ SDL_Surface *ONScripterLabel::loadImage( char *file_name, bool *has_alpha )
 }
 
 /* ---------------------------------------- */
+void ONScripterLabel::deleteColorChanges()
+{
+    while (current_page_colors.next) {
+        ColorChange *tmp = current_page_colors.next;
+        current_page_colors.next = tmp->next;
+        delete tmp;
+    }
+}
+
 void ONScripterLabel::processTextButtonInfo()
 {
     TextButtonInfoLink *info = text_button_info.next;
@@ -1456,6 +1462,14 @@ void ONScripterLabel::deleteTextButtonInfo()
 
     while( i1 ){
         TextButtonInfoLink *i2 = i1;
+        // need to hide textbtn links
+        ButtonLink *cur_button_link = i2->button;
+        while (cur_button_link) {
+            cur_button_link->show_flag = 0;
+            cur_button_link->anim[0]->visible = false;
+            dirty_rect.add( cur_button_link->image_rect );
+            cur_button_link = cur_button_link->same;
+        }
         i1 = i1->next;
         delete i2;
     }
@@ -1483,6 +1497,7 @@ void ONScripterLabel::deleteButtonLink()
     if ( exbtn_d_button_link.exbtn_ctl ) delete[] exbtn_d_button_link.exbtn_ctl;
     exbtn_d_button_link.exbtn_ctl = NULL;
 
+    // Need to delete refs to ButtonLinks from text_button_info
     TextButtonInfoLink *i1 = text_button_info.next;
     
     while (i1) {
@@ -1547,11 +1562,7 @@ void ONScripterLabel::clearCurrentPage()
     text_info.fill( 0, 0, 0, 0 );
     cached_page = current_page;
 
-    while (current_page_colors.next) {
-        ColorChange *tmp = current_page_colors.next;
-        current_page_colors.next = tmp->next;
-        delete tmp;
-    }
+    deleteColorChanges();
     setColor(current_page_colors.color, sentence_font.color);
     deleteTextButtonInfo();
 }

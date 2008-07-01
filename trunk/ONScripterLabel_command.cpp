@@ -246,7 +246,6 @@ int ONScripterLabel::textexbtnCommand()
             strcpy( button->exbtn_ctl, buf );
             button = button->same;
         }
-        printf("textexbtn: made %d '%s'\n", txtbtn_no, buf);
     }
 
     return RET_CONTINUE;
@@ -806,11 +805,7 @@ void ONScripterLabel::setwindowCore()
 
     }
 #endif
-    while (current_page_colors.next) {
-        ColorChange *tmp = current_page_colors.next;
-        current_page_colors.next = tmp->next;
-        delete tmp;
-    }
+    deleteColorChanges();
     setColor(current_page_colors.color, sentence_font.color);
 }
 
