@@ -423,7 +423,10 @@ int ONScripterLabel::loadSaveFile2( int file_version )
     
    
     int text_num = readInt();
-    start_page = current_page;
+    //Mion: clearing page then moving to next eliminates buffer error
+    start_page = current_page->next;
+    clearCurrentPage();
+    current_page = start_page;
     for ( i=0 ; i<text_num ; i++ ){
         clearCurrentPage();
         do{
