@@ -129,6 +129,7 @@ public:
     int textexbtnCommand();
     int textclearCommand();
     int textbtnstartCommand();
+    int textbtnoffCommand();
     int texecCommand();
     int tateyokoCommand();
     int talCommand();
@@ -453,7 +454,8 @@ private:
                        SPRITE_BUTTON        = 1,
                        EX_SPRITE_BUTTON     = 2,
                        LOOKBACK_BUTTON      = 3,
-                       TMP_SPRITE_BUTTON    = 4
+                       TMP_SPRITE_BUTTON    = 4,
+                       TEXT_BUTTON          = 5
         } BUTTON_TYPE;
 
         struct ButtonLink *next;
@@ -477,7 +479,8 @@ private:
         };
         ~ButtonLink(){
             if ((button_type == NORMAL_BUTTON || 
-                 button_type == TMP_SPRITE_BUTTON) && anim[0]) delete anim[0];
+                 button_type == TMP_SPRITE_BUTTON ||
+                 button_type == TEXT_BUTTON) && anim[0]) delete anim[0];
             if ( exbtn_ctl ) delete[] exbtn_ctl;
         };
         void insert( ButtonLink *button ){
@@ -517,12 +520,14 @@ private:
         ButtonLink *button;
         int xy[2];
         int no;
+        bool visible;
         TextButtonInfoLink(){
             next = NULL;
             text = NULL;
             button = NULL;
             xy[0] = xy[1] = -1;
             no = -1;
+            visible = 0;
         };
         ~TextButtonInfoLink(){
             if (text) delete[] text;
@@ -536,6 +541,7 @@ private:
     int txtbtn_start_num;
     int next_txtbtn_num;
     bool in_txtbtn;
+    bool txtbtn_show;
     uchar3 linkcolor[2];
 
     bool getzxc_flag;

@@ -262,6 +262,16 @@ void ONScripterLabel::refreshSurface( SDL_Surface *surface, SDL_Rect *clip_src, 
 {
     if (refresh_mode == REFRESH_NONE_MODE) return;
 
+    //Mion: ogapee20080121
+    bool windowchip_sprite_visible = false;
+    if (windowchip_sprite_no >= 0){
+        windowchip_sprite_visible = sprite_info[windowchip_sprite_no].visible;
+        if (refresh_mode & REFRESH_TEXT_MODE) 
+            sprite_info[windowchip_sprite_no].visible = true;
+        else
+            sprite_info[windowchip_sprite_no].visible = false;
+    }
+
     SDL_Rect clip = {0, 0, surface->w, surface->h};
     if (clip_src) if ( AnimationInfo::doClipping( &clip, clip_src ) ) return;
 
@@ -289,6 +299,15 @@ void ONScripterLabel::refreshSurface( SDL_Surface *surface, SDL_Rect *clip_src, 
 		drawTaggedSurface( surface, &tachi_info[human_order[2-i]], clip );
 	    }
 	}
+
+        //Mion: draw sprite at z-order after tachi but before windowback textwindow
+	if ( !( z_order < 10 && refresh_mode & REFRESH_SAYA_MODE ) &&
+	     !all_sprite_hide_flag ) {
+	    if ( sprite_info[z_order].image_surface && sprite_info[z_order].visible ){
+	        drawTaggedSurface( surface, &sprite_info[z_order], clip );
+	    }
+        }
+
     }
 
     if ( windowback_flag ){
@@ -321,7 +340,7 @@ void ONScripterLabel::refreshSurface( SDL_Surface *surface, SDL_Rect *clip_src, 
 		top = 10;
 	    else
 		top = 0;
-	    for ( i=z_order ; i>=top ; i-- ){
+	    for ( i=z_order-1 ; i>=top ; i-- ){
 		if ( sprite_info[i].image_surface && sprite_info[i].visible ){
 		    drawTaggedSurface( surface, &sprite_info[i], clip );
 		}
@@ -386,6 +405,9 @@ void ONScripterLabel::refreshSurface( SDL_Surface *surface, SDL_Rect *clip_src, 
         }
         p_button_link = p_button_link->next;
     }
+    //Mion: ogapee20080121
+    if (windowchip_sprite_no >= 0)
+        sprite_info[windowchip_sprite_no].visible = windowchip_sprite_visible;
 }
 
 void ONScripterLabel::refreshSprite( int sprite_no, bool active_flag,
