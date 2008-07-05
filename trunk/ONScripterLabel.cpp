@@ -1096,7 +1096,7 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
                  x < cur_button_link->select_rect.x + cur_button_link->select_rect.w &&
                  y >= cur_button_link->select_rect.y &&
                  y < cur_button_link->select_rect.y + cur_button_link->select_rect.h &&
-                 ( !cur_button_link->button_type == ButtonLink::TEXT_BUTTON ||
+                 ( cur_button_link->button_type != ButtonLink::TEXT_BUTTON ||
                    ( txtbtn_visible && txtbtn_show ) )){
                 button = cur_button_link->no;
                 break;
@@ -1533,7 +1533,7 @@ void ONScripterLabel::refreshMouseOverButton()
 {
     int mx, my;
     current_over_button = 0;
-    current_button_link = NULL;
+    current_button_link = root_button_link.next;
     SDL_GetMouseState( &mx, &my );
     mouseOverCheck( mx, my );
 }

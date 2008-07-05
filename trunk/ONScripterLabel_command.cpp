@@ -1911,12 +1911,6 @@ int ONScripterLabel::linkcolorCommand()
 
 int ONScripterLabel::ldCommand()
 {
-    //Mion: remove text to animate sprites, if in normal mode
-    if (!( skip_flag || draw_one_page_flag || ctrl_pressed_status )) {
-        int ret = leaveTextDisplayMode();
-        if ( ret != RET_NOMATCH ) return ret;
-    }
-
     char loc = script_h.readLabel()[0];
     int no = -1;
     if      (loc == 'l') no = 0;
@@ -1925,6 +1919,12 @@ int ONScripterLabel::ldCommand()
 
     const char *buf = NULL;
     if (no >= 0) buf = script_h.readStr();
+
+    //Mion: remove text to animate sprites, if in normal mode
+    if (!( skip_flag || draw_one_page_flag || ctrl_pressed_status )) {
+        int ret = leaveTextDisplayMode();
+        if ( ret != RET_NOMATCH ) return ret;
+    }
 
     if ( event_mode & EFFECT_EVENT_MODE ){
         return doEffect( parseEffect(false), NULL, TACHI_EFFECT_IMAGE );
