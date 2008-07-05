@@ -85,6 +85,7 @@ static struct FuncLUT{
     {"textclear",   &ONScripterLabel::textclearCommand},
     {"textbtnwait",   &ONScripterLabel::btnwaitCommand},
     {"textbtnstart",   &ONScripterLabel::textbtnstartCommand},
+    {"textbtnoff",   &ONScripterLabel::textbtnoffCommand},
     {"texec",   &ONScripterLabel::texecCommand},
     {"tateyoko",   &ONScripterLabel::tateyokoCommand},
     {"tal", &ONScripterLabel::talCommand},
@@ -1002,6 +1003,7 @@ void ONScripterLabel::resetSub()
     readColor( &linkcolor[1], "#88FF88" ); // cyan - mouseover link color
     txtbtn_start_num = next_txtbtn_num = 1;
     in_txtbtn = false;
+    txtbtn_show = false;
 
     dirty_rect.fill( screen_width, screen_height );
 }
@@ -1092,7 +1094,9 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
             if ( x >= cur_button_link->select_rect.x &&
                  x < cur_button_link->select_rect.x + cur_button_link->select_rect.w &&
                  y >= cur_button_link->select_rect.y &&
-                 y < cur_button_link->select_rect.y + cur_button_link->select_rect.h ){
+                 y < cur_button_link->select_rect.y + cur_button_link->select_rect.h &&
+                 ( !cur_button_link->button_type == ButtonLink::TEXT_BUTTON ||
+                   txtbtn_show ) ){
                 button = cur_button_link->no;
                 break;
             }
@@ -1119,16 +1123,23 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
                     sprite_info[ cur_button_link->sprite_no ].visible = true;
                     sprite_info[ cur_button_link->sprite_no ].setCell(0);
                 }
-                else if ( cur_button_link->button_type == ButtonLink::TMP_SPRITE_BUTTON){
+                else if ( cur_button_link->button_type == ButtonLink::TMP_SPRITE_BUTTON ){
                     cur_button_link->show_flag = 1;
                     cur_button_link->anim[0]->visible = true;
                     cur_button_link->anim[0]->setCell(0);
+                }
+                else if ( cur_button_link->button_type == ButtonLink::TEXT_BUTTON ){
+                    if (text_button_info.visible) {
+                        cur_button_link->show_flag = 1;
+                        cur_button_link->anim[0]->visible = true;
+                        cur_button_link->anim[0]->setCell(0);
+                    }
                 }
                 else if ( cur_button_link->anim[1] != NULL ){
                     cur_button_link->show_flag = 2;
                 }
                 dirty_rect.add( cur_button_link->image_rect );
-                if ( exbtn_d_button_link.exbtn_ctl){
+                if ( exbtn_d_button_link.exbtn_ctl ){
                     decodeExbtnControl( exbtn_d_button_link.exbtn_ctl, &check_src_rect, &check_dst_rect );
                 }
 
@@ -1166,7 +1177,13 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
                     cur_button_link->show_flag = 1;
                     cur_button_link->anim[0]->visible = true;
                     cur_button_link->anim[0]->setCell(1);
-                    if ( cur_button_link->exbtn_ctl){
+                }
+                else if ( cur_button_link->button_type == ButtonLink::TEXT_BUTTON &&
+                          txtbtn_show ){
+                    cur_button_link->show_flag = 1;
+                    cur_button_link->anim[0]->visible = true;
+                    cur_button_link->anim[0]->setCell(1);
+                    if ( cur_button_link->exbtn_ctl ){
                         decodeExbtnControl( cur_button_link->exbtn_ctl, &check_src_rect, &check_dst_rect );
                     }
                 }
@@ -1419,6 +1436,8 @@ void ONScripterLabel::deleteColorChanges()
 void ONScripterLabel::processTextButtonInfo()
 {
     TextButtonInfoLink *info = text_button_info.next;
+
+    if (info) txtbtn_show = true;
     while (info) {
         ButtonLink *firstbtn = NULL;
         char *text = info->prtext;
@@ -1436,6 +1455,7 @@ void ONScripterLabel::processTextButtonInfo()
             }
             ButtonLink *txtbtn = getSelectableSentence(text, &f_info, true, false, false);
             //printf("made txtbtn: %d '%s'\n", info->no, text);
+            txtbtn->button_type = ButtonLink::TEXT_BUTTON;
             txtbtn->no = info->no;
             if (firstbtn)
                 firstbtn->connect(txtbtn);
@@ -1474,6 +1494,7 @@ void ONScripterLabel::deleteTextButtonInfo()
         delete i2;
     }
     text_button_info.next = NULL;
+    text_button_info.visible = false;
     next_txtbtn_num = txtbtn_start_num;
 }
 

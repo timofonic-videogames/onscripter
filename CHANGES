@@ -1,3 +1,12 @@
+2008-07-04
+
+  Added return value 4 in "isskip" command for whole page mode. [Mion]
+  Changed refreshSurface with windowback mode to draw a z-order sprite 
+  in front of the tachie but behind the textwindow;
+  Added windowchip handling to refreshSurface. [Mion]
+  Added "textbtnoff" command, fixed textbtn handling & updated test.
+  [Mion]
+
 2008-07-03
 
   Fixed a bug in game loading, where if a game was running and had

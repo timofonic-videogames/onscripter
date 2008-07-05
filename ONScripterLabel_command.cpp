@@ -264,6 +264,13 @@ int ONScripterLabel::textbtnstartCommand()
     return RET_CONTINUE;
 }
 
+int ONScripterLabel::textbtnoffCommand()
+{
+    txtbtn_show = false;
+
+    return RET_CONTINUE;
+}
+
 int ONScripterLabel::texecCommand()
 {
     if ( textgosub_clickstr_state == CLICK_NEWPAGE ){
@@ -2033,6 +2040,8 @@ int ONScripterLabel::isskipCommand()
 #ifdef INSANI
     else if ( ctrl_pressed_status )
         script_h.setInt( &script_h.current_variable, 3 );
+    else if ( draw_one_page_flag )
+        script_h.setInt( &script_h.current_variable, 4 );
 #endif
     else
         script_h.setInt( &script_h.current_variable, 0 );
@@ -3325,6 +3334,8 @@ int ONScripterLabel::btnwaitCommand()
             decodeExbtnControl(exbtn_d_button_link.exbtn_ctl, &check_src_rect);
         }
 
+        if (txtbtn_show) text_button_info.visible = true;
+
         ButtonLink *p_button_link = root_button_link.next;
         while( p_button_link ){
             ButtonLink *cur_button_link = p_button_link;
@@ -3335,6 +3346,10 @@ int ONScripterLabel::btnwaitCommand()
                 }
                 else if ( cur_button_link->button_type == ButtonLink::TMP_SPRITE_BUTTON ){
                     cur_button_link->show_flag = 1;
+                }
+                else if ( cur_button_link->button_type == ButtonLink::TEXT_BUTTON ){
+                    if (text_button_info.visible)
+                        cur_button_link->show_flag = 1;
                 }
                 else if ( cur_button_link->anim[1] != NULL ){
                     cur_button_link->show_flag = 2;
