@@ -507,7 +507,7 @@ private:
             }
         };
     } root_button_link, *current_button_link, *shelter_button_link,
-      exbtn_d_button_link, text_button_link;
+      exbtn_d_button_link, exbtn_d_shelter_button_link, text_button_link;
 
     int current_over_button;
 
@@ -520,14 +520,12 @@ private:
         ButtonLink *button;
         int xy[2];
         int no;
-        bool visible;
         TextButtonInfoLink(){
             next = NULL;
             text = NULL;
             button = NULL;
             xy[0] = xy[1] = -1;
             no = -1;
-            visible = 0;
         };
         ~TextButtonInfoLink(){
             if (text) delete[] text;
@@ -542,6 +540,7 @@ private:
     int next_txtbtn_num;
     bool in_txtbtn;
     bool txtbtn_show;
+    bool txtbtn_visible;
     uchar3 linkcolor[2];
 
     bool getzxc_flag;

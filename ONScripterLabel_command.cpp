@@ -2774,6 +2774,8 @@ int ONScripterLabel::erasetextwindowCommand()
 
 int ONScripterLabel::erasetextbtnCommand()
 {
+    if (!txtbtn_visible) return RET_CONTINUE;
+
     TextButtonInfoLink *info = text_button_info.next;
     while (info) {
         ButtonLink *cur_button_link = info->button;
@@ -3334,7 +3336,7 @@ int ONScripterLabel::btnwaitCommand()
             decodeExbtnControl(exbtn_d_button_link.exbtn_ctl, &check_src_rect);
         }
 
-        if (txtbtn_show) text_button_info.visible = true;
+        if (txtbtn_show) txtbtn_visible = true;
 
         ButtonLink *p_button_link = root_button_link.next;
         while( p_button_link ){
@@ -3348,7 +3350,7 @@ int ONScripterLabel::btnwaitCommand()
                     cur_button_link->show_flag = 1;
                 }
                 else if ( cur_button_link->button_type == ButtonLink::TEXT_BUTTON ){
-                    if (text_button_info.visible)
+                    if (txtbtn_visible)
                         cur_button_link->show_flag = 1;
                 }
                 else if ( cur_button_link->anim[1] != NULL ){
@@ -3363,7 +3365,7 @@ int ONScripterLabel::btnwaitCommand()
         flush( refreshMode() );
 
         event_mode = WAIT_BUTTON_MODE;
-        refreshMouseOverButton();
+        //refreshMouseOverButton();
 
         if ( btntime_value > 0 ){
             if ( btntime2_flag )

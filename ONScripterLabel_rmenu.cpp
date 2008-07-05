@@ -56,6 +56,8 @@ void ONScripterLabel::enterSystemCall()
     root_button_link.next = NULL;
     shelter_select_link = root_select_link.next;
     root_select_link.next = NULL;
+    exbtn_d_shelter_button_link = exbtn_d_button_link;
+    exbtn_d_button_link.exbtn_ctl = NULL;
     shelter_event_mode = event_mode;
     shelter_colors = current_page_colors.next;
     current_page_colors.next = NULL;
@@ -72,6 +74,9 @@ void ONScripterLabel::enterSystemCall()
 
 void ONScripterLabel::leaveSystemCall( bool restore_flag )
 {
+    bool tmp = txtbtn_show;
+    txtbtn_show = false;
+
     current_font = &sentence_font;
     display_mode = shelter_display_mode;
     system_menu_mode = SYSTEM_NULL;
@@ -86,6 +91,8 @@ void ONScripterLabel::leaveSystemCall( bool restore_flag )
         restoreTextBuffer();
         root_button_link.next = shelter_button_link;
         root_select_link.next = shelter_select_link;
+        exbtn_d_button_link = exbtn_d_shelter_button_link;
+        erasetextbtnCommand();
 
         event_mode = shelter_event_mode;
         draw_cursor_flag = shelter_draw_cursor_flag;
@@ -100,6 +107,7 @@ void ONScripterLabel::leaveSystemCall( bool restore_flag )
 
     advancePhase();
     refreshMouseOverButton();
+    txtbtn_show = tmp;
 }
 
 void ONScripterLabel::executeSystemCall()
