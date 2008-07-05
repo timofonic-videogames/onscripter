@@ -183,7 +183,12 @@ int ONScripterLabel::loadSaveFile2( int file_version )
         if ( readInt() == 1 ) sprite_info[i].visible = true;
         else                  sprite_info[i].visible = false;
         sprite_info[i].current_cell = readInt();
-	if (file_version >= 203) readInt(); // -1
+	if (file_version >= 203) {
+            int trans = readInt();
+            if (trans == -1)
+                trans = 256;
+            sprite_info[i].trans = trans;
+        }
     }
 
     readVariables( 0, script_h.global_variable_border );
@@ -562,7 +567,10 @@ void ONScripterLabel::saveSaveFile2( bool output_flag )
         writeInt( sprite_info[i].pos.y * screen_ratio2 / screen_ratio1, output_flag );
         writeInt( sprite_info[i].visible?1:0, output_flag );
         writeInt( sprite_info[i].current_cell, output_flag );
-	writeInt( -1, output_flag );
+        if (sprite_info[i].trans == 256)
+            writeInt( -1, output_flag );
+        else
+            writeInt( sprite_info[i].trans, output_flag );
     }
 
     writeVariables( 0, script_h.global_variable_border, output_flag );
