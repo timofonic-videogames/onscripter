@@ -1,9 +1,11 @@
 2008-07-04
 
   Added return value 4 in "isskip" command for whole page mode. [Mion]
+
   Changed refreshSurface with windowback mode to draw a z-order sprite 
   in front of the tachie but behind the textwindow;
   Added windowchip handling to refreshSurface. [Mion]
+
   Added "textbtnoff" command, fixed textbtn handling & updated test.
   [Mion]
 
@@ -19,12 +21,14 @@
   Added "textbtnstart", "linkcolor", "gettextbtnstr", "erasetextbtn",
   and "textexbtn" commands, along with support for textbuttons
   (using "<>"). [Mion]
+
   Added tracking of text colors on current page. [Mion]
 
 
 2008-06-19
 
   Added support for pretextgosub tags (using "[]") [Mion]
+
   Added support for in-text variable assignment (using "{}"). [Mion]
 
 
@@ -42,6 +46,7 @@
 2008-04-04
 
   Added "addkinsoku" and "setkinsoku" commands [Mion]
+
   Reworked text processing to allow a mix of 1-byte & 2-byte chars,
   use better English space-based linebreaking and Japanese kinsoku-based
   linebreaking. [Mion]
