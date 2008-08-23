@@ -44,6 +44,8 @@ SDL_CONFIG=sdl-config
 SMPEG_CONFIG=smpeg-config
 FREETYPE_CONFIG=freetype-config
 
+VERSION=`awk '/define VER_NUMBER/ {print $3}' version.h | sed s/-en$//`
+
 # Parse options
 prev=
 for opt
@@ -221,6 +223,8 @@ then
     # If Freetype is internal, SDL_ttf must be too.
     INTERNAL_SDL_TTF=true
 fi
+
+echo "Configuring ONScripter-En $VERSION"
 
 # Platform
 $echo_n "Checking platform type... ${nobr}"
@@ -503,6 +507,26 @@ then
     1) echo "broken" ;;
     *) echo "no" ;;
     esac
+elif not $INTERNAL_OGGLIBS
+then
+    $echo_n "Checking whether Ogg libs need to be linked explicitly... ${nobr}"
+    write_ogg
+    cat >> test.cc <<-_EOF
+	#include <cstdio>
+	#include "SDL.h"
+	#include "SDL_mixer.h"
+	#include <vorbis/codec.h>
+	#include <vorbis/vorbisfile.h>
+	const int ol=4008;
+	int main(int argc, char**argv){using namespace std;FILE*f=fopen("o.ogg","wb");if(!f||fwrite(o,1,ol,f)!=ol)return 127;fclose(f);
+	OggVorbis_File vf;f=fopen("o.ogg","rb");int n=ov_open(f,&vf,0,0)<0;fclose(f);return n;}
+	_EOF
+    EXPLICIT_OGGLIBS=true
+    $CXX `$SDL_CONFIG --cflags` `$SDL_CONFIG --libs` -lSDL_mixer test.cc -o mtest >/dev/null 2>&1
+    case $? in
+    0) echo "no"; EXPLICIT_OGGLIBS=false ;;
+    *) echo "yes" ;;
+    esac
 fi
 
 if not $INTERNAL_BZIP2
@@ -744,7 +768,7 @@ cat >> Makefile <<_EOF
 
 LIBS = -Lextlib/lib \\
        $LINKSDL_image \$(if \$(findstring true,$INTERNAL_SDL_IMAGE),$LINKjpeg $LINKpng $LINKz) \\
-       $LINKSDL_mixer \$(if \$(findstring true,$INTERNAL_SDL_MIXER),$LINKvorbisfile $LINKvorbis $LINKogg) \\
+       $LINKSDL_mixer \$(if \$(or \$(findstring true,$INTERNAL_SDL_MIXER),\$(findstring true,$EXPLICIT_OGGLIBS)),$LINKvorbisfile $LINKvorbis $LINKogg) \\
        \$(shell $SDL_CONFIG --libs)      \\
        \$(shell $SMPEG_CONFIG --libs)    \\
        $LINKSDL_ttf \$(shell $FREETYPE_CONFIG --libs) \\
@@ -812,6 +836,18 @@ SDL_win32_main.o: SDL_win32_main.c
 	\$(CC) \$(INCS) \$(DEFS) -c \$< -o \$@
 _EOF
 fi
+
+cat >> Makefile <<_EOF
+
+.PHONY: dist
+dist:
+	svn export . onscripter-en-$VERSION
+	tar cf onscripter-en-$VERSION-fullsrc.tar onscripter-en-$VERSION
+	rm -rf onscripter-en-$VERSION/extlib
+	tar cf onscripter-en-$VERSION-src.tar onscripter-en-$VERSION
+	bzip2 -9 onscripter-en-$VERSION-*src.tar
+	rm -rf onscripter-en-$VERSION
+_EOF
 
 echo "done"
 echo "Now run \"$MAKE\" to build ONScripter-En."
