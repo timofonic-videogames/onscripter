@@ -1,6 +1,7 @@
 2008-08-23
 
-  Fixed a potential buffer overrun; thanks to Ivan Yanikov for the patch. [Haeleth]
+  Fixed some potential buffer overruns; thanks to Ivan Yanikov for the
+  patches. [Haeleth]
 
 
 2008-07-04
