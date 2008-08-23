@@ -11392,6 +11392,12 @@ void initSJIS2UTF16()
 
 unsigned short convSJIS2UTF16( unsigned short in )
 {
-    return sjis_2_utf16[ in - 0x8140 ];
+    unsigned int index = in - 0x8140;
+    const unsigned int array_size = sizeof(sjis_2_utf16) / sizeof(sjis_2_utf16[0]);
+
+    if (!(index < array_size))
+	return '?';
+    
+    return sjis_2_utf16[ index ];
 }
 
