@@ -1071,7 +1071,7 @@ void ONScripterLabel::timerEvent( void )
  * Event loop
  * **************************************** */
 
-/* Haeleth: we implement our own event polling routine, to enable constant animation updates. *
+/* Haeleth: we implement our own event polling routine, to enable constant animation updates. */
 static Uint32 last_ticks = 0;
 bool ONScripterLabel::WaitEvent(SDL_Event* event)
 {
@@ -1088,7 +1088,7 @@ bool ONScripterLabel::WaitEvent(SDL_Event* event)
 		SDL_Delay(10);
 	}
 }
-* /Haeleth */
+/* /Haeleth */
 
 int ONScripterLabel::eventLoop()
 {
@@ -1096,7 +1096,7 @@ int ONScripterLabel::eventLoop()
 
     advancePhase();
 
-    while ( SDL_WaitEvent(&event) ) {
+    while ( WaitEvent(&event) ) {
         // ignore continous SDL_MOUSEMOTION
         while (event.type == SDL_MOUSEMOTION){
             if ( SDL_PeepEvents( &tmp_event, 1, SDL_PEEKEVENT, SDL_ALLEVENTS ) == 0 ) break;
@@ -1162,11 +1162,11 @@ int ONScripterLabel::eventLoop()
             timerEvent();
             break;
 
-/* Haeleth *
+/* Haeleth */
           case HAEL_BGUPDATE_EVENT:
             updateOldMovie();
             break;
-* /Haeleth */
+/* /Haeleth */
 
           case ONS_SOUND_EVENT:
           case ONS_CDAUDIO_EVENT:

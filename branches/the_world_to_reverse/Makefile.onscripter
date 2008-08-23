@@ -9,7 +9,7 @@ TARGET_EXE ?= onscripter
 GUI_OBJS = ONScripterLabel$(OBJSUFFIX) ONScripterLabel_command$(OBJSUFFIX) ONScripterLabel_text$(OBJSUFFIX) \
 	ONScripterLabel_effect$(OBJSUFFIX) ONScripterLabel_event$(OBJSUFFIX) ONScripterLabel_rmenu$(OBJSUFFIX) \
 	ONScripterLabel_animation$(OBJSUFFIX) ONScripterLabel_sound$(OBJSUFFIX) ONScripterLabel_file$(OBJSUFFIX) \
-	ONScripterLabel_file2$(OBJSUFFIX) ONScripterLabel_image$(OBJSUFFIX) \
+	ONScripterLabel_file2$(OBJSUFFIX) ONScripterLabel_image$(OBJSUFFIX) ONScripterLabel_oldmovie$(OBJSUFFIX) \
 	AnimationInfo$(OBJSUFFIX) FontInfo$(OBJSUFFIX) DirtyRect$(OBJSUFFIX) resize_image$(OBJSUFFIX)
 SARDEC_OBJS  = sardec$(OBJSUFFIX) DirectReader$(OBJSUFFIX) SarReader$(OBJSUFFIX)
 SARCONV_OBJS = sarconv$(OBJSUFFIX) conv_shared$(OBJSUFFIX) resize_image$(OBJSUFFIX) DirectReader$(OBJSUFFIX) SarReader$(OBJSUFFIX)
