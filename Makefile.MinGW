@@ -9,7 +9,7 @@ INCS = `sdl-config --cflags` `smpeg-config --cflags` `freetype-config --cflags`
 
 LIBS = -static -Wl,--start-group \
        `sdl-config --static-libs` `smpeg-config --libs` `freetype-config --libs` \
-       -lSDL_image -ljpeg -lpng -lz    \
+       -lSDL_image -ljpeg -lpng -lz -lSDL_gfx   \
        -lSDL_mixer -logg -lvorbis -lvorbisfile  \
        -lSDL_ttf -lbz2 -Wl,--end-group
 
@@ -22,7 +22,7 @@ OBJSUFFIX = .o
 .SUFFIXES: $(OBJSUFFIX) .c .cpp .h
 
 # for GNU g++
-CC  = gcc 
+CC  = gcc
 CXX = g++
 LD  = g++ -o 
 
@@ -31,13 +31,13 @@ CFLAGS = -O3 -fomit-frame-pointer -ffast-math -Wall -Wpointer-arith -pipe -c $(I
 
 RM = rm -f
 
-TARGET_EXE = ha
+TARGET_EXE = onscripter
 TARGET = $(TARGET_EXE)$(EXESUFFIX)
 
 EXT_OBJS = win32rc.o
 
 include Makefile.onscripter
 
-RCFILE ?= hallucinate.rc
+RCFILE ?= generic.rc
 win32rc.o: $(RCFILE)
 	windres $< -o $@

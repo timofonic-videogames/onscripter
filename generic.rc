@@ -1,0 +1,23 @@
+1 VERSIONINFO
+FILEVERSION 1, 0, 0, 0
+PRODUCTVERSION 1, 0, 0, 0
+FILEFLAGS 32
+FILEOS 4
+FILETYPE 1
+{
+   BLOCK "StringFileInfo" {
+       BLOCK "080904b0" {
+           VALUE "FileDescription", "ONScripter with old-movie"
+           VALUE "OriginalFilename", "onscripter.exe"
+           VALUE "CompanyName", "Ogapee/Haeleth"
+           VALUE "FileVersion", "2006-09-23"
+           VALUE "LegalCopyright", "Copyright 1998-2006 Studio O.G.A. Portions copyright 2005-2006 insani, 2006 Haeleth."
+           VALUE "ProductName", "ONScripter-oldmovie"
+           VALUE "ProductVersion", "1"
+           VALUE "Comments", "This is a modified version of ONScripter implementing the old-movie effect.  Note that the underlying ONScripter engine is out of date: if you don't need the old-movie effect, you should use an up-to-date build of ONScripter-En instead."
+       }
+   }
+   BLOCK "VarFileInfo" {
+       VALUE "Translation", 0x0809, 0x04B0
+   }
+}
