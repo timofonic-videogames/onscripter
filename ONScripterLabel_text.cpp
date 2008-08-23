@@ -226,6 +226,7 @@ void ONScripterLabel::drawString( const char *str, uchar3 color, Fontinfo *info,
     char text[3] = { '\0', '\0', '\0' };
     while( *str ){
         while (*str == ' ' && skip_whitespace_flag) str++;
+	if (!*str) break;
 
 #ifdef ENABLE_1BYTE_CHAR
         if ( *str == '`' ){
