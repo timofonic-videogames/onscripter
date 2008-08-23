@@ -174,8 +174,11 @@ int ScriptParser::soundpressplginCommand()
     if ( current_mode != DEFINE_MODE ) errorAndExit( "soundpressplgin: not in the define section" );
 
     const char *buf = script_h.readStr();
-    char buf2[12];
-    memcpy(buf2, buf, 12);
+    int buf_len = (int) strlen(buf);
+    char buf2[1024];
+    if (buf_len + 1 > 1024) return RET_NOMATCH;
+    strcpy(buf2, buf);
+
     // only nbzplgin.dll is supported
     for (unsigned int i=0 ; i<strlen(buf) ; i++)
         if (buf2[i] >= 'A' && buf2[i] <= 'Z') buf2[i] += 'a' - 'A';
@@ -183,7 +186,9 @@ int ScriptParser::soundpressplginCommand()
         fprintf( stderr, " *** plugin %s is not available, ignored. ***\n", buf);
         return RET_CONTINUE;
     }
-    while( *buf != '|' ) buf++;
+    while( *buf && *buf != '|' ) buf++;
+    if (!*buf)
+	return RET_NOMATCH;
     buf++;
 
     script_h.cBR->registerCompressionType( buf, BaseReader::NBZ_COMPRESSION );
