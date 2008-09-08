@@ -704,6 +704,7 @@ private:
     void drawEffect( SDL_Rect *dst_rect, SDL_Rect *src_rect, SDL_Surface *surface );
     void generateMosaic( SDL_Surface *src_surface, int level );
     void effectCascade( char *params, int duration );
+    void effectTrvswave( char *params, int duration );
 
     /* ---------------------------------------- */
     /* Select related variables */

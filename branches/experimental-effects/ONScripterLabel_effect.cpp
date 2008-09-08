@@ -338,6 +338,12 @@ int ONScripterLabel::doEffect( EffectLink *effect, bool clear_dirty_region )
         //printf("dll effect: Got dll '%s', params '%s'\n", dll, params);
         if (!strcmp(dll, "cascade.dll")) {
             effectCascade(params, effect->duration);
+        } else if (!strcmp(dll, "trvswave.dll")) {
+            effectTrvswave(params, effect->duration);
+        } else {
+            // do crossfade
+            height = 256 * effect_counter / effect->duration;
+            alphaBlend( NULL, ALPHA_BLEND_CONST, height, &dirty_rect.bounding_box );
         }
         break;
     }
@@ -580,4 +586,35 @@ void ONScripterLabel::effectCascade( char *params, int duration )
         alphaBlend( NULL, ALPHA_BLEND_CONST, width, &dirty_rect.bounding_box );
         effect_dst_surface = src_surface;
     }
+}
+
+void ONScripterLabel::effectTrvswave( char *params, int duration )
+{
+#define TRVSWAVE_AMPLITUDE   9
+#define TRVSWAVE_WVLEN_START 256
+#define TRVSWAVE_WVLEN_END   32
+
+    SDL_Rect src_rect={0, 0, screen_width, 1};
+    SDL_Rect dst_rect={0, 0, screen_width, 1};
+    int ampl, wvlen;
+    int width = 256 * effect_counter / duration;
+    alphaBlend( NULL, ALPHA_BLEND_CONST, width, &dirty_rect.bounding_box );
+    if (effect_counter * 2 < duration) {
+        ampl = TRVSWAVE_AMPLITUDE * 2 * effect_counter / duration;
+        wvlen = (Sint16)(1.0/(((1.0/TRVSWAVE_WVLEN_END - 1.0/TRVSWAVE_WVLEN_START) * 2 * effect_counter / duration) + (1.0/TRVSWAVE_WVLEN_START)));
+    } else {
+        ampl = TRVSWAVE_AMPLITUDE * 2 * (duration - effect_counter) / duration;
+        wvlen = (Sint16)(1.0/(((1.0/TRVSWAVE_WVLEN_END - 1.0/TRVSWAVE_WVLEN_START) * 2 * (duration - effect_counter) / duration) + (1.0/TRVSWAVE_WVLEN_START)));
+    }
+    SDL_FillRect( effect_tmp_surface, NULL, SDL_MapRGBA( effect_tmp_surface->format, 0, 0, 0, 0xff ) );
+    int y_offset = -screen_height / 2;
+    for (int i=0; i<screen_height; i++) {
+        src_rect.y = dst_rect.y = i;
+        dst_rect.x = (Sint16)(ampl * sin(M_PI * 2.0 * y_offset / wvlen));
+        SDL_BlitSurface(accumulation_surface, &src_rect, effect_tmp_surface, &dst_rect);
+        ++y_offset;
+    }
+    SDL_Surface *tmp = effect_tmp_surface;
+    effect_tmp_surface = accumulation_surface;
+    accumulation_surface = tmp;
 }
