@@ -281,7 +281,6 @@ public:
 
     int insertmenuCommand();
     int resetmenuCommand();
-    int setlayerCommand();
     int layermessageCommand();
 
 protected:

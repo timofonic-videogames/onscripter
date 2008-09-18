@@ -3877,11 +3877,6 @@ int ONScripterLabel::resetmenuCommand()
     script_h.skipToken();
     return RET_CONTINUE;
 }
-int ONScripterLabel::setlayerCommand()
-{
-    script_h.skipToken();
-    return RET_CONTINUE;
-}
 int ONScripterLabel::layermessageCommand()
 {
     script_h.skipToken();

@@ -229,6 +229,34 @@ int ScriptParser::shadedistanceCommand()
     return RET_CONTINUE;
 }
 
+//Mion
+int ScriptParser::setlayerCommand()
+{
+    if ( current_mode != DEFINE_MODE ) errorAndExit( script_h.getStringBuffer(), "not in the define section" );
+
+    int no = script_h.readInt();
+    int interval = script_h.readInt();
+    const char *dll = script_h.readStr();
+
+    Layer *handler = NULL;
+    if (!strncmp(dll, "oldmovie.dll", 12)) {
+        handler = new OldMovieLayer( screen_width, screen_height );
+        printf("Setup layer effect for '%s'.\n", dll);
+    } else {
+        printf("layer effect '%s' is not implemented.\n", dll);
+        return RET_CONTINUE;
+    }
+
+    LayerInfo *layer = new LayerInfo();
+    layer->num = no;
+    layer->interval = interval;
+    layer->handler = handler;
+    layer->next = layer_info;
+    layer_info = layer;
+
+    return RET_CONTINUE;
+}
+
 //Mion: for kinsoku
 int ScriptParser::setkinsokuCommand()
 {
