@@ -101,6 +101,8 @@ void AnimationInfo::reset()
     mat[0][1] = 0;
     mat[1][0] = 0;
     mat[1][1] = 1000;
+
+    layer_no = -1;
 }
 
 void AnimationInfo::deleteImageName(){

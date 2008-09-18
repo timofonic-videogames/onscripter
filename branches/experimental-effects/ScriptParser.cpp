@@ -71,6 +71,7 @@ static struct FuncLUT{
     {"skip",     &ScriptParser::skipCommand},
     {"sin", &ScriptParser::sinCommand},
     {"shadedistance",     &ScriptParser::shadedistanceCommand},
+    {"setlayer", &ScriptParser::setlayerCommand},
     {"setkinsoku",   &ScriptParser::setkinsokuCommand},
     {"selectvoice",     &ScriptParser::selectvoiceCommand},
     {"selectcolor",     &ScriptParser::selectcolorCommand},
@@ -201,6 +202,8 @@ ScriptParser::ScriptParser()
     start_kinsoku = end_kinsoku = NULL;
     num_start_kinsoku = num_end_kinsoku = 0;
     setKinsoku(DEFAULT_START_KINSOKU, DEFAULT_END_KINSOKU, false);
+
+    layer_info = NULL;
 }
 
 ScriptParser::~ScriptParser()
@@ -785,6 +788,15 @@ void ScriptParser::deleteNestInfo()
     }
     root_nest_info.next = NULL;
     last_nest_info = &root_nest_info;
+}
+
+void ScriptParser::deleteLayerInfo()
+{
+    while (layer_info) {
+        LayerInfo *tmp = layer_info;
+        layer_info = layer_info->next;
+        delete tmp;
+    }
 }
 
 void ScriptParser::setStr( char **dst, const char *src, int num )

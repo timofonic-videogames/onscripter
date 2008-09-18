@@ -106,7 +106,6 @@ static struct FuncLUT{
     {"setwindow3",   &ONScripterLabel::setwindow3Command},
     {"setwindow2",   &ONScripterLabel::setwindow2Command},
     {"setwindow",   &ONScripterLabel::setwindowCommand},
-    {"setlayer", &ONScripterLabel::setlayerCommand},
     {"setcursor",   &ONScripterLabel::setcursorCommand},
     {"selnum",   &ONScripterLabel::selectCommand},
     {"selgosub",   &ONScripterLabel::selectCommand},
@@ -972,6 +971,7 @@ void ONScripterLabel::resetSub()
     resetSentenceFont();
 
     deleteNestInfo();
+    deleteLayerInfo();
     deleteButtonLink();
     deleteSelectLink();
 
