@@ -40,6 +40,24 @@ struct Layer
     virtual void refresh( SDL_Surface* surface, SDL_Rect clip ) = 0;
 };
 
+const int max_scratch_count = 6; // Number of scratches visible.
+const int max_glow = 5; // Number of glow levels.
+
+class Scratch {
+private:
+	int offs;   // Tint of the line: 64 for light, -64 for dark, 0 for no scratch.
+	int x1, x2; // Horizontal position of top and bottom of the line.
+	int dx;     // Distance by which the line moves each frame.
+	int time;   // Number of frames remaining before reinitialisation.
+	int width, height;
+	void init(int &count);
+public:
+	Scratch() : offs(0), time(1) {}
+	void setwindow(int w, int h){ width = w; height = h; }
+	void update(int &count);
+	void draw(SDL_Surface* surface, SDL_Rect clip);
+};
+
 class OldMovieLayer : public Layer
 {
 public:
@@ -50,8 +68,15 @@ public:
     void refresh( SDL_Surface* surface, SDL_Rect clip );
 
 private:
-    int rx, ry; // Offset of blur (second copy of background image)
+    int scratch_count; // Number of scratches visible.
+    Scratch scratches[max_scratch_count];
+    int rx, ry, // Offset of blur (second copy of background image)
+        ns;     // Current noise surface
     bool initialized;
+    SDL_Surface* NoiseSurface[10]; // We store 10 screens of random noise, and flip between them at random.
+    SDL_Surface* GlowSurface;      // For the glow effect, we store a single surface with a scanline for each glow level.
+    int gv, // Current glow level
+        go; // Glow delta: flips between 1 and -1 to fade the glow in and out.
 
     void BlendOnSurface(SDL_Surface* src, SDL_Surface* dst, SDL_Rect clip);
 };
