@@ -3194,8 +3194,9 @@ int ONScripterLabel::clickCommand()
     }
     else{
         skip_mode &= ~SKIP_NORMAL;
-        event_mode = WAIT_INPUT_MODE;
+        event_mode = WAIT_INPUT_MODE | WAIT_TIMER_MODE;
         key_pressed_flag = false;
+        advancePhase();
         return RET_WAIT | RET_REREAD;
     }
 }
