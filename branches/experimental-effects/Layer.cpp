@@ -46,16 +46,35 @@
 #define BMASK 0x000000ff
 #define AMASK 0xff000000
 
+const int max_scratch_count = 6; // Number of scratches visible.
+const int max_glow = 5; // Number of glow levels.
+int scratch_count; // Number of scratches visible.
+
+class Scratch {
+private:
+	int offs;   // Tint of the line: 64 for light, -64 for dark, 0 for no scratch.
+	int x1, x2; // Horizontal position of top and bottom of the line.
+	int dx;     // Distance by which the line moves each frame.
+	int time;   // Number of frames remaining before reinitialisation.
+	int width, height;
+	void init();
+public:
+	Scratch() : offs(0), time(1) {}
+	void setwindow(int w, int h){ width = w; height = h; }
+	void update();
+	void draw(SDL_Surface* surface, SDL_Rect clip);
+};
+
 	// Create a new scratch.
-void Scratch::init(int &count)
+void Scratch::init()
 {
 	// If this scratch was visible, decrement the counter.
-	if (offs) --count;
+	if (offs) --scratch_count;
 	// Each scratch object is reinitialised every 3-9 frames.
 	time = rand() % 7 + 3;
 	// Possibly create a visible scratch, if there aren't already 4.
-	if (count > 3 ? false : rand() % 3 == 1) {
-		++count;
+	if (scratch_count > 3 ? false : rand() % 3 == 1) {
+		++scratch_count;
 		offs = rand() % 2 ? 64 : -64;
 		x1 = rand() % (width - 20) + 10;
 		dx = rand() % 12 - 6;
@@ -64,12 +83,11 @@ void Scratch::init(int &count)
 	else offs = 0;
 }
 
-	
 // Called each frame.
-void Scratch::update(int &count)
+void Scratch::update()
 {
 	if (--time == 0) 
-		init(count);
+		init();
 	else if (offs) {
 		x1 += dx;
 		x2 += dx;
@@ -106,12 +124,29 @@ void Scratch::draw(SDL_Surface* surface, SDL_Rect clip)
 	}
 }
 
+Scratch scratches[max_scratch_count];
+SDL_Surface* NoiseSurface[10]; // We store 10 screens of random noise, and flip between them at random.
+SDL_Surface* GlowSurface;      // For the glow effect, we store a single surface with a scanline for each glow level.
+int om_count = 0;
+bool initialized_om_surfaces = false;
+
 OldMovieLayer::OldMovieLayer( int w, int h )
 {
+    ++om_count;
     width = w;
     height = h;
     
     init();
+}
+
+OldMovieLayer::~OldMovieLayer() {
+    --om_count;
+    if (om_count == 0) {
+        for (int i=0; i<10; i++)
+            SDL_FreeSurface(NoiseSurface[i]);
+        SDL_FreeSurface(GlowSurface);
+        initialized_om_surfaces = false;
+    }
 }
 
 void OldMovieLayer::init()
@@ -120,8 +155,9 @@ void OldMovieLayer::init()
     go = 1;
 
     // set up scratches
-    for (int i = 0; i < max_scratch_count; i++)
-        scratches[i].setwindow(width, height);
+    if (! initialized_om_surfaces ) {
+        for (int i = 0; i < max_scratch_count; i++)
+            scratches[i].setwindow(width, height);
     
 	// Generate 10 screens of random noise.
 	for (int i = 0; i < 10; ++i) {
@@ -145,6 +181,7 @@ void OldMovieLayer::init()
 		const int ry = r.y * (26 / max_glow) + 4;
 		SDL_FillRect(GlowSurface, &r, SDL_MapRGB(GlowSurface->format, ry, ry, ry));
 	}
+    }
 
     initialized = true;
 }
@@ -167,11 +204,12 @@ void OldMovieLayer::update()
 	if (gv == max_glow) { gv = max_glow - 2; go = -1; }
 	if (gv == -1) { gv = 1; go = 1; }
 	// Update scratches.
-	for (int i = 0; i < max_scratch_count; i++) scratches[i].update(scratch_count);
+	for (int i = 0; i < max_scratch_count; i++) scratches[i].update();
 }
 
-void OldMovieLayer::message( char *message )
+void OldMovieLayer::message( const char *message )
 {
+    printf("OldMovieLayer: got message '%s'\n", message);
 }
 
 // We need something to use for those SDL_gfx image filter routines, for now
@@ -179,9 +217,9 @@ void imageFilterMean(unsigned char *src1, unsigned char *src2, unsigned char *ds
 {
     unsigned char *s1 = src1, *s2 = src2, *d = dst;
     int i = length;
-
     while (i--) {
-        *(d++) = (*(s1++) / 2) + (*(s2++) / 2);
+        int result = ((int) *(s1++) + (int) *(s2++)) / 2;
+        *(d++) = (unsigned char) result;
     }
 }
 
@@ -190,11 +228,10 @@ void imageFilterAdd(unsigned char *src1, unsigned char *src2, unsigned char *dst
     unsigned char *s1 = src1, *s2 = src2, *d = dst;
     int i = length;
     while (i--) {
-        *d = (*(s1++) / 2) + (*(s2++) / 2);
-        if (*d >= 128)
-            *d++ = 255;
-        else
-            *d++ *= 2;
+        int result = (int) *(s1++) + (int) *(s2++);
+        if (result & 0x0100)
+            result = 255;
+        *(d++) = (unsigned char) result;
     }
 }
 
@@ -203,11 +240,10 @@ void imageFilterSub(unsigned char *src1, unsigned char *src2, unsigned char *dst
     unsigned char *s1 = src1, *s2 = src2, *d = dst;
     int i = length;
     while (i--) {
-        if (*s1 < *s2)
-            *d++ = 0;
-        else
-            *d++ = *s1 - *s2;
-        ++s1; ++s2;
+        int result = (int) *(s1++) - (int) *(s2++);
+        if (result < 0)
+            result = 0;
+        *(d++) = (unsigned char) result;
     }
 }
 
