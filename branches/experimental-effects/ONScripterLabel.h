@@ -402,10 +402,6 @@ private:
     long btnwait_time;
     bool btndown_flag;
 
-    //Mion: tracking script delay/wait
-    int script_remaining_time;
-    bool script_delayed;
-
     void quit();
 
     /* ---------------------------------------- */

@@ -28,12 +28,15 @@
 
 struct Layer
 {
-    AnimationInfo *sprite;
+    AnimationInfo *sprite_info, *sprite;
     int width, height;
 
     virtual ~Layer(){};
     
-    void setSprite( AnimationInfo *anim ){ sprite = anim; };
+    void setSpriteInfo( AnimationInfo *sinfo, AnimationInfo *anim ){
+        sprite_info = sinfo;
+        sprite = anim;
+    };
     virtual void init() = 0;
     virtual void update( ) = 0;
     virtual void message( const char *message ) = 0;
@@ -51,12 +54,21 @@ public:
     void refresh( SDL_Surface* surface, SDL_Rect clip );
 
 private:
+    // message parameters
+    int blur_level;
+    int noise_level;
+    int glow_level;
+    int scratch_level;
+    int dust_level;
+    AnimationInfo *dust_sprite;
+
     int rx, ry, // Offset of blur (second copy of background image)
         ns;     // Current noise surface
     bool initialized;
     int gv, // Current glow level
         go; // Glow delta: flips between 1 and -1 to fade the glow in and out.
 
+    void om_init();
     void BlendOnSurface(SDL_Surface* src, SDL_Surface* dst, SDL_Rect clip);
 };
 
