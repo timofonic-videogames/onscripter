@@ -69,12 +69,6 @@ int ONScripterLabel::proceedAnimation()
         }
     }
 
-    if (script_delayed) {
-        SDL_Rect tmp = {0, 0, 0, 0};
-        minimum_duration = estimateNextDuration( NULL, tmp, minimum_duration );
-    }
-
-
     //if ( minimum_duration == -1 ) minimum_duration = 0;
 
     return minimum_duration;
@@ -82,11 +76,7 @@ int ONScripterLabel::proceedAnimation()
 
 int ONScripterLabel::estimateNextDuration( AnimationInfo *anim, SDL_Rect &rect, int minimum )
 {
-    if ( anim == NULL) { // checking the script delay remaining time
-        if ( minimum == -1 || minimum > script_remaining_time )
-            minimum = script_remaining_time;
-    }
-    else if ( anim->remaining_time == 0 ){
+    if ( anim->remaining_time == 0 ){
 
         if ( anim->trans_mode != AnimationInfo::TRANS_LAYER ) {
             if ( minimum == -1 ||
@@ -128,6 +118,8 @@ void ONScripterLabel::resetRemainingTime( int t )
         anim = &tachi_info[i];
         if ( anim->visible && anim->is_animatable){
             anim->remaining_time -= t;
+            if (anim->remaining_time < 0)
+                anim->remaining_time = 0;
         }
     }
         
@@ -135,6 +127,8 @@ void ONScripterLabel::resetRemainingTime( int t )
         anim = &sprite_info[i];
         if ( anim->visible && anim->is_animatable ){
             anim->remaining_time -= t;
+            if (anim->remaining_time < 0)
+                anim->remaining_time = 0;
         }
     }
     //Mion - ogapee2008
@@ -142,6 +136,8 @@ void ONScripterLabel::resetRemainingTime( int t )
         anim = &sprite2_info[i];
         if ( anim->visible && anim->is_animatable ){
             anim->remaining_time -= t;
+            if (anim->remaining_time < 0)
+                anim->remaining_time = 0;
         }
     }
 
@@ -155,11 +151,10 @@ void ONScripterLabel::resetRemainingTime( int t )
         
         if ( anim->visible && anim->is_animatable ){
             anim->remaining_time -= t;
+            if (anim->remaining_time < 0)
+                anim->remaining_time = 0;
         }
     }
-    
-    if (script_delayed)
-        script_remaining_time -= t;
 }
 
 void ONScripterLabel::setupAnimationInfo( AnimationInfo *anim, Fontinfo *info )
@@ -266,7 +261,7 @@ void ONScripterLabel::parseTaggedString( AnimationInfo *anim )
             anim->pos.x = anim->pos.y = 0;
             anim->pos.w = screen_width;
             anim->pos.h = screen_height;
-            tmp->handler->setSprite(anim);
+            tmp->handler->setSpriteInfo(sprite_info, anim);
             anim->duration_list = new int[1];
             anim->duration_list[0] = tmp->interval;
             anim->is_animatable = true;

@@ -296,8 +296,6 @@ void ONScripterLabel::startTimer( int count )
         advancePhase( count );
         remaining_time = 0;
     }
-    //script_remaining_time = count;
-    //script_delayed = true;
 
     event_mode |= WAIT_TIMER_MODE;
 }
