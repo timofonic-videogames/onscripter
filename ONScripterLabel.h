@@ -302,12 +302,7 @@ protected:
     bool key_pressed_flag;
     int  shift_pressed_status;
     int  ctrl_pressed_status;
-/*
-#ifdef INSANI
-	int skip_to_wait;
-	int skip_in_text;
-#endif
-*/
+
     void variableEditMode( SDL_KeyboardEvent *event );
     void keyDownEvent( SDL_KeyboardEvent *event );
     void keyUpEvent( SDL_KeyboardEvent *event );
@@ -406,6 +401,10 @@ private:
     long internal_button_timer;
     long btnwait_time;
     bool btndown_flag;
+
+    //Mion: tracking script delay/wait
+    int script_remaining_time;
+    bool script_delayed;
 
     void quit();
 

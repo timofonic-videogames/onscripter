@@ -2003,6 +2003,22 @@ int ONScripterLabel::ldCommand()
     }
 }
 
+int ONScripterLabel::layermessageCommand()
+{
+    int no = script_h.readInt();
+    const char *message = script_h.readStr();
+
+    LayerInfo *tmp = layer_info;
+    while (tmp) {
+        if ( tmp->num == no ) break;
+        tmp = tmp->next;
+    }
+    if (tmp)
+        tmp->handler->message(message);
+
+    return RET_CONTINUE;
+}
+
 int ONScripterLabel::languageCommand()
 {
     const char* which = script_h.readLabel();
@@ -3874,11 +3890,6 @@ int ONScripterLabel::insertmenuCommand()
     return RET_CONTINUE;
 }
 int ONScripterLabel::resetmenuCommand()
-{
-    script_h.skipToken();
-    return RET_CONTINUE;
-}
-int ONScripterLabel::layermessageCommand()
 {
     script_h.skipToken();
     return RET_CONTINUE;

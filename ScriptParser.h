@@ -336,6 +336,12 @@ protected:
             handler = NULL;
             next = NULL;
         };
+        ~LayerInfo(){
+            if (handler) {
+                delete handler;
+                handler = NULL;
+            }
+        }
     } *layer_info;
     void deleteLayerInfo();
 

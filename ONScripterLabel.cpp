@@ -890,6 +890,9 @@ void ONScripterLabel::reset()
     btntime2_flag = false;
     btntime_value = 0;
     btnwait_time = 0;
+    
+    script_remaining_time = 0;
+    script_delayed = false;
 
     disableGetButtonFlag();
 

@@ -69,22 +69,32 @@ int ONScripterLabel::proceedAnimation()
         }
     }
 
-    if ( minimum_duration == -1 ) minimum_duration = 0;
+    if (script_delayed) {
+        SDL_Rect tmp = {0, 0, 0, 0};
+        minimum_duration = estimateNextDuration( NULL, tmp, minimum_duration );
+    }
+
+
+    //if ( minimum_duration == -1 ) minimum_duration = 0;
 
     return minimum_duration;
 }
 
 int ONScripterLabel::estimateNextDuration( AnimationInfo *anim, SDL_Rect &rect, int minimum )
 {
-    if ( anim->remaining_time == 0 ){
-        if ( minimum == -1 ||
-             minimum > anim->duration_list[ anim->current_cell ] )
-            minimum = anim->duration_list[ anim->current_cell ];
+    if ( anim == NULL) { // checking the script delay remaining time
+        if ( minimum == -1 || minimum > script_remaining_time )
+            minimum = script_remaining_time;
+    }
+    else if ( anim->remaining_time == 0 ){
 
         if ( anim->trans_mode != AnimationInfo::TRANS_LAYER ) {
+            if ( minimum == -1 ||
+                 minimum > anim->duration_list[ anim->current_cell ] )
+                minimum = anim->duration_list[ anim->current_cell ];
             if ( anim->proceedAnimation() )
                 flushDirect( rect, refreshMode() | (draw_cursor_flag?REFRESH_CURSOR_MODE:0) );
-        } else if (anim->layer_no >= 0) {
+        } else if ((anim->layer_no >= 0) && !(event_mode & EFFECT_EVENT_MODE)) {
             LayerInfo *tmp = layer_info;
             while (tmp) {
                 if ( tmp->num == anim->layer_no ) break;
@@ -93,7 +103,10 @@ int ONScripterLabel::estimateNextDuration( AnimationInfo *anim, SDL_Rect &rect, 
             if (tmp) {
                 tmp->handler->update();
                 flushDirect( rect, refreshMode() | (draw_cursor_flag?REFRESH_CURSOR_MODE:0) );
-
+                anim->remaining_time = anim->duration_list[ anim->current_cell ];
+                if ( minimum == -1 ||
+                     minimum > anim->duration_list[ anim->current_cell ] )
+                    minimum = anim->duration_list[ anim->current_cell ];
             }
         }
     }
@@ -144,6 +157,9 @@ void ONScripterLabel::resetRemainingTime( int t )
             anim->remaining_time -= t;
         }
     }
+    
+    if (script_delayed)
+        script_remaining_time -= t;
 }
 
 void ONScripterLabel::setupAnimationInfo( AnimationInfo *anim, Fontinfo *info )
