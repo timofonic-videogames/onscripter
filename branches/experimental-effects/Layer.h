@@ -54,6 +54,7 @@ public:
     void refresh( SDL_Surface* surface, SDL_Rect clip );
 
 private:
+
     // message parameters
     int blur_level;
     int noise_level;
@@ -61,6 +62,7 @@ private:
     int scratch_level;
     int dust_level;
     AnimationInfo *dust_sprite;
+    AnimationInfo *dust;
 
     int rx, ry, // Offset of blur (second copy of background image)
         ns;     // Current noise surface

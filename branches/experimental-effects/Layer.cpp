@@ -149,12 +149,15 @@ OldMovieLayer::~OldMovieLayer() {
                 SDL_FreeSurface(NoiseSurface[i]);
             SDL_FreeSurface(GlowSurface);
             initialized_om_surfaces = false;
+            if (dust) delete dust;
         }
     }
 }
 
 void OldMovieLayer::init(){
     blur_level = noise_level = glow_level = scratch_level = dust_level = 0;
+    dust_sprite = dust = NULL;
+
     initialized = false;
 }
 
@@ -194,6 +197,12 @@ void OldMovieLayer::om_init()
 		const int ry = (r.y * 30 / max_glow) + 4;
 		SDL_FillRect(GlowSurface, &r, SDL_MapRGB(GlowSurface->format, ry, ry, ry));
 	}
+
+        if (dust_sprite) {
+            // Copy dust sprite to dust
+            dust = new AnimationInfo(*dust_sprite);
+            dust->visible = true;
+        }
     }
 
     initialized = true;
@@ -222,6 +231,7 @@ void OldMovieLayer::update()
 	if (gv < 0) { gv = 1; go = 1; }
 	// Update scratches.
 	for (int i = 0; i < max_scratch_count; i++) scratches[i].update(scratch_level);
+
     }
 }
 
@@ -374,6 +384,18 @@ void OldMovieLayer::BlendOnSurface(SDL_Surface* src, SDL_Surface* dst, SDL_Rect 
 	}
 }
 
+void drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo *anim, SDL_Rect &clip )
+{
+        SDL_Rect poly_rect = anim->pos;
+
+        if (!anim->affine_flag)
+            anim->blendOnSurface( dst_surface, poly_rect.x, poly_rect.y,
+                                  clip, anim->trans );
+        else
+            anim->blendOnSurface2( dst_surface, poly_rect.x, poly_rect.y,
+                                   clip, anim->trans );
+}
+
 // Called every time the screen is refreshed.
 // Draws the background image with the old-movie effect applied, using the settings adopted at the
 // last call to updateOldMovie().
@@ -422,6 +444,19 @@ void OldMovieLayer::refresh(SDL_Surface *surface, SDL_Rect clip)
 	// Add scratches.
 	if (scratch_level > 0)
 	    for (int i = 0; i < max_scratch_count; i++) scratches[i].draw(surface, clip);
+
+	// Add dust specks.
+	if (dust && dust_level > 0) {
+	    for (int i=0; i<10; i++) {
+		if (rand() % 1000 < dust_level) {
+		    dust->visible = true;
+		    dust->current_cell = rand() % (dust->num_of_cells);
+		    dust->pos.x = rand() % (width + 10) - 5;
+		    dust->pos.y = rand() % (height + 10) - 5;
+                    drawTaggedSurface( surface, dust, clip );
+		}
+            }
+        }
 
 	// And we're done.
 	SDL_UnlockSurface(surface);
