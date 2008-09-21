@@ -979,6 +979,8 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
 #endif
 }
 
+int textout_animation = 0;
+
 void ONScripterLabel::timerEvent( void )
 {
   timerEventTop:
@@ -1024,9 +1026,13 @@ void ONScripterLabel::timerEvent( void )
                 playClickVoice();
                 stopAnimation( clickstr_state );
             }
+            if ( end_flag && (event_mode & WAIT_TEXTOUT_MODE) ) {
+                loop_flag = true;
+            }
 
             if ( end_flag || duration == -1 )
                 event_mode &= ~WAIT_TIMER_MODE;
+            flush(refreshMode() | (draw_cursor_flag?REFRESH_CURSOR_MODE:0));
             if ( loop_flag ) goto timerEventTop;
         }
         else{
@@ -1034,6 +1040,18 @@ void ONScripterLabel::timerEvent( void )
                 remaining_time -= duration;
             resetRemainingTime( duration );
             advancePhase( duration );
+            if ( event_mode & WAIT_TEXTOUT_MODE ) {
+                if ((duration >= 0) && (++textout_animation == 4)) {
+                    //Mion: don't refresh every time during textout,
+                    // at least until layers get optimized
+                    textout_animation = 0;
+                    flush(refreshMode() | (draw_cursor_flag?REFRESH_CURSOR_MODE:0));
+                }
+                event_mode &= ~WAIT_TIMER_MODE;
+                goto timerEventTop;
+            } else {
+                flush(refreshMode() | (draw_cursor_flag?REFRESH_CURSOR_MODE:0));
+            }
         }
     }
     else if ( event_mode & EFFECT_EVENT_MODE ){

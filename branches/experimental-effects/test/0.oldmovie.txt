@@ -22,4 +22,10 @@ layermessage 0,"s|2,12,10,200,160,10"
 
 delay 1000
 
+textclear
+csp 2
+
+bg black,10,2000
+
+
 end

@@ -439,7 +439,10 @@ void ScriptParser::readColor( uchar3 *color, const char *buf ){
 
 int ScriptParser::parseLine()
 {
-    if ( debug_level > 0 ) printf("ScriptParser::Parseline %s\n", script_h.getStringBuffer() );
+    if ( debug_level > 0 ) {
+        printf("ScriptParser::Parseline %s\n", script_h.getStringBuffer() );
+        fflush(stdout);
+    }
 
     if ( script_h.getStringBuffer()[0] == ';' ) return RET_CONTINUE;
     else if ( script_h.getStringBuffer()[0] == '*' ) return RET_CONTINUE;
