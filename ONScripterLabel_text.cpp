@@ -807,7 +807,7 @@ int ONScripterLabel::processText()
             drawChar( out_text, &sentence_font, true, true, accumulation_surface, &text_info );
             num_chars_in_sentence += 2;
             string_buffer_offset += 2;
-            event_mode = WAIT_TEXTOUT_MODE;
+            event_mode = WAIT_TEXTOUT_MODE | WAIT_TIMER_MODE;
 #ifdef INSANI
 	    if ( skip_mode & (SKIP_TO_WAIT | SKIP_TO_EOL) )
 	        advancePhase( 0 );
@@ -1027,7 +1027,7 @@ int ONScripterLabel::processText()
             return RET_CONTINUE | RET_NOREAD;
         }
         else{
-            event_mode = WAIT_TEXTOUT_MODE;
+            event_mode = WAIT_TEXTOUT_MODE | WAIT_TIMER_MODE;
 #ifdef INSANI
 	    if (skip_mode & (SKIP_TO_WAIT | SKIP_TO_EOL))
 		advancePhase( 0 );
