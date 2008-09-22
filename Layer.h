@@ -4,8 +4,6 @@
  *
  *  Added by Mion (Sonozaki Futago-tachi) Sep 2008
  *
- *  ogapee@aqua.dti2.ne.jp
- *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -25,9 +23,11 @@
 #define __LAYER_H__
 
 #include "AnimationInfo.h"
+#include "BaseReader.h"
 
 struct Layer
 {
+    BaseReader *reader;
     AnimationInfo *sprite_info, *sprite;
     int width, height;
 
@@ -37,9 +37,8 @@ struct Layer
         sprite_info = sinfo;
         sprite = anim;
     };
-    virtual void init() = 0;
     virtual void update( ) = 0;
-    virtual void message( const char *message ) = 0;
+    virtual char* message( const char *message, int &ret_int ) = 0;
     virtual void refresh( SDL_Surface* surface, SDL_Rect clip ) = 0;
 };
 
@@ -48,13 +47,11 @@ class OldMovieLayer : public Layer
 public:
     OldMovieLayer( int w, int h );
     ~OldMovieLayer();
-    void init();
     void update();
-    void message( const char *message );
+    char* message( const char *message, int &ret_int );
     void refresh( SDL_Surface* surface, SDL_Rect clip );
 
 private:
-
     // message parameters
     int blur_level;
     int noise_level;
@@ -66,12 +63,46 @@ private:
 
     int rx, ry, // Offset of blur (second copy of background image)
         ns;     // Current noise surface
-    bool initialized;
     int gv, // Current glow level
         go; // Glow delta: flips between 1 and -1 to fade the glow in and out.
+    bool initialized;
 
     void om_init();
     void BlendOnSurface(SDL_Surface* src, SDL_Surface* dst, SDL_Rect clip);
+};
+
+class FuruLayer : public Layer
+{
+public:
+    FuruLayer( int w, int h, bool animated, BaseReader *br=NULL );
+    ~FuruLayer();
+    void update();
+    char* message( const char *message, int &ret_int );
+    void refresh( SDL_Surface* surface, SDL_Rect clip );
+
+private:
+    bool tumbling; // true (hana) or false (snow)
+
+    // message parameters
+    int interval; // 1 ~ 10000; # frames between a new element release
+    int fall_velocity; // 1 ~ screen_height; pix/frame
+    int wind; // -screen_width/2 ~ screen_width/2; pix/frame 
+    int amplitude; // 0 ~ screen_width/2; pix/frame
+    int period; // 0 ~ 359; degree/frame
+    AnimationInfo *elements[3];
+    bool paused, halted;
+
+    // rolling buffer
+    struct Pt { int x; int y; int type; int cell; };
+
+    Pt *points;
+    int pstart, pend;
+
+    int frame_count;
+    bool initialized;
+
+    void furu_init();
+    void validate_params();
 };
 
 #endif // __LAYER_H__

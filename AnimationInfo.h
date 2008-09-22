@@ -25,7 +25,9 @@
 #define __ANIMATION_INFO_H__
 
 #include <SDL.h>
+#include <SDL_image.h>
 #include <string.h>
+#include "BaseReader.h"
 
 typedef unsigned char uchar3[3];
 

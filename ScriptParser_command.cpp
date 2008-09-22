@@ -238,21 +238,27 @@ int ScriptParser::setlayerCommand()
     int interval = script_h.readInt();
     const char *dll = script_h.readStr();
 
+#ifndef NO_LAYER_EFFECTS
     Layer *handler = NULL;
     if (!strncmp(dll, "oldmovie.dll", 12)) {
         handler = new OldMovieLayer( screen_width, screen_height );
-        printf("Setup layer effect for '%s'.\n", dll);
+    } else if (!strncmp(dll, "snow.dll", 8)) {
+        handler = new FuruLayer( screen_width, screen_height, false, script_h.cBR );
+    } else if (!strncmp(dll, "hana.dll", 8)) {
+        handler = new FuruLayer( screen_width, screen_height, true, script_h.cBR );
     } else {
         printf("layer effect '%s' is not implemented.\n", dll);
         return RET_CONTINUE;
     }
 
+    printf("Setup layer effect for '%s'.\n", dll);
     LayerInfo *layer = new LayerInfo();
     layer->num = no;
     layer->interval = interval;
     layer->handler = handler;
     layer->next = layer_info;
     layer_info = layer;
+#endif // ndef NO_LAYER_EFFECTS
 
     return RET_CONTINUE;
 }
