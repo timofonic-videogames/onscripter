@@ -2013,8 +2013,10 @@ int ONScripterLabel::layermessageCommand()
         if ( tmp->num == no ) break;
         tmp = tmp->next;
     }
-    if (tmp)
-        tmp->handler->message(message);
+    if (tmp) {
+        getret_str = tmp->handler->message(message, getret_int);
+        //printf("layermessage returned: '%s', %d\n", getret_str, getret_int);
+    }
 
     return RET_CONTINUE;
 }

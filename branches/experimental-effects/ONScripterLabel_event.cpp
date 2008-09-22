@@ -1041,7 +1041,7 @@ void ONScripterLabel::timerEvent( void )
             resetRemainingTime( duration );
             advancePhase( duration );
             if ( event_mode & WAIT_TEXTOUT_MODE ) {
-                if ((duration >= 0) && (++textout_animation == 4)) {
+                if ((duration >= 0) /*&& (++textout_animation == 4)*/) {
                     //Mion: don't refresh every time during textout,
                     // at least until layers get optimized
                     textout_animation = 0;
