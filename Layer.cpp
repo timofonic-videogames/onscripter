@@ -19,20 +19,24 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 #ifndef NO_LAYER_EFFECTS
+#ifndef BPP16
 
 #include "Layer.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
-#ifdef BPP16
-#error "Effect layers are only defined for 32BPP builds."
-#endif
-
+#if SDL_BYTEORDER == SDL_LIL_ENDIAN
 #define RMASK 0x00ff0000
 #define GMASK 0x0000ff00
 #define BMASK 0x000000ff
 #define AMASK 0xff000000
+#else
+#define RMASK 0x0000ff00
+#define GMASK 0x00ff0000
+#define BMASK 0xff000000
+#define AMASK 0x000000ff
+#endif
 
 #define MAX_SPRITE_NUM 1000
 
@@ -468,6 +472,7 @@ void FuruLayer::furu_init()
     points = new Pt[1024];
     pstart = pend = 0;
     halted = false;
+    paused = false;
 
     initialized = true;
 }
@@ -596,6 +601,7 @@ char *FuruLayer::message( const char *message, int &ret_int )
                        &tmp[1], &num_cells[1],
                        &tmp[2], &num_cells[2])) {
                 for (int i=0; i<3; i++) {
+                    if (elements[i]) delete elements[i];
                     elements[i] = new AnimationInfo(sprite_info[tmp[i]]);
                     elements[i]->num_of_cells = num_cells[i];
                 }
@@ -617,6 +623,7 @@ char *FuruLayer::message( const char *message, int &ret_int )
                     setStr( &anim->file_name, &buf[i][0] );
                     anim->setupImage(img, NULL, has_alpha);
                     if ( img ) SDL_FreeSurface(img);
+                    if (elements[i]) delete elements[i];
                     elements[i] = anim;
                 }
             }
@@ -625,19 +632,30 @@ char *FuruLayer::message( const char *message, int &ret_int )
             if (sscanf(message, "i|%d,%d,%d", 
                        &tmp[0], &tmp[1], &tmp[2])) {
                 for (int i=0; i<3; i++) {
+                    if (elements[i]) delete elements[i];
                     elements[i] = new AnimationInfo(sprite_info[tmp[i]]);
                 }
             } else if (sscanf(message, "i|%[^,],%[^,],%[^,]",
                               &buf[0][0], &buf[1][0], &buf[2][0])) {
                 for (int i=0; i<3; i++) {
+                    Uint32 firstpix = 0;
                     bool has_alpha = false;
                     SDL_Surface *img = loadImage( &buf[i][0], &has_alpha, sprite->image_surface, reader );
                     AnimationInfo *anim = new AnimationInfo();
                     anim->num_of_cells = 1;
-                    anim->trans_mode = AnimationInfo::TRANS_TOPLEFT;
+                    SDL_LockSurface( img );
+                    firstpix = *((Uint32*) img->pixels) & ~AMASK;
+                    if (firstpix > 0) {
+                        anim->trans_mode = AnimationInfo::TRANS_TOPLEFT;
+                    } else {
+                        // if first pix is black, this is an "additive" sprite
+                        anim->trans_mode = AnimationInfo::TRANS_ADD;
+                    }
+                    SDL_UnlockSurface( img );
                     setStr( &anim->file_name, &buf[i][0] );
                     anim->setupImage(img, NULL, has_alpha);
                     if ( img ) SDL_FreeSurface(img);
+                    if (elements[i]) delete elements[i];
                     elements[i] = anim;
                 }
             }
@@ -696,4 +714,5 @@ void FuruLayer::refresh(SDL_Surface *surface, SDL_Rect clip)
     }
 }
 
+#endif // ndef BPP16
 #endif // ndef NO_LAYER_EFFECTS
