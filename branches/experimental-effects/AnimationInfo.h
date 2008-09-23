@@ -46,7 +46,10 @@ public:
            TRANS_PALLET         = 6,
            TRANS_TOPRIGHT       = 7,
            TRANS_MASK           = 8,
-           TRANS_LAYER          = 9
+#ifndef BPP16
+           TRANS_LAYER          = 9,
+           TRANS_ADD            = 10,
+#endif    
     };
 
     bool is_copy; // allocated buffers should not be deleted from a copied instance
