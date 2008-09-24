@@ -41,7 +41,7 @@ static iconv_t iconv_cd = NULL;
 #ifdef CONST_ICONV
 #define ICONVCAST (const char**)
 #else
-#define ICONVCAST
+#define ICONVCAST (char**)
 #endif
 
 #ifndef SEEK_END

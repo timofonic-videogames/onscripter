@@ -1392,7 +1392,7 @@ SDL_Surface *ONScripterLabel::loadImage( char *file_name, bool *has_alpha )
 	    for (int y=0; y<ret->h; ++y) {
 		Uint32* pixbuf = (Uint32*)((char*)ret->pixels + y * ret->pitch);
 		for (int x=0; x<ret->w; ++x, ++pixbuf) {
-		    if (*pixbuf & ret->format->Amask != aval) {
+		    if ((*pixbuf & ret->format->Amask) != aval) {
 			*has_alpha = true;
 			goto breakme;
 		    }
