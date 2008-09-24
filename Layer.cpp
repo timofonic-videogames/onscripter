@@ -176,6 +176,7 @@ void OldMovieLayer::om_init()
     gv = 0;
     go = 1;
     rx = ry = 0;
+    ns = 0;
 
     if (! initialized_om_surfaces ) {
 
