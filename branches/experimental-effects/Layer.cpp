@@ -152,6 +152,7 @@ OldMovieLayer::OldMovieLayer( int w, int h )
 
     blur_level = noise_level = glow_level = scratch_level = dust_level = 0;
     dust_sprite = dust = NULL;
+    dust_pts = NULL;
 
     initialized = false;
 }
@@ -165,6 +166,7 @@ OldMovieLayer::~OldMovieLayer() {
             SDL_FreeSurface(GlowSurface);
             initialized_om_surfaces = false;
             if (dust) delete dust;
+            if (dust_pts) delete[] dust_pts;
         }
     }
 }
@@ -210,7 +212,10 @@ void OldMovieLayer::om_init()
         if (dust_sprite) {
             // Copy dust sprite to dust
             dust = new AnimationInfo(*dust_sprite);
+            dust->visible = true;
         }
+        if (dust_pts) delete[] dust_pts;
+        dust_pts = new Pt[10];
     }
 
     initialized = true;
@@ -238,14 +243,23 @@ void OldMovieLayer::update()
 	if (gv >= 5) { gv = 3; go = -1; }
 	if (gv < 0) { gv = 1; go = 1; }
 	// Update scratches.
-	for (int i = 0; i < max_scratch_count; i++) scratches[i].update(scratch_level);
+	for (int i = max_scratch_count-1; i >= 0; --i) scratches[i].update(scratch_level);
 
+        // Update dust
+        for (int i=9; i>=0; --i) {
+            dust_pts[i].cell = rand() % (dust->num_of_cells);
+            dust_pts[i].x = rand() % (width + 10) - 5;
+            dust_pts[i].y = rand() % (height + 10) - 5;
+        }
     }
 }
 
 char *OldMovieLayer::message( const char *message, int &ret_int )
 {
-    int sprite_no;
+    int sprite_no = 0;
+    ret_int = 0;
+    if (!sprite_info)
+        return NULL;
 
     printf("OldMovieLayer: got message '%s'\n", message);
     if (sscanf(message, "s|%d,%d,%d,%d,%d,%d", 
@@ -265,12 +279,11 @@ char *OldMovieLayer::message( const char *message, int &ret_int )
             dust_sprite = &sprite_info[sprite_no];
         om_init();
     }
-    ret_int = 0;
     return NULL;
 }
 
 // We need something to use for those SDL_gfx image filter routines, for now
-void imageFilterMean(unsigned char *src1, unsigned char *src2, unsigned char *dst, int length)
+static void imageFilterMean(unsigned char *src1, unsigned char *src2, unsigned char *dst, int length)
 {
     unsigned char *s1 = src1, *s2 = src2, *d = dst;
     int i = length;
@@ -280,7 +293,7 @@ void imageFilterMean(unsigned char *src1, unsigned char *src2, unsigned char *ds
     }
 }
 
-void imageFilterAdd(unsigned char *src1, unsigned char *src2, unsigned char *dst, int length)
+static void imageFilterAdd(unsigned char *src1, unsigned char *src2, unsigned char *dst, int length)
 {
     unsigned char *s1 = src1, *s2 = src2, *d = dst;
     int i = length;
@@ -292,7 +305,7 @@ void imageFilterAdd(unsigned char *src1, unsigned char *src2, unsigned char *dst
     }
 }
 
-void imageFilterSub(unsigned char *src1, unsigned char *src2, unsigned char *dst, int length)
+static void imageFilterSub(unsigned char *src1, unsigned char *src2, unsigned char *dst, int length)
 {
     unsigned char *s1 = src1, *s2 = src2, *d = dst;
     int i = length;
@@ -305,7 +318,7 @@ void imageFilterSub(unsigned char *src1, unsigned char *src2, unsigned char *dst
 }
 
 // Apply blur effect by averaging two offset copies of a source surface together.
-void OldMovieLayer::BlendOnSurface(SDL_Surface* src, SDL_Surface* dst, SDL_Rect clip)
+static void BlurOnSurface(SDL_Surface* src, SDL_Surface* dst, SDL_Rect clip, int rx, int ry, int width)
 {
 	// Calculate clipping bounds to avoid reading outside the source surface.
 	const int srcx = clip.x - rx;
@@ -324,7 +337,7 @@ void OldMovieLayer::BlendOnSurface(SDL_Surface* src, SDL_Surface* dst, SDL_Rect 
 	
 	// If the vertical offset is positive, we are reading one copy from (x, -1), so we need to
 	// skip the first scanline to avoid reading outside the source surface.
-	for (int i=0; i<skipfirstrows; i++) {
+	for (int i=skipfirstrows; i; --i) {
 		--rows;
 		src1px += srcp;
 		src2px += srcp;
@@ -341,7 +354,7 @@ void OldMovieLayer::BlendOnSurface(SDL_Surface* src, SDL_Surface* dst, SDL_Rect 
 	
 	// If the horizontal offset is -1, the rightmost column has not been written to.
 	// Rectify that by copying it directly from the source image.
-	if (rx && clip.x + clip.w >= width) {
+	if (rx && (clip.x + clip.w >= width)) {
 		Uint32* r = ((Uint32*) src->pixels) + (width - 1) + clip.y * width;
 		Uint32* d = ((Uint32*) dst->pixels) + (width - 1) + clip.y * width;
 		while (clip.h--) {
@@ -361,7 +374,7 @@ void OldMovieLayer::BlendOnSurface(SDL_Surface* src, SDL_Surface* dst, SDL_Rect 
 	}
 }
 
-void drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo *anim, SDL_Rect &clip )
+static void drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo *anim, SDL_Rect &clip )
 {
         SDL_Rect poly_rect = anim->pos;
 
@@ -379,13 +392,14 @@ void drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo *anim, SDL_Rect 
 void OldMovieLayer::refresh(SDL_Surface *surface, SDL_Rect clip)
 {
     if (initialized) {
-	SDL_BlitSurface(surface, &clip, sprite->image_surface, &clip);
 
 	// Blur background.
 	// If no offset is applied, we can just copy the given surface directly.
-	// If an offset is present, we average the given surface with an offset version using BlendOnSurface() above.
+	// If an offset is present, we average the given surface with an offset version
+
 	if (rx != 0 || ry != 0) {
-		BlendOnSurface(sprite->image_surface, surface, clip);
+        	SDL_BlitSurface(surface, &clip, sprite->image_surface, &clip);
+		BlurOnSurface(sprite->image_surface, surface, clip, rx, ry, width);
         }
 
 	// Add noise and glow.
@@ -402,7 +416,7 @@ void OldMovieLayer::refresh(SDL_Surface *surface, SDL_Rect clip)
 		// Since the glow is stored as a single scanline for each level, we always apply
 		// the glow scanline by scanline.
 		if (glow_level > 0)
-			for (int i = 0; i < height; ++i, s += sp) imageFilterAdd(s, g, s, width * 4);
+			for (int i = height; i; --i, s += sp) imageFilterAdd(s, g, s, width * 4);
 	}
 	else {
 		// Otherwise we do everything scanline by scanline.
@@ -424,12 +438,11 @@ void OldMovieLayer::refresh(SDL_Surface *surface, SDL_Rect clip)
 
 	// Add dust specks.
 	if (dust && dust_level > 0) {
-	    for (int i=0; i<10; i++) {
-		if (rand() % 1000 < dust_level) {
-		    dust->visible = true;
-		    dust->current_cell = rand() % (dust->num_of_cells);
-		    dust->pos.x = rand() % (width + 10) - 5;
-		    dust->pos.y = rand() % (height + 10) - 5;
+	    for (int i=9; i>0; --i) {
+		if ((rand() & 1023) < dust_level) {
+		    dust->current_cell = dust_pts[i].cell;
+		    dust->pos.x = dust_pts[i].x;
+		    dust->pos.y = dust_pts[i].y;
                     drawTaggedSurface( surface, dust, clip );
 		}
             }
@@ -461,16 +474,17 @@ FuruLayer::FuruLayer( int w, int h, bool animated, BaseReader *br )
 }
 
 FuruLayer::~FuruLayer(){
-    for (int i=0; i<3; i++) {
-        if (elements[i]) delete elements[i];
-    }
+    if (elements[0]) delete elements[0];
+    if (elements[1]) delete elements[1];
+    if (elements[2]) delete elements[2];
     if (points) delete[] points;
 }
 
 void FuruLayer::furu_init()
 {
+    window_x = 0; window_w = width;
     if (points) delete[] points;
-    points = new Pt[1024];
+    points = new Pt3[512];
     pstart = pend = 0;
     halted = false;
     paused = false;
@@ -482,42 +496,47 @@ void FuruLayer::update()
 {
     if (initialized && !paused) {
         if (tumbling) {
-            int i = pstart;
-            while (i != pend) {
-                points[i].x += wind;
-                points[i].y += fall_velocity;
-                points[i].cell = (points[i].cell + 1) %
-                    elements[points[i].type]->num_of_cells; 
-                ++i &= 1023;
+            for (int j=2; j>=0; --j) {
+                int i = pstart;
+                while (i != pend) {
+                    points[i].elem[j].x += wind;
+                    points[i].elem[j].y += fall_velocity;
+                    points[i].elem[j].cell = (points[i].elem[j].cell + 1) %
+                        elements[j]->num_of_cells; 
+                    ++i &= 511;
+                }
             }
         } else {
-            //for (int i=pstart; i!=pend; i=(i+1)%1024) {
-            int i = pstart;
-            while (i != pend) {
-                points[i].x += wind;
-                points[i].y += fall_velocity;
-                ++i &= 1023;
+            for (int j=2; j>=0; --j) {
+                int i = pstart;
+                while (i != pend) {
+                    points[i].elem[j].x += wind;
+                    points[i].elem[j].y += fall_velocity;
+                    ++i &= 511;
+                }
             }
         }
         if (interval > 1)
             frame_count = (frame_count + 1) % interval;
         if (!halted && (frame_count == 0)) {
-            int tmp = (pend + 1) % 1024;
+            int tmp = (pend + 1) & 511;
             if (tmp != pstart) {
-                // add a point
-                points[pend].x = rand() % (width + 20) - 10;
-                points[pend].y = 0;
-                points[pend].type = rand() % 3;
-                points[pend].cell = 0;
-                pend = tmp;
+                // add a point for each element
+                for (int j=2; j>=0; --j) {
+                    points[pend].elem[j].x = (rand() % window_w) + window_x;
+                    points[pend].elem[j].y = -(elements[j]->pos.h);
+                    points[pend].elem[j].type = j;
+                    points[pend].elem[j].cell = 0;
+                    pend = tmp;
+                }
             }
         }
-        if ((pstart != pend) && (points[pstart].y > (height + 20)))
-            pstart = (pstart + 1) % 1024;
+        if ((pstart != pend) && (points[pstart].elem[0].y > (height + 30)))
+            ++pstart &= 511;
     }
 }
 
-void setStr( char **dst, const char *src, int num=-1 )
+static void setStr( char **dst, const char *src, int num=-1 )
 {
     if ( *dst ) delete[] *dst;
     *dst = NULL;
@@ -535,7 +554,7 @@ void setStr( char **dst, const char *src, int num=-1 )
     }
 }
 
-SDL_Surface *loadImage( char *file_name, bool *has_alpha, SDL_Surface *surface, BaseReader *br )
+static SDL_Surface *loadImage( char *file_name, bool *has_alpha, SDL_Surface *surface, BaseReader *br )
 {
     if ( !file_name ) return NULL;
     unsigned long length = br->getFileLength( file_name );
@@ -581,16 +600,31 @@ void FuruLayer::validate_params()
     else if (amplitude > half_wx) amplitude = half_wx;
     if (period < 0) period = 0;
     else if (period > 359) period = 359;
+
+    //adjust the window based on wind & fall velocity
+    if (wind < 0) {
+        window_x = 0;
+        window_w = width - wind * height / fall_velocity;
+    } else if (wind == 0) {
+        window_x = 0;
+        window_w = width;
+    } else {
+        window_x = -(wind * height / fall_velocity);
+        window_w = width + wind * height / fall_velocity;
+    }
 }
 
 
 char *FuruLayer::message( const char *message, int &ret_int )
 {
     int num_cells[3], tmp[5];
-    char buf[4][128];
+    char buf[3][128];
 
     char *ret_str = NULL;
     ret_int = 0;
+
+    if (!sprite)
+        return NULL;
 
     //printf("FuruLayer: got message '%s'\n", message);
 //Image loading
@@ -601,7 +635,7 @@ char *FuruLayer::message( const char *message, int &ret_int )
                        &tmp[0], &num_cells[0],
                        &tmp[1], &num_cells[1],
                        &tmp[2], &num_cells[2])) {
-                for (int i=0; i<3; i++) {
+                for (int i=2; i>=0; --i) {
                     if (elements[i]) delete elements[i];
                     elements[i] = new AnimationInfo(sprite_info[tmp[i]]);
                     elements[i]->num_of_cells = num_cells[i];
@@ -611,13 +645,13 @@ char *FuruLayer::message( const char *message, int &ret_int )
                               &buf[0][0], &num_cells[0],
                               &buf[1][0], &num_cells[1],
                               &buf[2][0], &num_cells[2])) {
-                for (int i=0; i<3; i++) {
+                for (int i=2; i>=0; --i) {
                     bool has_alpha = false;
                     SDL_Surface *img = loadImage( &buf[i][0], &has_alpha, sprite->image_surface, reader );
                     AnimationInfo *anim = new AnimationInfo();
                     anim->num_of_cells = num_cells[i];
                     anim->duration_list = new int[ anim->num_of_cells ];
-                    for (int j=0 ; j<anim->num_of_cells ; j++ )
+                    for (int j=anim->num_of_cells - 1; j>=0; --j )
                         anim->duration_list[j] = 0;
                     anim->loop_mode = 3; // not animatable
                     anim->trans_mode = AnimationInfo::TRANS_TOPLEFT;
@@ -632,13 +666,13 @@ char *FuruLayer::message( const char *message, int &ret_int )
         // "Snow"
             if (sscanf(message, "i|%d,%d,%d", 
                        &tmp[0], &tmp[1], &tmp[2])) {
-                for (int i=0; i<3; i++) {
+                for (int i=2; i>=0; --i) {
                     if (elements[i]) delete elements[i];
                     elements[i] = new AnimationInfo(sprite_info[tmp[i]]);
                 }
             } else if (sscanf(message, "i|%[^,],%[^,],%[^,]",
                               &buf[0][0], &buf[1][0], &buf[2][0])) {
-                for (int i=0; i<3; i++) {
+                for (int i=2; i>=0; --i) {
                     Uint32 firstpix = 0;
                     bool has_alpha = false;
                     SDL_Surface *img = loadImage( &buf[i][0], &has_alpha, sprite->image_surface, reader );
@@ -665,8 +699,8 @@ char *FuruLayer::message( const char *message, int &ret_int )
     } else if (sscanf(message, "s|%d,%d,%d,%d,%d", 
                       &interval, &fall_velocity, &wind, 
                       &amplitude, &period)) {
-        validate_params();
         furu_init();
+        validate_params();
 //Transition (adjust) Parameters
     } else if (sscanf(message, "t|%d,%d,%d,%d,%d", 
                       &tmp[0], &tmp[1], &tmp[2], &tmp[3], &tmp[4])) {
@@ -687,7 +721,7 @@ char *FuruLayer::message( const char *message, int &ret_int )
         halted = true;
 //Get number of elements displayed
     } else if (!strcmp(message, "n")) {
-        ret_int = (pend - pstart) % 1024;
+        ret_int = ((pend - pstart) & 511) * 3;
 //Pause
     } else if (!strcmp(message, "p")) {
         paused = true;
@@ -701,15 +735,17 @@ char *FuruLayer::message( const char *message, int &ret_int )
 void FuruLayer::refresh(SDL_Surface *surface, SDL_Rect clip)
 {
     if (initialized) {
-        for (int i=pstart; i!=pend; i=(i+1)%1024) {
-            Pt curpt = points[i];
-            AnimationInfo *anim = elements[curpt.type];
-            if (anim) {
-                anim->visible = true;
-	        anim->current_cell = curpt.cell;
-    	        anim->pos.x = curpt.x;
-                anim->pos.y = curpt.y;
-                drawTaggedSurface( surface, anim, clip );
+        for (int i=pstart; i!=pend; ++i &= 511) {
+            for (int j=2; j>=0; --j) {
+                Pt curpt = points[i].elem[j];
+                AnimationInfo *anim = elements[j];
+                if (anim) {
+                    anim->visible = true;
+	            anim->current_cell = curpt.cell;
+       	            anim->pos.x = curpt.x;
+                    anim->pos.y = curpt.y;
+                    drawTaggedSurface( surface, anim, clip );
+                }
             }
         }
     }

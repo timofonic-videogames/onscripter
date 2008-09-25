@@ -33,10 +33,11 @@
 #define ONS_MIDI_EVENT    (SDL_USEREVENT+3)
 #define ONS_WAVE_EVENT    (SDL_USEREVENT+4)
 #define ONS_MUSIC_EVENT   (SDL_USEREVENT+5)
+#define ONS_ANIM_EVENT    (SDL_USEREVENT+6)
 
 // This sets up the fadeout event flag for use in mp3 fadeout.  Recommend for integration.  [Seung Park, 20060621]
 #ifdef INSANI
-#define ONS_FADE_EVENT    (SDL_USEREVENT+6)
+#define ONS_FADE_EVENT    (SDL_USEREVENT+7)
 #endif
 
 #define EDIT_MODE_PREFIX "[EDIT MODE]  "
@@ -44,6 +45,7 @@
 
 static SDL_TimerID timer_id = NULL;
 SDL_TimerID timer_cdaudio_id = NULL;
+SDL_TimerID anim_timer_id = NULL;
 
 // This block does two things: it sets up the timer id for mp3 fadeout, and it also sets up a timer id for midi looping --
 // the reason we have a separate midi loop timer id here is that on Mac OS X, looping midis via SDL will cause SDL itself
@@ -78,6 +80,18 @@ extern "C" void oggcallback( void *userdata, Uint8 *stream, int len )
         event.type = ONS_SOUND_EVENT;
         SDL_PushEvent(&event);
     }
+}
+
+extern "C" Uint32 SDLCALL animCallback( Uint32 interval, void *param )
+{
+    SDL_RemoveTimer( anim_timer_id );
+    anim_timer_id = NULL;
+
+	SDL_Event event;
+	event.type = ONS_ANIM_EVENT;
+	SDL_PushEvent( &event );
+
+    return interval;
 }
 
 extern "C" Uint32 SDLCALL timerCallback( Uint32 interval, void *param )
@@ -285,7 +299,7 @@ void ONScripterLabel::flushEvent()
 
 void ONScripterLabel::startTimer( int count )
 {
-    int duration = proceedAnimation();
+    int duration = proceedCursorAnimation();
 
     if ( duration > 0 && duration < count ){
         resetRemainingTime( duration );
@@ -313,6 +327,22 @@ void ONScripterLabel::advancePhase( int count )
 
         SDL_Event event;
         event.type = ONS_TIMER_EVENT;
+        SDL_PushEvent( &event );
+}
+
+void ONScripterLabel::advanceAnimPhase( int count )
+{
+    if ( anim_timer_id != NULL ){
+        SDL_RemoveTimer( anim_timer_id );
+    }
+
+    if (count > 0){
+        anim_timer_id = SDL_AddTimer( count, animCallback, NULL );
+        if (anim_timer_id != NULL) return;
+    }
+
+        SDL_Event event;
+        event.type = ONS_ANIM_EVENT;
         SDL_PushEvent( &event );
 }
 
@@ -979,7 +1009,23 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
 #endif
 }
 
-int textout_animation = 0;
+int animTextToggle = 0;
+
+void ONScripterLabel::animEvent( void )
+{
+    if ( !(event_mode & EFFECT_EVENT_MODE) ){
+        int duration = proceedAnimation();
+
+        if ( duration >= 0 ){
+            resetRemainingTime( duration );
+            advanceAnimPhase( duration );
+            //only refresh on every other update in textout mode
+            if (!(event_mode & WAIT_TEXTOUT_MODE) || (animTextToggle == 0))
+                flush(refreshMode() | (draw_cursor_flag?REFRESH_CURSOR_MODE:0));
+            ++animTextToggle &= 1;
+        }
+    }
+}
 
 void ONScripterLabel::timerEvent( void )
 {
@@ -988,7 +1034,8 @@ void ONScripterLabel::timerEvent( void )
     int ret;
 
     if ( event_mode & WAIT_TIMER_MODE ){
-        int duration = proceedAnimation();
+        int duration = proceedCursorAnimation();
+        flush(refreshMode() | (draw_cursor_flag?REFRESH_CURSOR_MODE:0));
 
         if ( duration < 0 ||
              ( remaining_time >= 0 &&
@@ -1032,7 +1079,6 @@ void ONScripterLabel::timerEvent( void )
 
             if ( end_flag || duration == -1 )
                 event_mode &= ~WAIT_TIMER_MODE;
-            flush(refreshMode() | (draw_cursor_flag?REFRESH_CURSOR_MODE:0));
             if ( loop_flag ) goto timerEventTop;
         }
         else{
@@ -1040,18 +1086,6 @@ void ONScripterLabel::timerEvent( void )
                 remaining_time -= duration;
             resetRemainingTime( duration );
             advancePhase( duration );
-            if ( event_mode & WAIT_TEXTOUT_MODE ) {
-                if ((duration >= 0) /*&& (++textout_animation == 4)*/) {
-                    //Mion: don't refresh every time during textout,
-                    // at least until layers get optimized
-                    textout_animation = 0;
-                    flush(refreshMode() | (draw_cursor_flag?REFRESH_CURSOR_MODE:0));
-                }
-                event_mode &= ~WAIT_TIMER_MODE;
-                goto timerEventTop;
-            } else {
-                flush(refreshMode() | (draw_cursor_flag?REFRESH_CURSOR_MODE:0));
-            }
         }
     }
     else if ( event_mode & EFFECT_EVENT_MODE ){
@@ -1062,6 +1096,7 @@ void ONScripterLabel::timerEvent( void )
             if ( ret == RET_CONTINUE ){
                 readToken(); // skip tailing \0 and mark kidoku
             }
+            advanceAnimPhase();
             if ( effect_blank == 0 || effect_counter == 0 ) goto timerEventTop;
             startTimer( effect_blank );
         }
@@ -1160,6 +1195,10 @@ int ONScripterLabel::eventLoop()
 
           case ONS_TIMER_EVENT:
             timerEvent();
+            break;
+
+          case ONS_ANIM_EVENT:
+            animEvent();
             break;
 
           case ONS_SOUND_EVENT:
