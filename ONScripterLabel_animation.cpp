@@ -50,6 +50,17 @@ int ONScripterLabel::proceedAnimation()
         }
     }
 
+    //if ( minimum_duration == -1 ) minimum_duration = 0;
+
+    return minimum_duration;
+}
+
+int ONScripterLabel::proceedCursorAnimation()
+{
+    int minimum_duration = -1;
+    AnimationInfo *anim = NULL;
+    dirty_rect.clear();
+
     if ( !textgosub_label &&
          ( clickstr_state == CLICK_WAIT ||
            clickstr_state == CLICK_NEWPAGE ) ){
@@ -59,7 +70,7 @@ int ONScripterLabel::proceedAnimation()
         else if ( clickstr_state == CLICK_NEWPAGE )
             anim = &cursor_info[CURSOR_NEWPAGE_NO];
 
-        if ( anim->visible && anim->is_animatable ){
+        if ( anim && anim->visible && anim->is_animatable ){
             SDL_Rect dst_rect = anim->pos;
             if ( !anim->abs_flag ){
                 dst_rect.x += sentence_font.x() * screen_ratio1 / screen_ratio2;
@@ -69,9 +80,6 @@ int ONScripterLabel::proceedAnimation()
             minimum_duration = estimateNextDuration( anim, dst_rect, minimum_duration );
         }
     }
-
-    //if ( minimum_duration == -1 ) minimum_duration = 0;
-
     return minimum_duration;
 }
 
@@ -269,6 +277,7 @@ void ONScripterLabel::parseTaggedString( AnimationInfo *anim )
             anim->duration_list[0] = tmp->interval;
             anim->is_animatable = true;
             printf("setup a sprite for layer %d\n", anim->layer_no);
+            advanceAnimPhase();
         } else
             anim->layer_no = -1;
         return;

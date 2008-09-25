@@ -309,11 +309,13 @@ protected:
     void keyPressEvent( SDL_KeyboardEvent *event );
     void mousePressEvent( SDL_MouseButtonEvent *event );
     void mouseMoveEvent( SDL_MouseMotionEvent *event );
+    void animEvent();
     void timerEvent();
     void flushEventSub( SDL_Event &event );
     void flushEvent();
     void startTimer( int count );
     void advancePhase( int count=0 );
+    void advanceAnimPhase( int count=0 );
     void trapHandler();
     void initSDL();
 #if defined(PDA) && !defined(PSP)
@@ -812,6 +814,7 @@ private:
     /* ---------------------------------------- */
     /* Animation */
     int  proceedAnimation();
+    int  proceedCursorAnimation();
     int  estimateNextDuration( AnimationInfo *anim, SDL_Rect &rect, int minimum );
     void resetRemainingTime( int t );
     void setupAnimationInfo( AnimationInfo *anim, Fontinfo *info=NULL );

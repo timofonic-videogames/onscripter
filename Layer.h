@@ -25,6 +25,8 @@
 #include "AnimationInfo.h"
 #include "BaseReader.h"
 
+struct Pt { int x; int y; int type; int cell; };
+
 struct Layer
 {
     BaseReader *reader;
@@ -61,6 +63,7 @@ private:
     AnimationInfo *dust_sprite;
     AnimationInfo *dust;
 
+    Pt *dust_pts;
     int rx, ry, // Offset of blur (second copy of background image)
         ns;     // Current noise surface
     int gv, // Current glow level
@@ -68,7 +71,7 @@ private:
     bool initialized;
 
     void om_init();
-    void BlendOnSurface(SDL_Surface* src, SDL_Surface* dst, SDL_Rect clip);
+    //void BlendOnSurface(SDL_Surface* src, SDL_Surface* dst, SDL_Rect clip);
 };
 
 class FuruLayer : public Layer
@@ -93,11 +96,11 @@ private:
     bool paused, halted;
 
     // rolling buffer
-    struct Pt { int x; int y; int type; int cell; };
-
-    Pt *points;
+    struct Pt3 { Pt elem[3]; };
+    Pt3 *points;
     int pstart, pend;
 
+    int window_x, window_w;
     int frame_count;
     bool initialized;
 
