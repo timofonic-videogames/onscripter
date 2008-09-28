@@ -22,6 +22,7 @@
 #ifndef BPP16
 
 #include "Layer.h"
+#include <SDL/SDL_imageFilter.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -282,41 +283,6 @@ char *OldMovieLayer::message( const char *message, int &ret_int )
     return NULL;
 }
 
-// We need something to use for those SDL_gfx image filter routines, for now
-static void imageFilterMean(unsigned char *src1, unsigned char *src2, unsigned char *dst, int length)
-{
-    unsigned char *s1 = src1, *s2 = src2, *d = dst;
-    int i = length;
-    while (i--) {
-        int result = ((int) *(s1++) + (int) *(s2++)) / 2;
-        *(d++) = (unsigned char) result;
-    }
-}
-
-static void imageFilterAdd(unsigned char *src1, unsigned char *src2, unsigned char *dst, int length)
-{
-    unsigned char *s1 = src1, *s2 = src2, *d = dst;
-    int i = length;
-    while (i--) {
-        int result = (int) *(s1++) + (int) *(s2++);
-        if (result & 0x0100)
-            result = 255;
-        *(d++) = (unsigned char) result;
-    }
-}
-
-static void imageFilterSub(unsigned char *src1, unsigned char *src2, unsigned char *dst, int length)
-{
-    unsigned char *s1 = src1, *s2 = src2, *d = dst;
-    int i = length;
-    while (i--) {
-        int result = (int) *(s1++) - (int) *(s2++);
-        if (result < 0)
-            result = 0;
-        *(d++) = (unsigned char) result;
-    }
-}
-
 // Apply blur effect by averaging two offset copies of a source surface together.
 static void BlurOnSurface(SDL_Surface* src, SDL_Surface* dst, SDL_Rect clip, int rx, int ry, int width)
 {
@@ -346,7 +312,7 @@ static void BlurOnSurface(SDL_Surface* src, SDL_Surface* dst, SDL_Rect clip, int
 	
 	// Blend the remaining scanlines.
 	while (rows--) {
-		imageFilterMean(src1px, src2px, dstpx, length);
+		SDL_imageFilterMean(src1px, src2px, dstpx, length);
 		src1px += srcp;
 		src2px += srcp;
 		dstpx += dstp;
@@ -412,11 +378,11 @@ void OldMovieLayer::refresh(SDL_Surface *surface, SDL_Rect clip)
 		// If no clipping rectangle is defined, we can apply the noise in one go.
 		unsigned char* s = (unsigned char*) surface->pixels;
 		if (noise_level > 0)
-			imageFilterSub(s, (unsigned char*) NoiseSurface[ns]->pixels, s, sp * surface->h);
+			SDL_imageFilterSub(s, (unsigned char*) NoiseSurface[ns]->pixels, s, sp * surface->h);
 		// Since the glow is stored as a single scanline for each level, we always apply
 		// the glow scanline by scanline.
 		if (glow_level > 0)
-			for (int i = height; i; --i, s += sp) imageFilterAdd(s, g, s, width * 4);
+			for (int i = height; i; --i, s += sp) SDL_imageFilterAdd(s, g, s, width * 4);
 	}
 	else {
 		// Otherwise we do everything scanline by scanline.
@@ -425,8 +391,8 @@ void OldMovieLayer::refresh(SDL_Surface *surface, SDL_Rect clip)
 		unsigned char* s = ((unsigned char*) surface->pixels) + clip.x * 4 + clip.y * sp;
 		unsigned char* n = ((unsigned char*) NoiseSurface[ns]->pixels) + clip.x * 4 + clip.y * np;
 		for (int i = clip.h; i; --i, s += sp, n += np) {
-			if (noise_level > 0) imageFilterSub(s, n, s, length); // subtract noise
-			if (glow_level > 0) imageFilterAdd(s, g, s, length); // add glow
+			if (noise_level > 0) SDL_imageFilterSub(s, n, s, length); // subtract noise
+			if (glow_level > 0) SDL_imageFilterAdd(s, g, s, length); // add glow
 		}
 	}
 	SDL_UnlockSurface(NoiseSurface[ns]);
@@ -710,6 +676,25 @@ char *FuruLayer::message( const char *message, int &ret_int )
         amplitude += tmp[3];
         period += tmp[4];
         validate_params();
+//Fill Screen w/Elements
+    } else if (!strcmp(message, "f")) {
+        if (initialized) {
+            int y = 0;
+            while (y < height) {
+                int tmp = (pend + 1) & 511;
+                if (tmp != pstart) {
+                    // add a point for each element
+                    for (int j=2; j>=0; --j) {
+                        points[pend].elem[j].x = (rand() % window_w) + window_x;
+                        points[pend].elem[j].y = y;
+                        points[pend].elem[j].type = j;
+                        points[pend].elem[j].cell = rand() % elements[j]->num_of_cells;
+                        pend = tmp;
+                    }
+                }
+                y += interval * fall_velocity;
+            }
+        }
 //Get Parameters
     } else if (!strcmp(message, "g")) {
         ret_int = paused ? 1 : 0;
@@ -728,6 +713,18 @@ char *FuruLayer::message( const char *message, int &ret_int )
 //Restart
     } else if (!strcmp(message, "r")) {
         paused = false;
+//eXtinguish
+    } else if (!strcmp(message, "x")) {
+        pstart = pend = 0;
+        if (elements[0]) delete elements[0];
+        elements[0] = NULL;
+        if (elements[1]) delete elements[1];
+        elements[1] = NULL;
+        if (elements[2]) delete elements[2];
+        elements[2] = NULL;
+        if (points) delete[] points;
+        points = NULL;
+        initialized = false;
     }
     return ret_str;
 }

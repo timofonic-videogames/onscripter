@@ -302,7 +302,7 @@ void ONScripterLabel::startTimer( int count )
     int duration = proceedCursorAnimation();
 
     if ( duration > 0 && duration < count ){
-        resetRemainingTime( duration );
+        resetCursorTime( duration );
         advancePhase( duration );
         remaining_time = count;
     }
@@ -1009,20 +1009,20 @@ void ONScripterLabel::keyPressEvent( SDL_KeyboardEvent *event )
 #endif
 }
 
-int animTextToggle = 0;
-
 void ONScripterLabel::animEvent( void )
 {
-    if ( !(event_mode & EFFECT_EVENT_MODE) ){
+    if ( event_mode && !(event_mode & EFFECT_EVENT_MODE) ){
         int duration = proceedAnimation();
 
         if ( duration >= 0 ){
+            int refresh_time = SDL_GetTicks();
+            flush(refreshMode() | (draw_cursor_flag?REFRESH_CURSOR_MODE:0));
+            refresh_time = SDL_GetTicks() - refresh_time;
             resetRemainingTime( duration );
+            if ((refresh_time * 2) > duration)
+                duration /= 2;
+            if (duration < 5) duration = 5;
             advanceAnimPhase( duration );
-            //only refresh on every other update in textout mode
-            if (!(event_mode & WAIT_TEXTOUT_MODE) || (animTextToggle == 0))
-                flush(refreshMode() | (draw_cursor_flag?REFRESH_CURSOR_MODE:0));
-            ++animTextToggle &= 1;
         }
     }
 }
@@ -1035,7 +1035,11 @@ void ONScripterLabel::timerEvent( void )
 
     if ( event_mode & WAIT_TIMER_MODE ){
         int duration = proceedCursorAnimation();
-        flush(refreshMode() | (draw_cursor_flag?REFRESH_CURSOR_MODE:0));
+
+        if (in_effect_blank) {
+            in_effect_blank = false;
+            advanceAnimPhase();
+        }
 
         if ( duration < 0 ||
              ( remaining_time >= 0 &&
@@ -1096,9 +1100,12 @@ void ONScripterLabel::timerEvent( void )
             if ( ret == RET_CONTINUE ){
                 readToken(); // skip tailing \0 and mark kidoku
             }
-            advanceAnimPhase();
-            if ( effect_blank == 0 || effect_counter == 0 ) goto timerEventTop;
+            if ( effect_blank == 0 || effect_counter == 0 ) { 
+                advanceAnimPhase(5);
+                goto timerEventTop;
+            }
             startTimer( effect_blank );
+            in_effect_blank = true;
         }
         else{
             script_h.setCurrent( current );

@@ -694,6 +694,7 @@ private:
     int effect_start_time;
     int effect_start_time_old;
     int effect_tmp;
+    bool in_effect_blank;
 
     int  setEffect( EffectLink *effect, int effect_dst, bool update_backup_surface );
     int  doEffect( EffectLink *effect, bool clear_dirty_region=true );
@@ -817,6 +818,7 @@ private:
     int  proceedCursorAnimation();
     int  estimateNextDuration( AnimationInfo *anim, SDL_Rect &rect, int minimum );
     void resetRemainingTime( int t );
+    void resetCursorTime( int t );
     void setupAnimationInfo( AnimationInfo *anim, Fontinfo *info=NULL );
     void parseTaggedString( AnimationInfo *anim );
     void drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo *anim, SDL_Rect &clip );
