@@ -3027,13 +3027,13 @@ int ellipseRGBA(SDL_Surface * dst, Sint16 x, Sint16 y, Sint16 rx, Sint16 ry, Uin
 
 __inline long int
 lrint (double ftl)
-{	
+{   
   int intgr;
-  _asm
-  {
-    fld flt
-    fistp intgr
-  };
+  __asm__
+  (
+    "fld ftl\n\t"
+    "fistp intgr"
+  );
   return intgr;
 }
 

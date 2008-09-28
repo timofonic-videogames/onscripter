@@ -44,7 +44,7 @@ extern "C" {
 
 /* ---- Prototypes */
 
-#ifdef WIN32
+#if defined(WIN32) && defined(NOT_STATIC_ONLY)
 #ifdef BUILD_DLL
 #define DLLINTERFACE __declspec(dllexport)
 #else

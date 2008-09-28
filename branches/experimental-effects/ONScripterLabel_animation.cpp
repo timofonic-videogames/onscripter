@@ -78,6 +78,7 @@ int ONScripterLabel::proceedCursorAnimation()
             }
 
             minimum_duration = estimateNextDuration( anim, dst_rect, minimum_duration );
+            flush(refreshMode() | (draw_cursor_flag?REFRESH_CURSOR_MODE:0));
         }
     }
     return minimum_duration;
@@ -151,6 +152,12 @@ void ONScripterLabel::resetRemainingTime( int t )
                 anim->remaining_time = 0;
         }
     }
+
+}
+
+void ONScripterLabel::resetCursorTime( int t )
+{
+    AnimationInfo *anim = NULL;
 
     if ( !textgosub_label &&
          ( clickstr_state == CLICK_WAIT ||

@@ -807,7 +807,7 @@ int ONScripterLabel::processText()
             drawChar( out_text, &sentence_font, true, true, accumulation_surface, &text_info );
             num_chars_in_sentence += 2;
             string_buffer_offset += 2;
-            event_mode = WAIT_TEXTOUT_MODE | WAIT_TIMER_MODE;
+            event_mode = WAIT_TEXTOUT_MODE;
 #ifdef INSANI
 	    if ( skip_mode & (SKIP_TO_WAIT | SKIP_TO_EOL) )
 	        advancePhase( 0 );
@@ -871,7 +871,7 @@ int ONScripterLabel::processText()
         else if ( script_h.getStringBuffer()[ string_buffer_offset ] == 'w' ||
                   script_h.getStringBuffer()[ string_buffer_offset ] == 'd' ){
 #ifdef INSANI
-            skip_mode |= SKIP_TO_EOL;
+            skip_mode &= ~SKIP_TO_EOL;
             event_mode = WAIT_SLEEP_MODE;
 #endif
             bool flag = false;
@@ -1027,7 +1027,7 @@ int ONScripterLabel::processText()
             return RET_CONTINUE | RET_NOREAD;
         }
         else{
-            event_mode = WAIT_TEXTOUT_MODE | WAIT_TIMER_MODE;
+            event_mode = WAIT_TEXTOUT_MODE;
 #ifdef INSANI
 	    if (skip_mode & (SKIP_TO_WAIT | SKIP_TO_EOL))
 		advancePhase( 0 );

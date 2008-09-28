@@ -900,6 +900,7 @@ void ONScripterLabel::reset()
     ctrl_pressed_status = 0;
     display_mode = DISPLAY_MODE_NORMAL;
     event_mode = IDLE_EVENT_MODE;
+    in_effect_blank = false;
     all_sprite_hide_flag = false;
     all_sprite2_hide_flag = false;
 
