@@ -643,20 +643,18 @@ void ONScripterLabel::effectWhirl( char *params, int duration )
     ONSBuf *src_buffer = (ONSBuf *)effect_tmp_surface->pixels;
     ONSBuf *dst_buffer = (ONSBuf *)accumulation_surface->pixels;
 
-    //left-side double-quadrant
     for ( int i=0 ; i<screen_height ; ++i ){
         for ( int j=0 ; j<screen_width ; j+=2, dst_buffer+=2 ){
             int ii=i, jj=j;
             float x = j - CENTER_X, y = i - CENTER_Y;
-            // convert to polar
-            float theta = atan2(y,x);
-            float r = x * x + y * y;
-            r = sqrt(r);
-            //whirl
-            theta += direction * (rad_base + rad_amp * sin(r * OMEGA));
-            //convert to rectangular
-            jj = (int) (r * cos(theta) + CENTER_X);
-            ii = (int) (r * sin(theta) + CENTER_Y);
+            //whirl factor
+            float theta = direction * (rad_base + rad_amp * 
+                                       sin(sqrt(x * x + y * y) * OMEGA));
+            //perform rotation
+            float cos_theta = cos(theta);
+            float sin_theta = sin(theta);
+            jj = (int) (x * cos_theta - y * sin_theta + CENTER_X);
+            ii = (int) (x * sin_theta + y * cos_theta + CENTER_Y);
             if (jj < 0) jj = 0;
             if (jj >= screen_width) jj = screen_width-1;
             if (ii < 0) ii = 0;
