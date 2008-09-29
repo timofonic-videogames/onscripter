@@ -340,6 +340,8 @@ int ONScripterLabel::doEffect( EffectLink *effect, bool clear_dirty_region )
             effectCascade(params, effect->duration);
         } else if (!strcmp(dll, "trvswave.dll")) {
             effectTrvswave(params, effect->duration);
+        } else if (!strcmp(dll, "whirl.dll")) {
+            effectWhirl(params, effect->duration);
         } else {
             // do crossfade
             height = 256 * effect_counter / effect->duration;
@@ -350,6 +352,9 @@ int ONScripterLabel::doEffect( EffectLink *effect, bool clear_dirty_region )
 
     //printf("effect conut %d / dur %d\n", effect_counter, effect->duration);
 
+    int drawduration = SDL_GetTicks() - effect_start_time;
+    if (drawduration < 17)
+        SDL_Delay(17 - drawduration);
     effect_counter += effect_timer_resolution;
     if ( effect_counter < effect->duration && effect_no != 1 ){
         if ( effect_no != 0 ) flush( REFRESH_NONE_MODE, NULL, false );
@@ -581,10 +586,7 @@ void ONScripterLabel::effectCascade( char *params, int duration )
     if (mode & CASCADE_CROSS) {
         // do crossfade
         width = 256 * effect_counter / duration;
-        src_surface = effect_dst_surface;
-        effect_dst_surface = dst_surface;
-        alphaBlend( NULL, ALPHA_BLEND_CONST, width, &dirty_rect.bounding_box );
-        effect_dst_surface = src_surface;
+        alphaBlend( NULL, ALPHA_BLEND_CONST, width, &dirty_rect.bounding_box, NULL, dst_surface );
     }
 }
 
@@ -617,4 +619,55 @@ void ONScripterLabel::effectTrvswave( char *params, int duration )
     SDL_Surface *tmp = effect_tmp_surface;
     effect_tmp_surface = accumulation_surface;
     accumulation_surface = tmp;
+}
+
+void ONScripterLabel::effectWhirl( char *params, int duration )
+{
+#define OMEGA (M_PI / 64)
+#define CENTER_X ((screen_width-1)/2)
+#define CENTER_Y ((screen_height-1)/2)
+
+    int direction = (params[0] == 'r') ? -1 : 1;
+
+    float t = (float) effect_counter * M_PI / (duration * 2);
+    float one_minus_cos = 1 - cos(t);
+    float rad_amp = M_PI * (sin(t) - one_minus_cos);
+    float rad_base = M_PI * 2 * one_minus_cos + rad_amp;
+
+    int width = 256 * effect_counter / duration;
+    alphaBlend( NULL, ALPHA_BLEND_CONST, width, &dirty_rect.bounding_box,
+                NULL, NULL, effect_tmp_surface );
+
+    SDL_LockSurface( effect_tmp_surface );
+    SDL_LockSurface( accumulation_surface );
+    ONSBuf *src_buffer = (ONSBuf *)effect_tmp_surface->pixels;
+    ONSBuf *dst_buffer = (ONSBuf *)accumulation_surface->pixels;
+
+    //left-side double-quadrant
+    for ( int i=0 ; i<screen_height ; ++i ){
+        for ( int j=0 ; j<screen_width ; j+=2, dst_buffer+=2 ){
+            int ii=i, jj=j;
+            float x = j - CENTER_X, y = i - CENTER_Y;
+            // convert to polar
+            float theta = atan2(y,x);
+            float r = x * x + y * y;
+            r = sqrt(r);
+            //whirl
+            theta += direction * (rad_base + rad_amp * sin(r * OMEGA));
+            //convert to rectangular
+            jj = (int) (r * cos(theta) + CENTER_X);
+            ii = (int) (r * sin(theta) + CENTER_Y);
+            if (jj < 0) jj = 0;
+            if (jj >= screen_width) jj = screen_width-1;
+            if (ii < 0) ii = 0;
+            if (ii >= screen_height) ii = screen_height-1;
+
+            // change pixel value!
+            *dst_buffer = *(src_buffer + screen_width * ii + jj);
+            *(dst_buffer+1) = *dst_buffer;
+        }
+    }
+
+    SDL_UnlockSurface( accumulation_surface );
+    SDL_UnlockSurface( effect_tmp_surface );
 }

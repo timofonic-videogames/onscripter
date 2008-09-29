@@ -702,6 +702,7 @@ private:
     void generateMosaic( SDL_Surface *src_surface, int level );
     void effectCascade( char *params, int duration );
     void effectTrvswave( char *params, int duration );
+    void effectWhirl( char *params, int duration );
 
     /* ---------------------------------------- */
     /* Select related variables */
@@ -842,7 +843,9 @@ private:
     int  resizeSurface( SDL_Surface *src, SDL_Surface *dst );
     void shiftCursorOnButton( int diff );
     void alphaBlend( SDL_Surface *mask_surface,
-                     int trans_mode, Uint32 mask_value = 255, SDL_Rect *clip=NULL );
+                     int trans_mode, Uint32 mask_value = 255, SDL_Rect *clip=NULL,
+                     SDL_Surface *src1=NULL, SDL_Surface *src2=NULL,
+                     SDL_Surface *dst=NULL );
     void alphaBlend32( SDL_Surface *dst_surface, SDL_Rect dst_rect,
                        SDL_Surface *src_surface, SDL_Color &color, SDL_Rect *clip, bool rotate_flag );
     void makeNegaSurface( SDL_Surface *surface, SDL_Rect &clip );
