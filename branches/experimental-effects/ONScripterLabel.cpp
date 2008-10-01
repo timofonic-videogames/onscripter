@@ -847,6 +847,8 @@ int ONScripterLabel::init()
     // ----------------------------------------
     // Initialize misc variables
 
+    sin_table = cos_table = NULL;
+
     internal_timer = SDL_GetTicks();
 
     trap_dist = NULL;
@@ -903,6 +905,10 @@ void ONScripterLabel::reset()
     in_effect_blank = false;
     all_sprite_hide_flag = false;
     all_sprite2_hide_flag = false;
+
+    if (sin_table) delete[] sin_table;
+    if (cos_table) delete[] cos_table;
+    sin_table = cos_table = NULL;
 
     if (resize_buffer_size != 16){
         delete[] resize_buffer;
