@@ -695,7 +695,10 @@ private:
     int effect_start_time_old;
     int effect_tmp;
     bool in_effect_blank;
+    float *sin_table, *cos_table;
 
+    void buildSinTable();
+    void buildCosTable();
     int  setEffect( EffectLink *effect, int effect_dst, bool update_backup_surface );
     int  doEffect( EffectLink *effect, bool clear_dirty_region=true );
     void drawEffect( SDL_Rect *dst_rect, SDL_Rect *src_rect, SDL_Surface *surface );

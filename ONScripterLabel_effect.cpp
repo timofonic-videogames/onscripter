@@ -27,6 +27,26 @@
 #define EFFECT_STRIPE_CURTAIN_WIDTH (24 * screen_ratio1 / screen_ratio2)
 #define EFFECT_QUAKE_AMP (12 * screen_ratio1 / screen_ratio2)
 
+void ONScripterLabel::buildSinTable()
+{
+    if (!sin_table) {
+        sin_table = new float[512];
+        for (int i=0; i<512; i++) {
+            sin_table[i] = sin((float) i * M_PI * 2 / 512);
+        }
+    }
+}
+
+void ONScripterLabel::buildCosTable()
+{
+    if (!cos_table) {
+        cos_table = new float[512];
+        for (int i=0; i<512; i++) {
+            cos_table[i] = cos((float) i * M_PI * 2 / 512);
+        }
+    }
+}
+
 int ONScripterLabel::setEffect( EffectLink *effect, int effect_dst, bool update_backup_surface )
 {
     if ( effect->effect == 0 ) return RET_CONTINUE;
@@ -38,7 +58,7 @@ int ONScripterLabel::setEffect( EffectLink *effect, int effect_dst, bool update_
     if ( effect_cut_flag && skip_mode & SKIP_NORMAL ) effect_no = 1;
 
     SDL_BlitSurface( accumulation_surface, NULL, effect_src_surface, NULL );
-        
+
     switch( effect_dst ){
       case EFFECT_DST_GIVEN:
         break;
@@ -52,6 +72,7 @@ int ONScripterLabel::setEffect( EffectLink *effect, int effect_dst, bool update_
             if (effect_no == 1)
                 refreshSurface( effect_dst_surface, &dirty_rect.bounding_box, refresh_mode );
             else
+
                 refreshSurface( effect_dst_surface, NULL, refresh_mode );
         }
         break;
@@ -68,7 +89,27 @@ int ONScripterLabel::setEffect( EffectLink *effect, int effect_dst, bool update_
          effect_no == 16 || effect_no == 17 )
         dirty_rect.fill( screen_width, screen_height );
 
+    if (effect_no == CUSTOM_EFFECT_NO - 1) { // dll-based
+        char *dll = effect->anim.image_name;
+        char *params = dll;
+        while (*params != 0) {
+            if (*params == '/') {
+                *params++ = 0;
+                break;
+            }
+            params++;
+        }
+        printf("dll effect: Got dll '%s', params '%s'\n", dll, params);
+        if (!strcmp(dll, "trvswave.dll")) {
+            buildSinTable();
+        } else if (!strcmp(dll, "whirl.dll")) {
+            buildSinTable();
+            buildCosTable();
+        }
+    }
+
     effect_counter = 0;
+    effect_start_time_old = SDL_GetTicks();
     event_mode = EFFECT_EVENT_MODE;
     advancePhase();
 
@@ -82,7 +123,6 @@ int ONScripterLabel::doEffect( EffectLink *effect, bool clear_dirty_region )
     if ( ctrl_pressed_status || skip_mode & SKIP_TO_WAIT ) effect->duration = 1;
 #endif
     effect_start_time = SDL_GetTicks();
-    if ( effect_counter == 0 ) effect_start_time_old = effect_start_time - 1;
 
     effect_timer_resolution = effect_start_time - effect_start_time_old;
     effect_start_time_old = effect_start_time;
@@ -353,8 +393,9 @@ int ONScripterLabel::doEffect( EffectLink *effect, bool clear_dirty_region )
     //printf("effect conut %d / dur %d\n", effect_counter, effect->duration);
 
     int drawduration = SDL_GetTicks() - effect_start_time;
-    if (drawduration < 17)
-        SDL_Delay(17 - drawduration);
+    if (drawduration < 5)
+        SDL_Delay(5 - drawduration);
+
     effect_counter += effect_timer_resolution;
     if ( effect_counter < effect->duration && effect_no != 1 ){
         if ( effect_no != 0 ) flush( REFRESH_NONE_MODE, NULL, false );
@@ -599,8 +640,9 @@ void ONScripterLabel::effectTrvswave( char *params, int duration )
     SDL_Rect src_rect={0, 0, screen_width, 1};
     SDL_Rect dst_rect={0, 0, screen_width, 1};
     int ampl, wvlen;
+    int y_offset = -screen_height / 2;
     int width = 256 * effect_counter / duration;
-    alphaBlend( NULL, ALPHA_BLEND_CONST, width, &dirty_rect.bounding_box );
+    alphaBlend( NULL, ALPHA_BLEND_CONST, width, &dirty_rect.bounding_box, NULL, NULL, effect_tmp_surface );
     if (effect_counter * 2 < duration) {
         ampl = TRVSWAVE_AMPLITUDE * 2 * effect_counter / duration;
         wvlen = (Sint16)(1.0/(((1.0/TRVSWAVE_WVLEN_END - 1.0/TRVSWAVE_WVLEN_START) * 2 * effect_counter / duration) + (1.0/TRVSWAVE_WVLEN_START)));
@@ -608,31 +650,36 @@ void ONScripterLabel::effectTrvswave( char *params, int duration )
         ampl = TRVSWAVE_AMPLITUDE * 2 * (duration - effect_counter) / duration;
         wvlen = (Sint16)(1.0/(((1.0/TRVSWAVE_WVLEN_END - 1.0/TRVSWAVE_WVLEN_START) * 2 * (duration - effect_counter) / duration) + (1.0/TRVSWAVE_WVLEN_START)));
     }
-    SDL_FillRect( effect_tmp_surface, NULL, SDL_MapRGBA( effect_tmp_surface->format, 0, 0, 0, 0xff ) );
-    int y_offset = -screen_height / 2;
+    SDL_FillRect( accumulation_surface, NULL, SDL_MapRGBA( accumulation_surface->format, 0, 0, 0, 0xff ) );
     for (int i=0; i<screen_height; i++) {
-        src_rect.y = dst_rect.y = i;
-        dst_rect.x = (Sint16)(ampl * sin(M_PI * 2.0 * y_offset / wvlen));
-        SDL_BlitSurface(accumulation_surface, &src_rect, effect_tmp_surface, &dst_rect);
+        int theta = 512 * y_offset / wvlen;
+        while (theta < 0) theta += 512;
+        theta %= 512;
+        dst_rect.x = (Sint16)(ampl * sin_table[theta]);
+        //dst_rect.x = (Sint16)(ampl * sin(M_PI * 2.0 * y_offset / wvlen));
+        SDL_BlitSurface(effect_tmp_surface, &src_rect, accumulation_surface, &dst_rect);
+        ++src_rect.y;
+        ++dst_rect.y;
         ++y_offset;
     }
-    SDL_Surface *tmp = effect_tmp_surface;
-    effect_tmp_surface = accumulation_surface;
-    accumulation_surface = tmp;
 }
 
 void ONScripterLabel::effectWhirl( char *params, int duration )
 {
-#define OMEGA (M_PI / 64)
-#define CENTER_X ((screen_width-1)/2)
-#define CENTER_Y ((screen_height-1)/2)
+#define OMEGA (512 / 128)
+//#define OMEGA (M_PI / 64)
+#define CENTER_X (screen_width/2)
+#define CENTER_Y (screen_height/2)
 
     int direction = (params[0] == 'r') ? -1 : 1;
 
-    float t = (float) effect_counter * M_PI / (duration * 2);
-    float one_minus_cos = 1 - cos(t);
-    float rad_amp = M_PI * (sin(t) - one_minus_cos);
-    float rad_base = M_PI * 2 * one_minus_cos + rad_amp;
+    int t = (effect_counter * 128 / duration) % 512;
+    int rad_amp = (int)(256 * (sin_table[t] + cos_table[t] - 1));
+    int rad_base = (int)(512 * (1 - cos_table[t])) + rad_amp;
+    //float t = (float) effect_counter * M_PI / (duration * 2);
+    //float one_minus_cos = 1 - cos(t);
+    //float rad_amp = M_PI * (sin(t) - one_minus_cos);
+    //float rad_base = M_PI * 2 * one_minus_cos + rad_amp;
 
     int width = 256 * effect_counter / duration;
     alphaBlend( NULL, ALPHA_BLEND_CONST, width, &dirty_rect.bounding_box,
@@ -644,17 +691,27 @@ void ONScripterLabel::effectWhirl( char *params, int duration )
     ONSBuf *dst_buffer = (ONSBuf *)accumulation_surface->pixels;
 
     for ( int i=0 ; i<screen_height ; ++i ){
-        for ( int j=0 ; j<screen_width ; j+=2, dst_buffer+=2 ){
+        for ( int j=0 ; j<screen_width ; ++j, ++dst_buffer ){
             int ii=i, jj=j;
-            float x = j - CENTER_X, y = i - CENTER_Y;
+            // actual x = x + 0.5, actual y = y + 0.5
+            int x = j - CENTER_X, y = i - CENTER_Y;
             //whirl factor
-            float theta = direction * (rad_base + rad_amp * 
-                                       sin(sqrt(x * x + y * y) * OMEGA));
+            int theta = (int)(sqrt(x * x + x + y * y + y) * 4);
+            while (theta < 0) theta += 512;
+            theta %= 512;
+            theta = direction * (int)(rad_base + rad_amp * sin_table[theta]);
+            //float theta = direction * (rad_base + rad_amp * 
+            //                           sin(sqrt(x * x + y * y) * OMEGA));
+
             //perform rotation
-            float cos_theta = cos(theta);
-            float sin_theta = sin(theta);
-            jj = (int) (x * cos_theta - y * sin_theta + CENTER_X);
-            ii = (int) (x * sin_theta + y * cos_theta + CENTER_Y);
+            while (theta < 0) theta += 512;
+            theta %= 512;
+            jj = (int) ((float)(x + 0.5) * cos_table[theta] -
+                        (float)(y + 0.5) * sin_table[theta] + CENTER_X - 0.5);
+            ii = (int) ((float)(x + 0.5) * sin_table[theta] + 
+                        (float)(y + 0.5) * cos_table[theta] + CENTER_Y - 0.5);
+            //jj = (int) (x * cos_theta - y * sin_theta + CENTER_X);
+            //ii = (int) (x * sin_theta + y * cos_theta + CENTER_Y);
             if (jj < 0) jj = 0;
             if (jj >= screen_width) jj = screen_width-1;
             if (ii < 0) ii = 0;
@@ -662,7 +719,6 @@ void ONScripterLabel::effectWhirl( char *params, int duration )
 
             // change pixel value!
             *dst_buffer = *(src_buffer + screen_width * ii + jj);
-            *(dst_buffer+1) = *dst_buffer;
         }
     }
 
