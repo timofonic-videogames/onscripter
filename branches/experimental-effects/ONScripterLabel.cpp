@@ -848,6 +848,8 @@ int ONScripterLabel::init()
     // Initialize misc variables
 
     sin_table = cos_table = NULL;
+    breakup_cells = NULL;
+    breakup_cellforms = NULL;
 
     internal_timer = SDL_GetTicks();
 
@@ -909,6 +911,9 @@ void ONScripterLabel::reset()
     if (sin_table) delete[] sin_table;
     if (cos_table) delete[] cos_table;
     sin_table = cos_table = NULL;
+
+    if (breakup_cells) delete[] breakup_cells;
+    if (breakup_cellforms) delete breakup_cellforms;
 
     if (resize_buffer_size != 16){
         delete[] resize_buffer;

@@ -105,6 +105,8 @@ int ONScripterLabel::setEffect( EffectLink *effect, int effect_dst, bool update_
         } else if (!strcmp(dll, "whirl.dll")) {
             buildSinTable();
             buildCosTable();
+        } else if (!strcmp(dll, "breakup.dll")) {
+            initBreakup(params);
         }
     }
 
@@ -382,6 +384,8 @@ int ONScripterLabel::doEffect( EffectLink *effect, bool clear_dirty_region )
             effectTrvswave(params, effect->duration);
         } else if (!strcmp(dll, "whirl.dll")) {
             effectWhirl(params, effect->duration);
+        } else if (!strcmp(dll, "breakup.dll")) {
+            effectBreakup(params, effect->duration);
         } else {
             // do crossfade
             height = 256 * effect_counter / effect->duration;
@@ -724,4 +728,163 @@ void ONScripterLabel::effectWhirl( char *params, int duration )
 
     SDL_UnlockSurface( accumulation_surface );
     SDL_UnlockSurface( effect_tmp_surface );
+}
+
+#define BREAKUP_CELLWIDTH 24
+#define BREAKUP_CELLFORMS 16
+#define BREAKUP_MAX_CELL_X ((screen_width + BREAKUP_CELLWIDTH - 1)/BREAKUP_CELLWIDTH)
+#define BREAKUP_MAX_CELL_Y ((screen_height + BREAKUP_CELLWIDTH - 1)/BREAKUP_CELLWIDTH)
+#define BREAKUP_MAX_CELLS (BREAKUP_MAX_CELL_X * BREAKUP_MAX_CELL_Y)
+#define BREAKUP_DIRECTIONS 8
+#define BREAKUP_MOVE_FRAMES 40
+
+const int breakup_disp_x[BREAKUP_DIRECTIONS] = { -7,-7,-5,-4,-2,1,3,5 }; 
+const int breakup_disp_y[BREAKUP_DIRECTIONS] = {  0, 2, 4, 6, 7,7,6,5 }; 
+int n_cell_x, n_cell_y, n_cell_diags, n_cells, tot_frames, last_frame;
+SDL_Rect breakup_window;
+
+void ONScripterLabel::buildBreakupCellforms(){
+// build the 32x32 mask for each cellform
+    if (!breakup_cellforms) {
+        int w = BREAKUP_CELLWIDTH * BREAKUP_CELLFORMS;
+        int h = BREAKUP_CELLWIDTH;
+        breakup_cellforms = new bool[w*h];
+
+        for (int n=0, rad2=1; n<BREAKUP_CELLFORMS; n++, rad2=(n+1)*(n+1)) {
+            for (int x=0, xd=-BREAKUP_CELLWIDTH/2; x<BREAKUP_CELLWIDTH; x++, xd++) {
+                for (int y=0, yd=-BREAKUP_CELLWIDTH/2; y<BREAKUP_CELLWIDTH; y++, yd++) {
+                    if (((xd * xd + xd + yd * yd + yd)*2 + 1) < 2*rad2) {
+                        breakup_cellforms[y*w + n*BREAKUP_CELLWIDTH + x] = true;
+                    }
+                    else {
+                        breakup_cellforms[y*w + n*BREAKUP_CELLWIDTH + x] = false;
+                    }
+                }
+            }
+        }
+    }
+}
+
+void ONScripterLabel::initBreakup( char *params )
+{
+    SDL_Rect window = {0, 0, screen_width, screen_height};
+    breakup_window = window;
+
+    buildBreakupCellforms();
+
+    if (!breakup_cells)
+        breakup_cells = new BreakupCell[BREAKUP_MAX_CELLS];
+    n_cell_x = BREAKUP_MAX_CELL_X;
+    n_cell_y = BREAKUP_MAX_CELL_Y;
+    n_cell_diags = n_cell_x + n_cell_y;
+    n_cells = n_cell_x * n_cell_y;
+    tot_frames = BREAKUP_MOVE_FRAMES + n_cell_diags + BREAKUP_CELLFORMS - BREAKUP_CELLWIDTH/2 + 1;
+    last_frame = 0;
+    int n = 0, dir = 1, i = 0, diag_n = 0;
+    for (i=0; i<n_cell_x; i++) {
+        for (int j=i, k=0; (j>=0) && (k<n_cell_y); j--, k++) {
+            breakup_cells[n].cell_x = j;
+            breakup_cells[n].cell_y = k;
+            breakup_cells[n].dir = dir;
+            breakup_cells[n].state = 0 - diag_n;
+            breakup_cells[n].radius = 0;
+            ++dir &= (BREAKUP_DIRECTIONS-1);
+            ++n;
+        }
+        ++diag_n;
+    }
+    for (int i=1; i<n_cell_y; i++) {
+        for (int j=n_cell_x-1, k=i; (k<n_cell_y) && (j>=0); j--, k++) {
+            breakup_cells[n].cell_x = j;
+            breakup_cells[n].cell_y = k;
+            breakup_cells[n].dir = dir;
+            breakup_cells[n].state = 0 - diag_n;
+            breakup_cells[n].radius = 0;
+            ++dir &= (BREAKUP_DIRECTIONS-1);
+            ++n;
+        }
+        ++diag_n;
+    }
+}
+
+void ONScripterLabel::effectBreakup( char *params, int duration )
+{
+    int frame = tot_frames * effect_counter / duration;
+    int frame_diff = frame - last_frame;
+    if (frame_diff > 0) {
+        SDL_Surface *bg = effect_src_surface;
+        SDL_BlitSurface(bg, NULL, accumulation_surface, NULL);
+        last_frame += frame_diff;
+
+        SDL_Surface *chr = effect_dst_surface;
+        SDL_Surface *dst = accumulation_surface;
+
+        SDL_LockSurface( chr );
+        SDL_LockSurface( dst );
+        ONSBuf *chr_buf = (ONSBuf *)chr->pixels;
+        ONSBuf *buffer  = (ONSBuf *)dst->pixels;
+        bool *msk_buf = breakup_cellforms;
+
+        for (int n=0; n<n_cells; ++n) {
+            SDL_Rect rect = { breakup_cells[n].cell_x * BREAKUP_CELLWIDTH,
+                              breakup_cells[n].cell_y * BREAKUP_CELLWIDTH, 
+                              BREAKUP_CELLWIDTH, BREAKUP_CELLWIDTH };
+            if (breakup_cells[n].state < (40 + BREAKUP_CELLFORMS - BREAKUP_CELLWIDTH/2))
+                breakup_cells[n].state += frame_diff;
+            if (breakup_cells[n].state >= (40 + BREAKUP_CELLFORMS - BREAKUP_CELLWIDTH/2)) {
+                for (int i=0; i<BREAKUP_CELLWIDTH; ++i) {
+                    for (int j=0; j<BREAKUP_CELLWIDTH; ++j) {
+                        int x = rect.x + j;
+                        int y = rect.y + i;
+                        if ((x < 0) || (x >= dst->w) || (x >= chr->w) ||
+                            (y < 0) || (y >= dst->h) || (y >= chr->h))
+                            continue;
+                        buffer[y*dst->w + x] = chr_buf[y*chr->w + x];
+                    }
+                }
+            }
+            else if (breakup_cells[n].state >= 40) {
+                breakup_cells[n].radius = breakup_cells[n].state - 29;
+                for (int i=0; i<BREAKUP_CELLWIDTH; ++i) {
+                    for (int j=0; j<BREAKUP_CELLWIDTH; ++j) {
+                        int x = rect.x + j;
+                        int y = rect.y + i;
+                        if ((x < 0) || (x >= dst->w) || (x >= chr->w) ||
+                            (y < 0) || (y >= dst->h) || (y >= chr->h))
+                            continue;
+                        int msk_off = BREAKUP_CELLWIDTH*breakup_cells[n].radius;
+                        if (msk_buf[BREAKUP_CELLWIDTH * BREAKUP_CELLFORMS * i + msk_off + j])
+                            buffer[y*dst->w + x] = chr_buf[y*chr->w + x];
+                    }
+                }
+            }
+            else if (breakup_cells[n].state >= 0) {
+                int state = breakup_cells[n].state;
+                int disp_x = breakup_disp_x[breakup_cells[n].dir] * (state-40);
+                int disp_y = breakup_disp_y[breakup_cells[n].dir] * (40-state);
+
+                if (breakup_cells[n].state >= 20)
+                    breakup_cells[n].radius = (breakup_cells[n].state/2) - 9;
+                for (int i=0; i<BREAKUP_CELLWIDTH; ++i) {
+                    for (int j=0; j<BREAKUP_CELLWIDTH; ++j) {
+                        int x = disp_x + rect.x + j;
+                        int y = disp_y + rect.y + i;
+                        if ((x < 0) || (x >= dst->w) ||
+                            (y < 0) || y >= dst->h)
+                            continue;
+                        if (((rect.x+j)<0) || ((rect.x+j) >= chr->w) ||
+                            ((rect.y+i)<0) || ((rect.y+i) >= chr->h))
+                            continue;
+                        int msk_off = BREAKUP_CELLWIDTH*breakup_cells[n].radius;
+                        if (msk_buf[BREAKUP_CELLWIDTH * BREAKUP_CELLFORMS * i + msk_off + j])
+                            buffer[y*dst->w + x] =
+                                chr_buf[(rect.y+i)*chr->w + rect.x + j];
+                    }
+                }
+            }
+        }
+
+        SDL_UnlockSurface( accumulation_surface );
+        SDL_UnlockSurface( chr );
+    }
 }
