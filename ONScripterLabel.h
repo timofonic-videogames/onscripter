@@ -707,6 +707,23 @@ private:
     void effectTrvswave( char *params, int duration );
     void effectWhirl( char *params, int duration );
 
+    struct BreakupCell{
+        int cell_x, cell_y;
+        int disp_x, disp_y;
+        int dir;
+        int state;
+        int radius;
+        BreakupCell(){
+            cell_x = cell_y = 0;
+            disp_x = disp_y = 0;
+            dir = state = radius = 0;
+        };
+    } *breakup_cells;
+    bool *breakup_cellforms;
+    void buildBreakupCellforms();
+    void initBreakup( char *params );
+    void effectBreakup( char *params, int duration );
+
     /* ---------------------------------------- */
     /* Select related variables */
     enum { SELECT_GOTO_MODE=0, SELECT_GOSUB_MODE=1, SELECT_NUM_MODE=2, SELECT_CSEL_MODE=3 };
