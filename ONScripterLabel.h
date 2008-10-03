@@ -709,18 +709,17 @@ private:
 
     struct BreakupCell{
         int cell_x, cell_y;
-        int disp_x, disp_y;
         int dir;
         int state;
         int radius;
         BreakupCell(){
             cell_x = cell_y = 0;
-            disp_x = disp_y = 0;
             dir = state = radius = 0;
         };
     } *breakup_cells;
-    bool *breakup_cellforms;
+    bool *breakup_cellforms, *breakup_mask;
     void buildBreakupCellforms();
+    void buildBreakupMask();
     void initBreakup( char *params );
     void effectBreakup( char *params, int duration );
 
