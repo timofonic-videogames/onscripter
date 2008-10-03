@@ -403,9 +403,10 @@ int ONScripterLabel::leaveTextDisplayMode(bool force_leave_flag)
             return RET_WAIT | RET_REREAD;
         }
         else{
+            dirty_rect.add( sentence_font_info.pos );
+            refreshSurface(backup_surface, &dirty_rect.bounding_box, REFRESH_NORMAL_MODE);
             SDL_BlitSurface( backup_surface, NULL, effect_dst_surface, NULL );
             SDL_BlitSurface( accumulation_surface, NULL, backup_surface, NULL );
-            dirty_rect.add( sentence_font_info.pos );
 
             return setEffect( &window_effect, EFFECT_DST_GIVEN, false );
         }
