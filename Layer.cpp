@@ -355,7 +355,7 @@ static void drawTaggedSurface( SDL_Surface *dst_surface, AnimationInfo *anim, SD
 // Called every time the screen is refreshed.
 // Draws the background image with the old-movie effect applied, using the settings adopted at the
 // last call to updateOldMovie().
-void OldMovieLayer::refresh(SDL_Surface *surface, SDL_Rect clip)
+void OldMovieLayer::refresh(SDL_Surface *surface, SDL_Rect &clip)
 {
     if (initialized) {
 
@@ -729,15 +729,15 @@ char *FuruLayer::message( const char *message, int &ret_int )
     return ret_str;
 }
 
-void FuruLayer::refresh(SDL_Surface *surface, SDL_Rect clip)
+void FuruLayer::refresh(SDL_Surface *surface, SDL_Rect &clip)
 {
     if (initialized) {
-        for (int i=pstart; i!=pend; ++i &= 511) {
-            for (int j=2; j>=0; --j) {
-                Pt curpt = points[i].elem[j];
-                AnimationInfo *anim = elements[j];
-                if (anim) {
-                    anim->visible = true;
+        for (int j=2; j>=0; --j) {
+            AnimationInfo *anim = elements[j];
+            if (anim) {
+                anim->visible = true;
+                for (int i=pstart; i!=pend; ++i &= 511) {
+                    Pt curpt = points[i].elem[j];
 	            anim->current_cell = curpt.cell;
        	            anim->pos.x = curpt.x;
                     anim->pos.y = curpt.y;

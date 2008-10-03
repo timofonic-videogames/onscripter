@@ -41,7 +41,7 @@ struct Layer
     };
     virtual void update( ) = 0;
     virtual char* message( const char *message, int &ret_int ) = 0;
-    virtual void refresh( SDL_Surface* surface, SDL_Rect clip ) = 0;
+    virtual void refresh( SDL_Surface* surface, SDL_Rect &clip ) = 0;
 };
 
 class OldMovieLayer : public Layer
@@ -51,7 +51,7 @@ public:
     ~OldMovieLayer();
     void update();
     char* message( const char *message, int &ret_int );
-    void refresh( SDL_Surface* surface, SDL_Rect clip );
+    void refresh( SDL_Surface* surface, SDL_Rect &clip );
 
 private:
     // message parameters
@@ -81,7 +81,7 @@ public:
     ~FuruLayer();
     void update();
     char* message( const char *message, int &ret_int );
-    void refresh( SDL_Surface* surface, SDL_Rect clip );
+    void refresh( SDL_Surface* surface, SDL_Rect &clip );
 
 private:
     bool tumbling; // true (hana) or false (snow)

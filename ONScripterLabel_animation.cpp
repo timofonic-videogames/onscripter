@@ -27,7 +27,6 @@ int ONScripterLabel::proceedAnimation()
 {
     int i, minimum_duration = -1;
     AnimationInfo *anim;
-    dirty_rect.clear();
     
     for ( i=0 ; i<3 ; i++ ){
         anim = &tachi_info[i];
@@ -59,7 +58,6 @@ int ONScripterLabel::proceedCursorAnimation()
 {
     int minimum_duration = -1;
     AnimationInfo *anim = NULL;
-    dirty_rect.clear();
 
     if ( !textgosub_label &&
          ( clickstr_state == CLICK_WAIT ||
@@ -92,9 +90,9 @@ int ONScripterLabel::estimateNextDuration( AnimationInfo *anim, SDL_Rect &rect, 
             if ( minimum == -1 ||
                  minimum > anim->duration_list[ anim->current_cell ] )
                 minimum = anim->duration_list[ anim->current_cell ];
-            if ( anim->proceedAnimation() )
+            if ( anim->proceedAnimation() ) {
                 dirty_rect.add(rect);
-                //flushDirect( rect, refreshMode() | (draw_cursor_flag?REFRESH_CURSOR_MODE:0) );
+            }
         } else if ((anim->layer_no >= 0) && !(event_mode & EFFECT_EVENT_MODE)) {
             LayerInfo *tmp = layer_info;
             while (tmp) {
@@ -104,7 +102,6 @@ int ONScripterLabel::estimateNextDuration( AnimationInfo *anim, SDL_Rect &rect, 
             if (tmp) {
                 tmp->handler->update();
                 dirty_rect.add(rect);
-                //flushDirect( rect, refreshMode() | (draw_cursor_flag?REFRESH_CURSOR_MODE:0) );
                 anim->remaining_time = anim->duration_list[ anim->current_cell ];
                 if ( minimum == -1 ||
                      minimum > anim->duration_list[ anim->current_cell ] )
