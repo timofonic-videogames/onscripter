@@ -76,9 +76,13 @@ int ONScripterLabel::proceedCursorAnimation()
             }
 
             minimum_duration = estimateNextDuration( anim, dst_rect, minimum_duration );
-            flush(refreshMode() | (draw_cursor_flag?REFRESH_CURSOR_MODE:0));
+            if (minimum_duration >= 0)
+                flush(refreshMode() | (draw_cursor_flag?REFRESH_CURSOR_MODE:0));
         }
     }
+
+    if ( minimum_duration == -1 ) minimum_duration = 0;
+
     return minimum_duration;
 }
 

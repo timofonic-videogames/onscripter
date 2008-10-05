@@ -74,6 +74,11 @@ private:
     //void BlendOnSurface(SDL_Surface* src, SDL_Surface* dst, SDL_Rect clip);
 };
 
+#define N_FURU_ELEMENTS 3
+#define FURU_ELEMENT_BUFSIZE 512 // should be a power of 2
+#define FURU_AMP_TABLE_SIZE 256 // should also be power of 2, it helps
+const float fall_mult[N_FURU_ELEMENTS] = {0.9, 0.7, 0.6};
+
 class FuruLayer : public Layer
 {
 public:
@@ -91,21 +96,56 @@ private:
     int fall_velocity; // 1 ~ screen_height; pix/frame
     int wind; // -screen_width/2 ~ screen_width/2; pix/frame 
     int amplitude; // 0 ~ screen_width/2; pix/frame
-    int period; // 0 ~ 359; degree/frame
-    AnimationInfo *elements[3];
+    int freq; // 0 ~ 359; degree/frame
+    int angle;
     bool paused, halted;
 
-    // rolling buffer
-    struct Pt3 { Pt elem[3]; };
-    Pt3 *points;
-    int pstart, pend;
+    struct OscPt { // point plus base oscillation angle
+        Pt pt;
+        int base_angle;
+    };
+    struct Element {
+        AnimationInfo *sprite;
+        int *amp_table;
+        // rolling buffer
+        OscPt *points;
+        int pstart, pend, frame_cnt, fall_speed;
+        Element(){
+            sprite = NULL;
+            amp_table = NULL;
+            points = NULL;
+            pstart = pend = frame_cnt = fall_speed = 0;
+        };
+        ~Element(){
+            if (sprite) delete sprite;
+            if (amp_table) delete[] amp_table;
+            if (points) delete[] points;
+        };
+        void init(){
+            if (!points) points = new OscPt[FURU_ELEMENT_BUFSIZE];
+            pstart = pend = frame_cnt = 0;
+        };
+        void clear(){
+            if (sprite) delete sprite;
+            sprite = NULL;
+            if (amp_table) delete[] amp_table;
+            amp_table = NULL;
+            if (points) delete[] points;
+            points = NULL;
+            pstart = pend = frame_cnt = 0;
+        };
+        void setSprite(AnimationInfo *anim){
+            if (sprite) delete sprite;
+            sprite = anim;
+        };
+    } elements[N_FURU_ELEMENTS];
+    int max_sp_w;
 
-    int window_x, window_w;
-    int frame_count;
     bool initialized;
 
     void furu_init();
     void validate_params();
+    void buildAmpTables();
 };
 
 #endif // __LAYER_H__

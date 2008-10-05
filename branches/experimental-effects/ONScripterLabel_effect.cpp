@@ -402,6 +402,8 @@ int ONScripterLabel::doEffect( EffectLink *effect, bool clear_dirty_region )
     int drawduration = SDL_GetTicks() - effect_start_time;
     if (drawduration < 5)
         SDL_Delay(5 - drawduration);
+    else
+        SDL_Delay(1);
 
     effect_counter += effect_timer_resolution;
     if ( effect_counter < effect->duration && effect_no != 1 ){

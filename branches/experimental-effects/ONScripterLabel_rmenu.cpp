@@ -244,6 +244,7 @@ void ONScripterLabel::executeSystemAutomode()
 void ONScripterLabel::executeSystemReset()
 {
     if ( yesno_caller == SYSTEM_RESET ){
+        ctrl_pressed_status = true;
         leaveSystemCall();
     }
     else{
@@ -257,6 +258,7 @@ void ONScripterLabel::executeSystemEnd()
 {
     if ( yesno_caller == SYSTEM_END ){
         leaveSystemCall();
+        ctrl_pressed_status = true;
     }
     else{
         yesno_caller = SYSTEM_END;

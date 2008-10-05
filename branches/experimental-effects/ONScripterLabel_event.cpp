@@ -1021,7 +1021,7 @@ void ONScripterLabel::animEvent( void )
             resetRemainingTime( duration );
             if ((refresh_time * 2) > duration)
                 duration /= 2;
-            if (duration < 5) duration = 5;
+            if (duration < 4) duration = 4;
             advanceAnimPhase( duration );
         }
     }
@@ -1041,21 +1041,18 @@ void ONScripterLabel::timerEvent( void )
             advanceAnimPhase();
         }
 
-        if ( duration < 0 ||
+        if ( duration == 0 ||
              ( remaining_time >= 0 &&
                remaining_time-duration <= 0 ) ){
 
             bool end_flag = true;
             bool loop_flag = false;
             if ( remaining_time >= 0 ){
-                if (((duration >= 0) && (remaining_time - duration <= 0)) ||
-                    (remaining_time == 0)) {
-                    remaining_time = -1;
-                }
+                remaining_time = -1;
                 if ( event_mode & WAIT_VOICE_MODE && wave_sample[0] ){
                     end_flag = false;
                     if ( duration > 0 ){
-                        resetRemainingTime( duration );
+                        resetCursorTime( duration );
                         advancePhase( duration );
                     }
                 }
@@ -1073,22 +1070,19 @@ void ONScripterLabel::timerEvent( void )
             if ( end_flag &&
                  event_mode & (WAIT_INPUT_MODE | WAIT_BUTTON_MODE) &&
                  ( clickstr_state == CLICK_WAIT ||
-                       clickstr_state == CLICK_NEWPAGE ) ){
+                   clickstr_state == CLICK_NEWPAGE ) ){
                 playClickVoice();
                 stopAnimation( clickstr_state );
             }
-            if ( end_flag && (event_mode & WAIT_TEXTOUT_MODE) ) {
-                loop_flag = true;
-            }
 
-            if ( end_flag || duration == -1 )
+            if ( end_flag || duration == 0 )
                 event_mode &= ~WAIT_TIMER_MODE;
             if ( loop_flag ) goto timerEventTop;
         }
         else{
             if ( remaining_time > 0 )
                 remaining_time -= duration;
-            resetRemainingTime( duration );
+            resetCursorTime( duration );
             advancePhase( duration );
         }
     }
