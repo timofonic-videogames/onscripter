@@ -3352,17 +3352,23 @@ int ONScripterLabel::btnwaitCommand()
 
     script_h.readInt();
 
-
     if ( event_mode & WAIT_BUTTON_MODE ||
-         (textbtn_flag && skip_mode & (SKIP_NORMAL | SKIP_TO_EOP) &&
-          (textgosub_clickstr_state & 0x03) == CLICK_WAIT) || ctrl_pressed_status) {
+         ( ( (skip_mode & SKIP_NORMAL) || 
+             ((skip_mode & SKIP_TO_EOP) && 
+              ((clickstr_state == CLICK_WAIT) ||
+               ((textgosub_clickstr_state & 0x03) == CLICK_WAIT))) ||
+             ctrl_pressed_status ) && textbtn_flag ) ) {
+
         btnwait_time = SDL_GetTicks() - internal_button_timer;
 	// commenting out appears to fix btnwait bug
 //        btntime_value = 0;
         num_chars_in_sentence = 0;
 
-        if ((textbtn_flag && skip_mode & (SKIP_NORMAL | SKIP_TO_EOP) &&
-          (textgosub_clickstr_state & 0x03) == CLICK_WAIT) || ctrl_pressed_status)
+        if ( ( (skip_mode & SKIP_NORMAL) || 
+             ((skip_mode & SKIP_TO_EOP) && 
+              ((clickstr_state == CLICK_WAIT) ||
+               ((textgosub_clickstr_state & 0x03) == CLICK_WAIT))) ||
+               ctrl_pressed_status ) && textbtn_flag )
             current_button_state.button = 0;
         script_h.setInt( &script_h.current_variable, current_button_state.button );
 
