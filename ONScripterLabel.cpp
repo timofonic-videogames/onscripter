@@ -848,6 +848,7 @@ int ONScripterLabel::init()
     // Initialize misc variables
 
     sin_table = cos_table = NULL;
+    whirl_table = NULL;
     breakup_cells = NULL;
     breakup_mask = breakup_cellforms = NULL;
 
@@ -911,6 +912,8 @@ void ONScripterLabel::reset()
     if (sin_table) delete[] sin_table;
     if (cos_table) delete[] cos_table;
     sin_table = cos_table = NULL;
+    if (whirl_table) delete[] whirl_table;
+    whirl_table = NULL;
 
     if (breakup_cells) delete[] breakup_cells;
     if (breakup_mask) delete[] breakup_mask;

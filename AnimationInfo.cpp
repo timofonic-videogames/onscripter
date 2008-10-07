@@ -23,6 +23,7 @@
 
 #include "AnimationInfo.h"
 #include "BaseReader.h"
+#include <SDL/SDL_imageFilter.h>
 #include <math.h>
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -319,16 +320,11 @@ void AnimationInfo::blendOnSurface( SDL_Surface *dst_surface, int dst_x, int dst
         Uint8* src_buf = (Uint8*) src_buffer;
         Uint8* dst_buf = (Uint8*) dst_buffer;
 
-        for (int i=0 ; i<dst_rect.h ; i++){
-            for (int j=0 ; j<dst_rect.w*4 ; j++, src_buf++, dst_buf++){
-	        // If we've run out of source area, ignore the remainder.
-  	        if (src_buf >= srcmax) goto break2;
-  	        int result = *dst_buf + *src_buf;
-  	        if (result > 255) result = 255;
-                *dst_buf = (Uint8) result;
-            }
-            src_buf += (total_width - dst_rect.w) * 4;
-            dst_buf += (dst_surface->w - dst_rect.w) * 4;
+        for (int i=dst_rect.h ; i ; --i){
+            if (src_buf >= srcmax) goto break2;
+            SDL_imageFilterAdd(src_buf, dst_buf, dst_buf, dst_rect.w*4);
+            src_buf += total_width * 4;
+            dst_buf += dst_surface->w * 4;
         }
     }
 #endif        
