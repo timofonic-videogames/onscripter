@@ -695,10 +695,14 @@ private:
     int effect_start_time_old;
     int effect_tmp;
     bool in_effect_blank;
+
+#define ONS_TRIG_TABLE_SIZE 256
     float *sin_table, *cos_table;
+    int *whirl_table;
 
     void buildSinTable();
     void buildCosTable();
+    void buildWhirlTable();
     int  setEffect( EffectLink *effect, int effect_dst, bool update_backup_surface );
     int  doEffect( EffectLink *effect, bool clear_dirty_region=true );
     void drawEffect( SDL_Rect *dst_rect, SDL_Rect *src_rect, SDL_Surface *surface );
