@@ -858,6 +858,8 @@ int ONScripterLabel::init()
     resize_buffer = new unsigned char[16];
     resize_buffer_size = 16;
 
+    skip_mode = SKIP_NONE;
+
     for (i=0 ; i<MAX_PARAM_NUM ; i++) bar_info[i] = prnum_info[i] = NULL;
 
     defineresetCommand();
@@ -969,7 +971,7 @@ void ONScripterLabel::resetSub()
 
     refresh_shadow_text_mode = REFRESH_NORMAL_MODE | REFRESH_SHADOW_MODE | REFRESH_TEXT_MODE;
     erase_text_window_mode = 1;
-    skip_mode = SKIP_NONE;
+    skip_mode = (skip_mode & SKIP_TO_EOP) ? SKIP_TO_EOP : SKIP_NONE;
     monocro_flag = false;
     nega_mode = 0;
     clickstr_state = CLICK_NONE;
