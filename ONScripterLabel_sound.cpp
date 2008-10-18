@@ -303,6 +303,17 @@ int ONScripterLabel::playMP3()
     }
 
 #ifndef MP3_MAD
+    SDL_AudioSpec wanted;
+    SMPEG_wantedSpec( mp3_sample, &wanted );
+    if ((wanted.format != audio_format.format) ||
+        (wanted.freq != audio_format.freq)) {
+        Mix_CloseAudio();
+        openAudio(wanted.freq, wanted.format, wanted.channels);
+        if (!audio_open_flag) {
+            // didn't work, use the old settings
+            openAudio();
+       }
+    }
     SMPEG_enableaudio( mp3_sample, 0 );
     SMPEG_actualSpec( mp3_sample, &audio_format );
     SMPEG_enableaudio( mp3_sample, 1 );
@@ -336,6 +347,23 @@ int ONScripterLabel::playOGG(int format, unsigned char *buffer, long length, boo
         playWave(chunk, format, loop_flag, channel);
 
         return SOUND_OGG;
+    }
+
+    if ((audio_format.format != AUDIO_S16) ||
+        (audio_format.freq != rate)) {
+        Mix_CloseAudio();
+        openAudio(rate, AUDIO_S16, channels);
+        ovi->cvt.needed = 0;
+        if (!audio_open_flag) {
+            // didn't work, use the old settings
+            openAudio();
+            ovi->cvt_len = 0;
+            SDL_BuildAudioCVT(&ovi->cvt,
+                      AUDIO_S16, channels, rate,
+                      audio_format.format, audio_format.channels, audio_format.freq);
+            ovi->mult1 = 10;
+            ovi->mult2 = (int)(ovi->cvt.len_ratio*10.0);
+       }
     }
 
     music_struct.ovi = ovi;
