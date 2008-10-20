@@ -167,12 +167,12 @@ public:
     int ofscopyCommand();
     int negaCommand();
     int mspCommand();
-    int mpegplayCommand();
     int mp3volCommand();
 #ifdef INSANI
     int mp3fadeoutCommand();
 #endif
     int mp3Command();
+    int movieCommand();
     int movemousecursorCommand();
     int monocroCommand();
     int menu_windowCommand();
@@ -805,8 +805,6 @@ private:
     int playExternalMusic(bool loop_flag);
     int playMIDI(bool loop_flag);
 
-    int playMPEG( const char *filename, bool click_flag );
-    void playAVI( const char *filename, bool click_flag );
     enum { WAVE_PLAY        = 0,
            WAVE_PRELOAD     = 1,
            WAVE_PLAY_LOADED = 2
@@ -817,6 +815,17 @@ private:
     void setupWaveHeader( unsigned char *buffer, int channels, int rate, int bits, unsigned long data_length );
     OVInfo *openOggVorbis(unsigned char *buf, long len, int &channels, int &rate);
     int  closeOggVorbis(OVInfo *ovi);
+
+    /* ---------------------------------------- */
+    /* Movie related variables */
+    SMPEG *async_movie;
+    unsigned char *movie_buffer;
+    SDL_Surface *async_movie_surface;
+    SDL_Rect *async_movie_rect;
+    bool movie_click_flag, movie_loop_flag;
+    int playMPEG( const char *filename, bool async_flag );
+    void playAVI( const char *filename, bool click_flag );
+    void stopMovie(SMPEG *mpeg);
 
     /* ---------------------------------------- */
     /* Text event related variables */

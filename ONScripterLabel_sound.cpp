@@ -444,15 +444,16 @@ int ONScripterLabel::playMIDI(bool loop_flag)
     return 0;
 }
 
-int ONScripterLabel::playMPEG( const char *filename, bool click_flag )
+int ONScripterLabel::playMPEG( const char *filename, bool async_flag )
 {
     int ret = 0;
 #ifndef MP3_MAD
     bool different_spec = false;
     unsigned long length = script_h.cBR->getFileLength( filename );
-    unsigned char *mpeg_buffer = new unsigned char[length];
-    script_h.cBR->getFile( filename, mpeg_buffer );
-    SMPEG *mpeg_sample = SMPEG_new_rwops( SDL_RWFromMem( mpeg_buffer, length ), NULL, 0 );
+    if (movie_buffer) delete[] movie_buffer;
+    movie_buffer = new unsigned char[length];
+    script_h.cBR->getFile( filename, movie_buffer );
+    SMPEG *mpeg_sample = SMPEG_new_rwops( SDL_RWFromMem( movie_buffer, length ), NULL, 0 );
 
     if ( !SMPEG_error( mpeg_sample ) ){
         SMPEG_enableaudio( mpeg_sample, 0 );
@@ -484,10 +485,22 @@ int ONScripterLabel::playMPEG( const char *filename, bool click_flag )
         SMPEG_setvolume( mpeg_sample, music_struct.volume );
 
         Mix_HookMusic( mp3callback, mpeg_sample );
+
+        if (movie_loop_flag)
+            SMPEG_loop( mpeg_sample, -1 );
         SMPEG_play( mpeg_sample );
 
+        if (async_flag){}//to add later
+
         bool done_flag = false;
-        while( !(done_flag & click_flag) && SMPEG_status(mpeg_sample) == SMPEG_PLAYING ){
+        while( !done_flag ){
+            if (SMPEG_status(mpeg_sample) != SMPEG_PLAYING){
+                if (movie_loop_flag)
+                    SMPEG_play( mpeg_sample );
+                else
+                    break;
+            }
+
             SDL_Event event;
 
             while( SDL_PollEvent( &event ) ){
@@ -496,7 +509,7 @@ int ONScripterLabel::playMPEG( const char *filename, bool click_flag )
                     if ( ((SDL_KeyboardEvent *)&event)->keysym.sym == SDLK_RETURN ||
                          ((SDL_KeyboardEvent *)&event)->keysym.sym == SDLK_SPACE ||
                          ((SDL_KeyboardEvent *)&event)->keysym.sym == SDLK_ESCAPE )
-                        done_flag = true;
+                        done_flag = movie_click_flag;
                     break;
                   case SDL_KEYUP:
                     // need to catch CTRL keyups
@@ -504,8 +517,10 @@ int ONScripterLabel::playMPEG( const char *filename, bool click_flag )
                     break;
                   case SDL_QUIT:
                     ret = 1;
-                  case SDL_MOUSEBUTTONDOWN:
                     done_flag = true;
+                    break;
+                  case SDL_MOUSEBUTTONDOWN:
+                    done_flag = movie_click_flag;
                     break;
                   default:
                     break;
@@ -514,9 +529,7 @@ int ONScripterLabel::playMPEG( const char *filename, bool click_flag )
             SDL_Delay( 10 );
         }
 
-        SMPEG_stop( mpeg_sample );
-        Mix_HookMusic( NULL, NULL );
-        SMPEG_delete( mpeg_sample );
+        stopMovie(mpeg_sample);
 
         if (different_spec) {
             //restart mixer with the old audio spec
@@ -524,7 +537,8 @@ int ONScripterLabel::playMPEG( const char *filename, bool click_flag )
             openAudio();
         }
     }
-    delete[] mpeg_buffer;
+    delete[] movie_buffer;
+    movie_buffer = NULL;
 #else
     fprintf( stderr, "mpegplay command is disabled.\n" );
 #endif
@@ -559,6 +573,13 @@ void ONScripterLabel::playAVI( const char *filename, bool click_flag )
 #else
     fprintf( stderr, "avi command is disabled.\n" );
 #endif
+}
+
+void ONScripterLabel::stopMovie(SMPEG *mpeg)
+{
+    SMPEG_stop( mpeg );
+    Mix_HookMusic( NULL, NULL );
+    SMPEG_delete( mpeg );
 }
 
 void ONScripterLabel::stopBGM( bool continue_flag )

@@ -142,7 +142,7 @@ static struct FuncLUT{
     {"nega", &ONScripterLabel::negaCommand},
     {"msp2", &ONScripterLabel::mspCommand}, //Mion - ogapee2008
     {"msp", &ONScripterLabel::mspCommand},
-    {"mpegplay", &ONScripterLabel::mpegplayCommand},
+    {"mpegplay", &ONScripterLabel::movieCommand},
     {"mp3vol", &ONScripterLabel::mp3volCommand},
     {"mp3stop", &ONScripterLabel::playstopCommand},
     {"mp3save", &ONScripterLabel::mp3Command},
@@ -151,6 +151,7 @@ static struct FuncLUT{
     {"mp3fadeout", &ONScripterLabel::mp3fadeoutCommand},
 #endif
     {"mp3", &ONScripterLabel::mp3Command},
+    {"movie", &ONScripterLabel::movieCommand},
     {"movemousecursor", &ONScripterLabel::movemousecursorCommand},
     {"monocro", &ONScripterLabel::monocroCommand},
     {"menu_window", &ONScripterLabel::menu_windowCommand},
@@ -844,6 +845,11 @@ int ONScripterLabel::init()
     int i;
     for (i=0 ; i<ONS_MIX_CHANNELS+ONS_MIX_EXTRA_CHANNELS ; i++) wave_sample[i] = NULL;
 
+    async_movie = NULL;
+    movie_buffer = NULL;
+    async_movie_surface = NULL;
+    async_movie_rect = NULL;
+
     // ----------------------------------------
     // Initialize misc variables
 
@@ -950,6 +956,12 @@ void ONScripterLabel::reset()
     cd_play_loop_flag = false;
     mp3save_flag = false;
     current_cd_track = -1;
+
+    movie_click_flag = movie_loop_flag = false;
+    if (async_movie) stopMovie(async_movie);
+    async_movie = NULL;
+    if (movie_buffer) delete[] movie_buffer;
+    movie_buffer = NULL;
 
     resetSub();
 

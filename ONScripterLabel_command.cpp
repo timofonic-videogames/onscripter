@@ -1472,19 +1472,6 @@ int ONScripterLabel::mspCommand()
     return RET_CONTINUE;
 }
 
-int ONScripterLabel::mpegplayCommand()
-{
-    script_h.readStr();
-    const char *save_buf = script_h.saveStringBuffer();
-
-    bool click_flag = (script_h.readInt()==1)?true:false;
-
-    stopBGM( false );
-    if (playMPEG( save_buf, click_flag )) endCommand();
-
-    return RET_CONTINUE;
-}
-
 int ONScripterLabel::mp3volCommand()
 {
     music_struct.volume = script_h.readInt();
@@ -1536,6 +1523,52 @@ int ONScripterLabel::mp3Command()
                   music_play_loop_flag, MIX_BGM_CHANNEL);
     }
 
+    return RET_CONTINUE;
+}
+
+int ONScripterLabel::movieCommand()
+{
+    bool mpegplay_flag = false;
+
+    if ( script_h.isName( "mpegplay" ) ){
+        mpegplay_flag = true;
+    } else {
+        if ( script_h.compareString( "stop" ) ){
+            script_h.readLabel();
+            if (async_movie) stopMovie(async_movie);
+            async_movie = NULL;
+
+            return RET_CONTINUE;
+        }
+    }
+
+    script_h.readStr();
+    const char *save_buf = script_h.saveStringBuffer();
+
+    stopBGM( false );
+
+    if (mpegplay_flag) {
+        movie_loop_flag = false;
+        movie_click_flag = (script_h.readInt()==1)?true:false;
+        if (playMPEG( save_buf, false )) endCommand();
+        return RET_CONTINUE;
+    }
+
+    movie_click_flag = false;
+    movie_loop_flag = false;
+    bool async_flag = false;
+
+    while( script_h.getEndStatus() & ScriptHandler::END_COMMA ){
+        const char *param = script_h.readLabel();
+        if ( strcmp(param, "click") == 0 )
+            movie_click_flag = true;
+        else if ( strcmp(param, "loop") == 0 )
+            movie_loop_flag = true;
+        else if ( strcmp(param, "async") == 0 )
+            async_flag = true;
+    }
+
+    if (playMPEG( save_buf, async_flag )) endCommand();
     return RET_CONTINUE;
 }
 
