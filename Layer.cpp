@@ -22,7 +22,6 @@
 #ifndef BPP16
 
 #include "Layer.h"
-#include <SDL/SDL_imageFilter.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -286,6 +285,40 @@ char *OldMovieLayer::message( const char *message, int &ret_int )
     return NULL;
 }
 
+void imageFilterMean(unsigned char *src1, unsigned char *src2, unsigned char *dst, int length)
+{
+    unsigned char *s1 = src1, *s2 = src2, *d = dst;
+    int i = length;
+    while (i--) {
+        int result = ((int) *(s1++) + (int) *(s2++)) / 2;
+        *(d++) = (unsigned char) result;
+    }
+}
+
+void imageFilterAdd(unsigned char *src1, unsigned char *src2, unsigned char *dst, int length)
+{
+    unsigned char *s1 = src1, *s2 = src2, *d = dst;
+    int i = length;
+    while (i--) {
+        int result = (int) *(s1++) + (int) *(s2++);
+        if (result & 0x0100)
+            result = 255;
+        *(d++) = (unsigned char) result;
+    }
+}
+
+void imageFilterSub(unsigned char *src1, unsigned char *src2, unsigned char *dst, int length)
+{
+    unsigned char *s1 = src1, *s2 = src2, *d = dst;
+    int i = length;
+    while (i--) {
+        int result = (int) *(s1++) - (int) *(s2++);
+        if (result < 0)
+            result = 0;
+        *(d++) = (unsigned char) result;
+    }
+}
+
 // Apply blur effect by averaging two offset copies of a source surface together.
 static void BlurOnSurface(SDL_Surface* src, SDL_Surface* dst, SDL_Rect clip, int rx, int ry, int width)
 {
@@ -315,7 +348,7 @@ static void BlurOnSurface(SDL_Surface* src, SDL_Surface* dst, SDL_Rect clip, int
 	
 	// Blend the remaining scanlines.
 	while (rows--) {
-		SDL_imageFilterMean(src1px, src2px, dstpx, length);
+		imageFilterMean(src1px, src2px, dstpx, length);
 		src1px += srcp;
 		src2px += srcp;
 		dstpx += dstp;
@@ -381,11 +414,11 @@ void OldMovieLayer::refresh(SDL_Surface *surface, SDL_Rect &clip)
 		// If no clipping rectangle is defined, we can apply the noise in one go.
 		unsigned char* s = (unsigned char*) surface->pixels;
 		if (noise_level > 0)
-			SDL_imageFilterSub(s, (unsigned char*) NoiseSurface[ns]->pixels, s, sp * surface->h);
+			imageFilterSub(s, (unsigned char*) NoiseSurface[ns]->pixels, s, sp * surface->h);
 		// Since the glow is stored as a single scanline for each level, we always apply
 		// the glow scanline by scanline.
 		if (glow_level > 0)
-			for (int i = height; i; --i, s += sp) SDL_imageFilterAdd(s, g, s, width * 4);
+			for (int i = height; i; --i, s += sp) imageFilterAdd(s, g, s, width * 4);
 	}
 	else {
 		// Otherwise we do everything scanline by scanline.
@@ -394,8 +427,8 @@ void OldMovieLayer::refresh(SDL_Surface *surface, SDL_Rect &clip)
 		unsigned char* s = ((unsigned char*) surface->pixels) + clip.x * 4 + clip.y * sp;
 		unsigned char* n = ((unsigned char*) NoiseSurface[ns]->pixels) + clip.x * 4 + clip.y * np;
 		for (int i = clip.h; i; --i, s += sp, n += np) {
-			if (noise_level > 0) SDL_imageFilterSub(s, n, s, length); // subtract noise
-			if (glow_level > 0) SDL_imageFilterAdd(s, g, s, length); // add glow
+			if (noise_level > 0) imageFilterSub(s, n, s, length); // subtract noise
+			if (glow_level > 0) imageFilterAdd(s, g, s, length); // add glow
 		}
 	}
 	SDL_UnlockSurface(NoiseSurface[ns]);
