@@ -377,7 +377,8 @@ void AnimationInfo::blendOnSurface2( SDL_Surface *dst_surface, int dst_x, int ds
         int raster_min = min_xy[0], raster_max = max_xy[0];
         for (i=0 ; i<4 ; i++){
             if (corner_xy[i][1] == corner_xy[(i+1)%4][1]) continue;
-            x = (corner_xy[(i+1)%4][0] - corner_xy[i][0])*(y-corner_xy[i][1])/(corner_xy[(i+1)%4][1] - corner_xy[i][1]) + corner_xy[i][0];
+            x = (corner_xy[(i+1)%4][0] - corner_xy[i][0])*(y-corner_xy[i][1])/
+                (corner_xy[(i+1)%4][1] - corner_xy[i][1]) + corner_xy[i][0];
             if (corner_xy[(i+1)%4][1] - corner_xy[i][1] > 0){
                 if (raster_min < x) raster_min = x;
             }
@@ -553,6 +554,9 @@ void AnimationInfo::calcAffineMatrix()
     for (int i=0 ; i<4 ; i++){
         int c_x = (i<2)?(-pos.w/2):(pos.w/2);
         int c_y = ((i+1)&2)?(pos.h/2):(-pos.h/2);
+        //Mion: need to make sure corners are in right order (UL,LL,LR,UR)
+        if (scale_x < 0) c_x = -c_x;
+        if (scale_y < 0) c_y = -c_y;
         corner_xy[i][0] = (mat[0][0] * c_x + mat[0][1] * c_y) / 1000 + pos.x;
         corner_xy[i][1] = (mat[1][0] * c_x + mat[1][1] * c_y) / 1000 + pos.y;
 
