@@ -264,9 +264,9 @@ int DIB_OpenAudio(_THIS, SDL_AudioSpec *spec)
 #else
 //Mion: Windows waveout requires a minimum of 1/4 second,
 // but SDL can run with smaller buffers; since we're not generating dlls,
-// let's try setting the minimum to 1/128 second
-	if ( spec->samples < (spec->freq/128) )
-		spec->samples = ((spec->freq/128)+127)&~127;
+// let's try setting the minimum to 1/32 second
+	if ( spec->samples < (spec->freq/32) )
+		spec->samples = ((spec->freq/32)+31)&~31;
 #endif
 
 	/* Update the fragment size as size in bytes */
