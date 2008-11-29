@@ -51,7 +51,7 @@ typedef HRESULT (WINAPI *GETFOLDERPATH)(HWND, int, HANDLE, DWORD, LPTSTR);
 extern void initSJIS2UTF16();
 extern "C" void waveCallback( int channel );
 
-#define DEFAULT_AUDIOBUF  4096
+#define DEFAULT_AUDIOBUF 2048
 
 #define FONT_FILE "default.ttf"
 #define REGISTRY_FILE "registry.txt"
