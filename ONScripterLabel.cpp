@@ -1066,7 +1066,7 @@ void ONScripterLabel::flushDirect( SDL_Rect &rect, int refresh_mode, bool update
 
 void ONScripterLabel::mouseOverCheck( int x, int y )
 {
-    int c = 0;
+    int c = -1;
 
     last_mouse_state.x = x;
     last_mouse_state.y = y;
@@ -1077,6 +1077,7 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
     ButtonLink *p_button_link = root_button_link.next;
     ButtonLink *cur_button_link = NULL;
     while( p_button_link ){
+        c++;
         cur_button_link = p_button_link;
         while (cur_button_link) {
             if ( x >= cur_button_link->select_rect.x &&
@@ -1092,10 +1093,9 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
         }
         if (button != 0) break;
         p_button_link = p_button_link->next;
-        c++;
     }
 
-    if ((c > 0) && ( (current_over_button != button) || (current_button_link != p_button_link))) {
+    if ((c >= 0) && ( (current_over_button != button) || (current_button_link != p_button_link))) {
         DirtyRect dirty = dirty_rect;
         dirty_rect.clear();
 
