@@ -7,7 +7,7 @@ FILETYPE 1
 {
    BLOCK "StringFileInfo" {
        BLOCK "080904b0" {
-           VALUE "FileDescription", "ONScripter-En"
+           VALUE "FileDescription", "ONScripter-En (experimental)"
            VALUE "OriginalFilename", "onscripter-en.exe"
            VALUE "CompanyName", "Ogapee/Haeleth"
            VALUE "FileVersion", "@Y@-@M@-@D@"

@@ -51,7 +51,7 @@ typedef HRESULT (WINAPI *GETFOLDERPATH)(HWND, int, HANDLE, DWORD, LPTSTR);
 extern void initSJIS2UTF16();
 extern "C" void waveCallback( int channel );
 
-#define DEFAULT_AUDIOBUF 4096
+#define DEFAULT_AUDIOBUF 2048
 
 #define FONT_FILE "default.ttf"
 #define REGISTRY_FILE "registry.txt"
@@ -1094,7 +1094,7 @@ void ONScripterLabel::flushDirect( SDL_Rect &rect, int refresh_mode, bool update
 
 void ONScripterLabel::mouseOverCheck( int x, int y )
 {
-    int c = 0;
+    int c = -1;
 
     last_mouse_state.x = x;
     last_mouse_state.y = y;
@@ -1103,8 +1103,9 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
     /* Check button */
     int button = 0;
     ButtonLink *p_button_link = root_button_link.next;
-    ButtonLink *cur_button_link;
+    ButtonLink *cur_button_link = NULL;
     while( p_button_link ){
+        c++;
         cur_button_link = p_button_link;
         while (cur_button_link) {
             if ( x >= cur_button_link->select_rect.x &&
@@ -1120,10 +1121,9 @@ void ONScripterLabel::mouseOverCheck( int x, int y )
         }
         if (button != 0) break;
         p_button_link = p_button_link->next;
-        c++;
     }
 
-    if ( (current_over_button != button) || (current_button_link != p_button_link)){
+    if ((c >= 0) && ( (current_over_button != button) || (current_button_link != p_button_link))) {
         DirtyRect dirty = dirty_rect;
         dirty_rect.clear();
 
@@ -1539,6 +1539,7 @@ void ONScripterLabel::deleteButtonLink()
         delete b2;
     }
     root_button_link.next = NULL;
+    current_button_link = NULL;
 
     if ( exbtn_d_button_link.exbtn_ctl ) delete[] exbtn_d_button_link.exbtn_ctl;
     exbtn_d_button_link.exbtn_ctl = NULL;

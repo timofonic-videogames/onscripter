@@ -257,17 +257,9 @@ int DIB_OpenAudio(_THIS, SDL_AudioSpec *spec)
 	waveformat.nAvgBytesPerSec = 
 		waveformat.nSamplesPerSec * waveformat.nBlockAlign;
 
-#ifndef WINDIB_TINY_BUFFERS
 	/* Check the buffer size -- minimum of 1/4 second (word aligned) */
 	if ( spec->samples < (spec->freq/4) )
 		spec->samples = ((spec->freq/4)+3)&~3;
-#else
-//Mion: Windows waveout requires a minimum of 1/4 second,
-// but SDL can run with smaller buffers; since we're not generating dlls,
-// let's try setting the minimum to 1/32 second
-	if ( spec->samples < (spec->freq/32) )
-		spec->samples = ((spec->freq/32)+31)&~31;
-#endif
 
 	/* Update the fragment size as size in bytes */
 	SDL_CalculateAudioSpec(spec);

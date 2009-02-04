@@ -211,7 +211,6 @@ internalise_SDL() {
     INTERNAL_SMPEG=true
     SDL_CONFIG=./extlib/bin/sdl-config
     SMPEG_CONFIG=./extlib/bin/smpeg-config
-    VECFLAGS="$VECFLAGS -DWINDIB_TINY_BUFFERS"
 }
 
 if $INTERNAL_LIBS
@@ -403,7 +402,6 @@ CFLAGSEXTRA="$CFLAGSEXTRA $VECFLAGS"
 if $INTERNAL_SDL
 then
     SDL_CONFIG=./extlib/bin/sdl-config
-    VECFLAGS=$VECFLAGS -DWINDIB_TINY_BUFFERS
 else
     $echo_n "Checking for system SDL... ${nobr}"
     VER=`($SDL_CONFIG --version) 2>/dev/null`
