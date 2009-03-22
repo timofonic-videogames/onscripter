@@ -1523,6 +1523,11 @@ void ONScripterLabel::deleteButtonLink()
         while ( b2 ) {
             ButtonLink *b3 = b2;
             b2 = b2->same;
+            if ( b3->button_type == ButtonLink::SPRITE_BUTTON ||
+                 b3->button_type == ButtonLink::EX_SPRITE_BUTTON ){
+                sprite_info[ b3->sprite_no ].visible = true;
+                sprite_info[ b3->sprite_no ].setCell(0);
+            }
             delete b3;
         }
         b2 = b1;
@@ -1535,6 +1540,11 @@ void ONScripterLabel::deleteButtonLink()
                     i1->button = NULL;
                 i1 = i1->next;
             }
+        }
+        if ( b2->button_type == ButtonLink::SPRITE_BUTTON ||
+             b2->button_type == ButtonLink::EX_SPRITE_BUTTON ){
+            sprite_info[ b2->sprite_no ].visible = true;
+            sprite_info[ b2->sprite_no ].setCell(0);
         }
         delete b2;
     }
