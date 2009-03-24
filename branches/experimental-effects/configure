@@ -27,8 +27,9 @@ if [ -z "$MAKE"   ]; then MAKE=make; fi
 if [ -z "$AR"     ]; then AR=ar; fi
 if [ -z "$RANLIB" ]; then RANLIB=ranlib; fi
 UNSUPPORTED_COMPILER=false
-VECTORIZE=false
+VECTORIZE=true
 VECTORIZE_LEVEL=0
+FASTMATH=-ffast-math
 INTERNAL_LIBS=false
 INTERNAL_SDL=false
 INTERNAL_SDL_IMAGE=false
@@ -385,7 +386,7 @@ then
     esac
 
     case "x$CC_VER" in
-    x4.*) VECFLAGS="-ftree-vectorize $VECFLAGS"
+    x4.*) VECFLAGS="$FASTMATH -ftree-vectorize $VECFLAGS"
           if [ $VECTORIZE_LEVEL != 0 ]
           then
               VECFLAGS="$VECFLAGS -ftree-vectorizer-verbose=$VECTORIZE_LEVEL"
@@ -404,6 +405,12 @@ then
     SDL_CONFIG=./extlib/bin/sdl-config
 else
     $echo_n "Checking for system SDL... ${nobr}"
+    case "$SYS" in
+        MinGW)  SDL_CONFIG=`pwd`/extlib/bin/sdl-config
+                cp ./win_dll/sdl-config $SDL_CONFIG
+                chmod +x $SDL_CONFIG
+                cp ./win_dll/SDL.dll `pwd`;;
+        esac
     VER=`($SDL_CONFIG --version) 2>/dev/null`
     if [ -n "$VER" ]
     then
@@ -417,6 +424,13 @@ else
 	echo "no"
 	internalise_SDL
     fi
+fi
+
+if $INTERNAL_SDL
+then
+    case "$SYS" in
+        MinGW)  echo "Using internal SDL - might not work with DirectX" ;;
+        esac
 fi
 
 rm -rf .configtest
@@ -746,6 +760,7 @@ INTERNAL_SMPEG=\$(findstring true,$INTERNAL_SMPEG)
 INTERNAL_LIBPNG=\$(findstring true,$INTERNAL_LIBPNG)
 INTERNAL_LIBJPEG=\$(findstring true,$INTERNAL_LIBJPEG)
 INTERNAL_OGGLIBS=\$(findstring true,$INTERNAL_OGGLIBS)
+SDL_CONFIG=$SDL_CONFIG
 
 export PATH     :=   \$(shell pwd)/extlib/bin:\$(PATH)
 export CFLAGS   := -I\$(shell pwd)/extlib/include \$(CFLAGS) $VECFLAGS
@@ -761,7 +776,7 @@ export RANLIB  := $RANLIB
 
 # ONScripter variables
 OSCFLAGSEXTRA = $CFLAGSEXTRA
-INCS = -Iextlib/include \$(shell $SDL_CONFIG --cflags)      \\
+INCS = -Iextlib/include \$(shell \$(SDL_CONFIG) --cflags)      \\
                         \$(shell $SMPEG_CONFIG --cflags)    \\
                         \$(shell $FREETYPE_CONFIG --cflags) \\
        \$(shell [ -d extlib/include/SDL ] && echo -Iextlib/include/SDL)
@@ -773,7 +788,7 @@ cat >> Makefile <<_EOF
 
 LIBS = -Lextlib/lib \\
        -static -Wl,--start-group \\
-       \$(filter-out -lSDLmain,\$(shell $SDL_CONFIG --static-libs)) \\
+       \$(filter-out -lSDLmain,\$(shell \$(SDL_CONFIG) --static-libs)) \\
        $LINKSDL_ttf \\
        \$(shell $SMPEG_CONFIG --libs) \$(shell $FREETYPE_CONFIG --libs) \\
        $LINKSDL_image $LINKjpeg $LINKpng $LINKz \\
@@ -790,7 +805,7 @@ MacOSX)
 cat >> Makefile <<_EOF
 
 LIBS = -Lextlib/lib \\
-       \$(shell $SDL_CONFIG --static-libs)         \\
+       \$(shell \$(SDL_CONFIG) --static-libs)         \\
        \$(shell $SMPEG_CONFIG --libs)              \\
        $LINKSDL_ttf \$(shell $FREETYPE_CONFIG --libs) \\
        $LINKSDL_image $LINKjpeg $LINKpng              \\
@@ -816,7 +831,7 @@ cat >> Makefile <<_EOF
 LIBS = -Lextlib/lib \\
        $LINKSDL_image \$(if \$(findstring true,$INTERNAL_SDL_IMAGE),$LINKjpeg $LINKpng $LINKz) \\
        $LINKSDL_mixer \$(if \$(or \$(findstring true,$INTERNAL_SDL_MIXER),\$(findstring true,$EXPLICIT_OGGLIBS)),$LINKvorbisfile $LINKvorbis $LINKogg) \\
-       \$(shell $SDL_CONFIG --libs)      \\
+       \$(shell \$(SDL_CONFIG) --libs)      \\
        \$(shell $SMPEG_CONFIG --libs)    \\
        $LINKSDL_ttf \$(shell $FREETYPE_CONFIG --libs) \\
        $LINKbz2 \$(if \$(findstring true,$INTERNAL_SDL),$INTERNAL_LDFLAGS)
