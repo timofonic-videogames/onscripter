@@ -355,6 +355,7 @@ void ScriptParser::reset()
     }
     last_effect_link = &root_effect_link;
     last_effect_link->next = NULL;
+    deleteLayerInfo();
 
     readLog( script_h.log_info[ScriptHandler::LABEL_LOG] );
     

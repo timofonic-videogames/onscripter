@@ -1001,7 +1001,6 @@ void ONScripterLabel::resetSub()
     resetSentenceFont();
 
     deleteNestInfo();
-    deleteLayerInfo();
     deleteButtonLink();
     deleteSelectLink();
 
