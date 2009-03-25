@@ -1,6 +1,6 @@
 #!/bin/sh
 
-prefix=`echo "$0" | sed 's/[^/]*\$//'`../src/SDL-1.2.13
+prefix=./extlib/src/SDL-1.2.13
 exec_prefix=${prefix}
 exec_prefix_set=no
 libdir=${exec_prefix}/lib
@@ -42,14 +42,14 @@ while test $# -gt 0; do
       echo 1.2.13
       ;;
     --cflags)
-      echo -I${prefix}/include -I${prefix}/dll-include -D_GNU_SOURCE=1 -Dmain=SDL_main
+      echo -I${prefix}/include/SDL -I${prefix}/src/SDL-1.2.13/include -D_GNU_SOURCE=1 -Dmain=SDL_main
       ;;
     --libs)
-      echo -L${exec_prefix}/dll-lib  -lmingw32 -lSDLmain -lSDL  -mwindows
+      echo -L${exec_prefix}/lib  -lmingw32 -lSDLmain -lSDL -lwinmm  -mwindows
       ;;
     --static-libs)
 #    --libs|--static-libs)
-      echo -L${exec_prefix}/dll-lib  -lmingw32 -lSDLmain -lSDL  -mwindows
+      echo -L${exec_prefix}/lib  -lmingw32 -lSDLmain -lSDL -lwinmm  -mwindows
       ;;
     *)
       echo "${usage}" 1>&2

@@ -406,9 +406,9 @@ then
 else
     $echo_n "Checking for system SDL... ${nobr}"
     case "$SYS" in
-        MinGW)  SDL_CONFIG=`pwd`/extlib/bin/sdl-config
-                cp ./win_dll/sdl-config $SDL_CONFIG
-                chmod +x $SDL_CONFIG
+        MinGW)  SDL_CONFIG=`pwd`/extlib
+                cd win_dll; make prefix=$SDL_CONFIG > /dev/null 2>&1; cd ..
+                SDL_CONFIG=`pwd`/extlib/bin/sdl-config
                 cp ./win_dll/SDL.dll `pwd`;;
         esac
     VER=`($SDL_CONFIG --version) 2>/dev/null`
@@ -784,11 +784,17 @@ _EOF
 case "$SYS" in 
 MinGW)
 
+if $INTERNAL_SDL
+then
+  MY_SDL_LIBS="\$(filter-out -lSDLmain,\$(shell \$(SDL_CONFIG) --static-libs))"
+else
+  MY_SDL_LIBS="\$(shell \$(SDL_CONFIG) --static-libs)"
+fi
 cat >> Makefile <<_EOF
 
 LIBS = -Lextlib/lib \\
        -static -Wl,--start-group \\
-       \$(filter-out -lSDLmain,\$(shell \$(SDL_CONFIG) --static-libs)) \\
+       $MY_SDL_LIBS \\
        $LINKSDL_ttf \\
        \$(shell $SMPEG_CONFIG --libs) \$(shell $FREETYPE_CONFIG --libs) \\
        $LINKSDL_image $LINKjpeg $LINKpng $LINKz \\
