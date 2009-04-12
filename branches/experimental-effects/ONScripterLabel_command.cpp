@@ -3564,6 +3564,7 @@ int ONScripterLabel::btndefCommand()
     }
 
     deleteButtonLink();
+    current_button_state.button = 0;
     processTextButtonInfo();
 
     disableGetButtonFlag();
