@@ -1,3 +1,7 @@
+2009-07-18
+  Bugfixes for "fchk" command, graphics_*.cpp compilation. [Mion]
+
+
 2009-07-12
   bugfixes for non-MMX/SSE2 graphics routines, button handling (again),
   textwindow (non)display on CTRL-press.

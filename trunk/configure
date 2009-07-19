@@ -937,17 +937,17 @@ then
 cat >> Makefile <<_EOF
 
 graphics_sse2.o: graphics_sse2.cpp graphics_sse2.h graphics_common.h
-	\$(CC) \$(INCS) \$(DEFS) $GFX_SSE2_FLAGS -c \$< -o \$@
+	\$(CXX) \$(INCS) \$(DEFS) $GFX_SSE2_FLAGS -c \$< -o \$@
 
 graphics_mmx.o: graphics_mmx.cpp graphics_mmx.h graphics_common.h
-	\$(CC) \$(INCS) \$(DEFS) $GFX_MMX_FLAGS -c \$< -o \$@
+	\$(CXX) \$(INCS) \$(DEFS) $GFX_MMX_FLAGS -c \$< -o \$@
 _EOF
 elif $USE_PPC_GFX
 then
 cat >> Makefile <<_EOF
 
 graphics_maltivec.o: graphics_maltivec.cpp  graphics_maltivec.h graphics_common.h
-	\$(CC) \$(INCS) \$(DEFS) $GFX_MALTIVEC_FLAGS -c \$< -o \$@
+	\$(CXX) \$(INCS) \$(DEFS) $GFX_MALTIVEC_FLAGS -c \$< -o \$@
 _EOF
 fi
 
