@@ -841,7 +841,7 @@ int ScriptParser::ifCommand()
     while(1){
         if (script_h.compareString("fchk")){
             script_h.readName();
-            buf = script_h.readLabel();
+            buf = script_h.readStr();
             if (*buf == '\0')
                 f = false;
             else {
