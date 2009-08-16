@@ -149,6 +149,7 @@ static struct FuncLUT{
     {"defsub",   &ScriptParser::defsubCommand},
     {"defsevol",   &ScriptParser::defsevolCommand},
     {"defmp3vol",   &ScriptParser::defmp3volCommand},
+    {"defbgmvol",   &ScriptParser::defmp3volCommand},
     {"defaultspeed", &ScriptParser::defaultspeedCommand},
     {"defaultfont", &ScriptParser::defaultfontCommand},
     {"dec",   &ScriptParser::decCommand},

@@ -158,7 +158,7 @@ int ONScripterLabel::vCommand()
 {
     char buf[256];
 
-    sprintf(buf, "wav%c%s.wav", DELIMITER, script_h.getStringBuffer()+1);
+    sprintf(buf, "voice%c%s.wav", DELIMITER, script_h.getStringBuffer()+1);
     playSound(buf, SOUND_WAVE|SOUND_OGG, false, MIX_WAVE_CHANNEL);
 
     return RET_CONTINUE;
