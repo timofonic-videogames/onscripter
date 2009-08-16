@@ -6,11 +6,13 @@
 2009-07-12
 
   bugfixes for non-MMX/SSE2 graphics routines, button handling (again),
-  textwindow (non)display on CTRL-press.
+  textwindow (non)display on CTRL-press. [Mion]
+
   Removed drawing a z-order sprite in front of the tachie but behind
-  the textwindow in windowback mode (can use extended sprites instead).
-  Removed the fix to disallow numerals after the asterisk in label names
-  (NScr doesn't obey its own rule, why should we?) [Mion]
+  the textwindow in windowback mode (can use extended sprites instead). [Mion]
+
+  Removed the 2009-06-14 fix that disallowed numerals after the asterisk
+  in label names (NScr doesn't obey its own rule, why should we?) [Mion]
 
 
 2009-06-27
@@ -21,14 +23,17 @@
 2009-06-23
 
   Changed "wait" command to do an actual timed wait even in ctrl/skip mode,
-  just for a reduced duration.
+  just for a reduced duration. [Mion]
+
   Added command "savedir". [Mion]
 
 
 2009-06-21
 
-  Fix for rain effect on PPC.
-  Added Altivec graphics routines.
+  Fix for rain effect on PPC. [Mion, Roto]
+
+  Added Altivec graphics routines. [Mion, Roto]
+
   Added SSE2 alphablend graphics routine. [Mion]
 
 
@@ -39,22 +44,26 @@
 
 2009-06-14
 
-  Moved SSE2/MMX graphics routines to separate files.
+  Moved SSE2/MMX graphics routines to separate files. [Mion]
+
   Various bugfixes, mainly a syntax fix to disallow numerals
   after the * in label names (as it should). [Mion]
 
 
 2009-06-11
 
-  Added SSE2/MMX graphics routines and removed sdl_gfx library.
-  Added additive and subtractive alpha blending modes.
+  Added SSE2/MMX graphics routines and removed sdl_gfx library. [Roto, Mion]
+
+  Added additive and subtractive alpha blending modes. [Mion]
+
   Added commands "lsp2add", "lsph2add", "lsp2sub", "lsph2sub". [Mion]
 
 
 2009-06-09
 
-  Bugfixes; added support for sdl_gfx library.
-  Also experimental graphics routines using SSE2 (thanks Roto). [Mion]
+  Bugfixes; added support for sdl_gfx library. [Mion]
+
+  Also experimental graphics routines using SSE2. [Roto, Mion]
 
 
 2009-05-29
@@ -102,8 +111,8 @@
     * Partial implementation of "movie" command (loop & click)
     * Enable GCC 4.3 autovectorization option (see configure --help)
     * Support for DirectSound on mingw builds:
-      **  Add official SDL.dll & build libraries
-      **  Configure mingw builds to use SDL.dll by default
+      Added official SDL.dll & build libraries,
+      Configured mingw builds to use SDL.dll by default
     * Various bugfixes
 
 
