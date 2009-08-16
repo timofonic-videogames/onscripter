@@ -1,6 +1,6 @@
 2009-07-18
 
-  Bugfixes for "fchk" command, graphics_*.cpp compilation. [Mion]
+  Bugfixes for "fchk" command, graphics_.cpp file(s) compilation. [Mion]
 
 
 2009-07-12
@@ -9,7 +9,7 @@
   textwindow (non)display on CTRL-press.
   Removed drawing a z-order sprite in front of the tachie but behind
   the textwindow in windowback mode (can use extended sprites instead).
-  Removed the fix to disallow numerals after the * in label names
+  Removed the fix to disallow numerals after the asterisk in label names
   (NScr doesn't obey its own rule, why should we?) [Mion]
 
 
