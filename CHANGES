@@ -1,3 +1,14 @@
+2009-08-16
+
+  Added "mode_wave_demo" command directive, as well as the behavior for when
+  it is _inactive_. [Mion]
+
+  Fixed "click" command to not turn off skip-to-choice mode
+  (more in line with NScr behavior). [Mion]
+
+  Made adjustments to wait/delay behavior during skip modes. [Mion]
+
+
 2009-07-18
 
   Bugfixes for "fchk" command, graphics_.cpp file(s) compilation. [Mion]
@@ -47,7 +58,7 @@
   Moved SSE2/MMX graphics routines to separate files. [Mion]
 
   Various bugfixes, mainly a syntax fix to disallow numerals
-  after the * in label names (as it should). [Mion]
+  after the asterisk in label names (as it should). [Mion]
 
 
 2009-06-11
