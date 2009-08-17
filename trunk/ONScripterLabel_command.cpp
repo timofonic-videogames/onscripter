@@ -108,8 +108,11 @@ int ONScripterLabel::waitCommand()
 
     if( (skip_mode & (SKIP_NORMAL | SKIP_TO_EOP | SKIP_TO_WAIT)) || ctrl_pressed_status ) {
         //Mion: instead of skipping entirely, let's do a shortened wait (safer)
-        count = count / 10;
-        if (count < 10) count = 10;
+        if (count > 100) {
+            count = count / 10;
+        } else if (count > 10) {
+            count = 10;
+        }
     }
     startTimer( count );
     return RET_WAIT;
@@ -3227,6 +3230,14 @@ int ONScripterLabel::delayCommand()
         return RET_CONTINUE;
     }
     else{
+        //Mion: use a shorter delay during skip mode
+        if( (skip_mode & (SKIP_NORMAL | SKIP_TO_EOP | SKIP_TO_WAIT)) || ctrl_pressed_status ) {
+            if (t > 100) {
+                t = t / 10;
+            } else if (t > 10) {
+                t = 10;
+            }
+        }
         event_mode = WAIT_INPUT_MODE;
         key_pressed_flag = false;
         startTimer( t );
@@ -3357,7 +3368,9 @@ int ONScripterLabel::clickCommand()
         return RET_CONTINUE;
     }
     else{
-        skip_mode &= ~SKIP_NORMAL;
+        //Mion: NScr doesn't stop skip-to-choice mode for a "click" command
+        if (skip_mode & SKIP_NORMAL)
+            return RET_CONTINUE;
         event_mode = WAIT_INPUT_MODE | WAIT_TIMER_MODE;
         key_pressed_flag = false;
         advancePhase();

@@ -900,6 +900,7 @@ int ONScripterLabel::processText()
             event_mode = WAIT_SLEEP_MODE;
 #endif
             bool flag = false;
+            bool in_skip = (skip_mode & (SKIP_NORMAL | SKIP_TO_EOP | SKIP_TO_WAIT)) || ctrl_pressed_status;
             if ( script_h.getStringBuffer()[ string_buffer_offset ] == 'd' ) flag = true;
             string_buffer_offset++;
             int t = 0;
@@ -910,13 +911,21 @@ int ONScripterLabel::processText()
             }
             if (in_txtbtn)
                 terminateTextButton();
-            if ( skip_mode & (SKIP_NORMAL | SKIP_TO_EOP | SKIP_TO_WAIT) || ctrl_pressed_status){
+            if ( flag && in_skip) {
 #ifdef INSANI
                 skip_mode &= ~SKIP_TO_EOL;
 #endif
                 return RET_CONTINUE | RET_NOREAD;
             }
             else{
+                if (!flag && in_skip) {
+                    //Mion: instead of skipping entirely, let's do a shortened wait (safer)
+                    if (t > 100) {
+                        t = t / 10;
+                    } else if (t > 10) {
+                        t = 10;
+                    }
+                }
                 if (skip_mode || (sentence_font.wait_time == 0)) flush(refreshMode());
 #ifdef INSANI
                 skip_mode &= ~SKIP_TO_EOL;

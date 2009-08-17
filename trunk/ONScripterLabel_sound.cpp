@@ -157,10 +157,19 @@ int ONScripterLabel::playSound(const char *filename, int format, bool loop_flag,
     long length = script_h.cBR->getFileLength( filename );
     if (length == 0) return SOUND_NONE;
 
+    //Mion: account for mode_wave_demo setting
+    //(i.e. if not set, then don't play non-bgm wave/ogg during skip mode)
+    if (!mode_wave_demo_flag && (skip_mode & SKIP_NORMAL)) {
+        if ((format & (SOUND_OGG | SOUND_WAVE)) &&
+            ((channel < ONS_MIX_CHANNELS) || (channel == MIX_WAVE_CHANNEL) ||
+             (channel == MIX_CLICKVOICE_CHANNEL)))
+            return SOUND_NONE;
+    }
+
     unsigned char *buffer;
 
-    if (format & (SOUND_MP3 | SOUND_OGG_STREAMING) && 
-        length == music_buffer_length &&
+    if ((format & (SOUND_MP3 | SOUND_OGG_STREAMING)) && 
+        (length == music_buffer_length) &&
         music_buffer ){
         buffer = music_buffer;
     }

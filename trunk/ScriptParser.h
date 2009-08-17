@@ -141,6 +141,7 @@ public:
     int nextCommand();
     int mulCommand();
     int movCommand();
+    int mode_wave_demoCommand();
     int mode_sayaCommand();
     int mode_extCommand();
     int modCommand();
@@ -268,6 +269,7 @@ protected:
     bool windowback_flag;
     bool usewheel_flag;
     bool useescspc_flag;
+    bool mode_wave_demo_flag;
     bool mode_saya_flag;
     bool mode_ext_flag;
     bool force_button_shortcut_flag;

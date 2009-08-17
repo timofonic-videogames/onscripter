@@ -108,6 +108,7 @@ static struct FuncLUT{
     {"mov4",      &ScriptParser::movCommand},
     {"mov3",      &ScriptParser::movCommand},
     {"mov",      &ScriptParser::movCommand},
+    {"mode_wave_demo", &ScriptParser::mode_wave_demoCommand},
     {"mode_saya", &ScriptParser::mode_sayaCommand},
     {"mode_ext", &ScriptParser::mode_extCommand},
     {"mod",      &ScriptParser::modCommand},
@@ -254,6 +255,7 @@ void ScriptParser::reset()
     windowback_flag = false;
     usewheel_flag = false;
     useescspc_flag = false;
+    mode_wave_demo_flag = false;
     mode_saya_flag = false;
     mode_ext_flag = false;
     rubyon_flag = false;
