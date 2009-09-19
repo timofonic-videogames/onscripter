@@ -1,3 +1,10 @@
+New ONScripter-EN site as of 2009-08-23
+
+  ONScripter-EN is now maintained by Uncle Mion (sonozaki) at
+  http://onscripter.denpa.mobi with Subversion repository at
+  svn://svn.denpa.mobi/onscripter
+
+
 2009-08-16
 
   Added "mode_wave_demo" command directive, as well as the behavior for when
